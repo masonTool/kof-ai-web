@@ -279,6 +279,7 @@ export class Match {
       teamLeft: 1,
       wins: this.wins[side - 1]!,
       ko: f.state === FighterState.Dead,
+      maxMode: f.maxMode > 0,
       trail: f.combo.hits > 0 ? Math.min(1, f.hp / f.maxHp + 0.12) : undefined,
     };
   }

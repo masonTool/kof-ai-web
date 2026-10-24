@@ -121,6 +121,12 @@ export interface MoveDef {
   blockable?: boolean;
   /** 属于哪一类，UI/取消规则要用 */
   kind: 'normal' | 'command' | 'special' | 'super' | 'throw' | 'system';
+  /** 整个招式期间的总位移（正数；方向由 facing 决定，如回避/突进） */
+  travel?: number;
+  /** 位移方向跟随输入（按住前=朝前、否则朝后），回避用 */
+  travelFollowInput?: boolean;
+  /** 位移在多少帧内走完（默认 = total） */
+  travelFrames?: number;
 }
 
 export interface Palette {
@@ -150,8 +156,11 @@ export interface CharDef {
   hp: number;
   /** 前进/后退速度（px/帧） */
   walk: { fwd: number; back: number };
-  /** 跳跃：初速（向上为负）+ 水平速度 + 滞空帧（用于动画） */
-  jump: { vy: number; vx: number; frames: number };
+  /**
+   * 跳跃：初速（向上为负）+ 水平速度 + 滞空帧（用于动画）。
+   * `smallVy/smallVx` 是**小跳**的数值（轻点↑），不写就按大跳的 62% / 85% 算。
+   */
+  jump: { vy: number; vx: number; frames: number; smallVy?: number; smallVx?: number };
   /** 受击盒（站/蹲/空三套） */
   boxes: HitBoxes;
   /** 推挤盒宽度（以角色 x 为中心）；不写就用默认 24 */

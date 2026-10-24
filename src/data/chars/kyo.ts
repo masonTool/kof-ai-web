@@ -350,6 +350,15 @@ export const KYO: CharDef = {
       }),
     ], { input: { motion: '236236', buttons: ['A', 'C'] }, meterCost: 100 }),
 
+    // ---------------------------------------------------------------- 系统技
+    // AB 紧急回避：按住前 = 前转，按住后/不按 = 后转（方向由 travelFollowInput 决定）
+    'AB': mv('AB', '紧急回避', 'roll', 26, 'system', [], {
+      invuln: [{ frames: [1, 20], kind: 'full' }],
+      travel: 88,
+      travelFrames: 20,
+      travelFollowInput: true,
+    }),
+
     // ---------------------------------------------------------------- 投技
     // 近身判定（要求贴身才能成立）在系统机制条目里补，这里先给数据
     'throw': mv('throw', '釟鉄', 'throwStart', 44, 'throw', [

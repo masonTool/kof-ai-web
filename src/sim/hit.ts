@@ -9,6 +9,7 @@ import { Btn } from '../core/input';
 import type { HitDef } from '../data/schema';
 import { centerOf, intersects } from './collision';
 import { addComboHit, scaledDamage } from './combo';
+import { DIZZY_FRAMES, GUARD_CRUSH_MAX, GUARD_CRUSH_STUN, MAX_MODE_DAMAGE, STUN_MAX } from './constants';
 import type { Fighter } from './fighter';
 import { isNeutral } from './state';
 import type { World } from './world';
@@ -65,6 +66,22 @@ export function isGuarding(defender: Fighter, hit: HitDef): boolean {
   }
 }
 
+/**
+ * 受击方是否处在无敌窗口（招式数据里的 `invuln`）。
+ * 之前只判了倒地/起身，招式上的无敌帧（鬼焼、紧急回避）其实一直没生效。
+ */
+export function isInvulnerable(defender: Fighter, hit: HitDef): boolean {
+  const move = defender.move;
+  if (!defender.isAttacking || !move?.invuln) return false;
+  for (const w of move.invuln) {
+    if (defender.moveFrame < w.frames[0] || defender.moveFrame > w.frames[1]) continue;
+    if (w.kind === 'full') return true;
+    if (w.kind === 'low' && hit.level === 'low') return true;
+    if (w.kind === 'air' && defender.airborne) return true;
+  }
+  return false;
+}
+
 interface Candidate {
   attacker: Fighter;
   defender: Fighter;
@@ -85,6 +102,7 @@ function collect(fighters: readonly Fighter[]): Candidate[] {
       for (const defender of fighters) {
         if (defender === attacker || defender.isDead) continue;
         if (defender.state === 'down' || defender.state === 'wakeup') continue; // 倒地/起身无敌
+        if (isInvulnerable(defender, hit)) continue; // 招式自带的无敌帧（回避/鬼焼）
         if (!intersects(hitBox, defender.worldBox(defender.hurtbox()))) continue;
 
         const blocked = isGuarding(defender, hit);
@@ -117,7 +135,16 @@ export function resolveCombat(world: World, fighters: readonly Fighter[]): HitRe
       // 被防也能接取消（KOF 的"防御取消"），表里没写就不开
       const onBlock = attacker.move?.cancel?.onBlock;
       if (onBlock && onBlock.length > 0) attacker.allowCancel(onBlock);
-      defender.enterBlockstun(hit.blockStun);
+      // 削防：连续防御会累积，满则崩防（大硬直）
+      defender.guardGauge += Math.max(6, Math.floor(hit.damage * 0.5));
+      if (defender.guardGauge >= GUARD_CRUSH_MAX) {
+        defender.guardGauge = 0;
+        defender.enterHitstun(GUARD_CRUSH_STUN);
+        defender.push(attacker.facing * hit.blockPushback * 2);
+        world.emit('guardcrush', { x: c.x, y: c.y });
+      } else {
+        defender.enterBlockstun(hit.blockStun);
+      }
       defender.push(attacker.facing * hit.blockPushback);
       attacker.push(-attacker.facing * hit.blockPushback * 0.5);
       attacker.addMeter(Math.floor(hit.damage * 0.15));
@@ -137,7 +164,9 @@ export function resolveCombat(world: World, fighters: readonly Fighter[]): HitRe
       continue;
     }
 
-    const raw = c.counter ? Math.round(hit.damage * COUNTER_DAMAGE_MULT) : hit.damage;
+    const base = c.counter ? Math.round(hit.damage * COUNTER_DAMAGE_MULT) : hit.damage;
+    // MAX 模式期间伤害提升
+    const raw = Math.round(base * (attacker.maxMode > 0 ? MAX_MODE_DAMAGE : 1));
     const damage = scaledDamage(raw, comboBefore);
 
     // 命中了才开取消窗口（没打中不能取消，这是连段成立的前提）
@@ -151,6 +180,16 @@ export function resolveCombat(world: World, fighters: readonly Fighter[]): HitRe
         launch: hit.launch,
         knockdown: hit.knockdown !== undefined && hit.knockdown !== 'none',
       });
+
+      // 气绝：挨够了会晕（晕眩中挨打不再累积，否则永远醒不过来）
+      if (defender.state !== 'dizzy') {
+        defender.stunGauge += Math.floor(damage * 0.45);
+        if (defender.stunGauge >= STUN_MAX) {
+          defender.enterDizzy(DIZZY_FRAMES);
+          defender.stunGauge = 0;
+          world.emit('dizzy', { x: defender.x, y: defender.y });
+        }
+      }
     }
     defender.push(attacker.facing * hit.pushback);
 

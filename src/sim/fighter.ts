@@ -7,10 +7,18 @@
  * 推挤与镜头在后续条目里补。
  */
 import type { InputState } from '../core/input';
-import { axisX, axisY } from '../core/input';
+import { Btn, axisX, axisY } from '../core/input';
 import type { Box, CharDef, HitDef, MoveDef } from '../data/schema';
 import { newCombo, type ComboState } from './combo';
-import { GROUND_Y, KNOCKDOWN_FRAMES, WAKEUP_FRAMES } from './constants';
+import {
+  GROUND_Y,
+  JUMP_CUT_FRAMES,
+  KNOCKDOWN_FRAMES,
+  MAX_MODE_FRAMES,
+  MAX_MODE_METER,
+  QUICK_WAKEUP_MIN,
+  WAKEUP_FRAMES,
+} from './constants';
 import { DEFAULT_PUSH_WIDTH, clampStageX, integrateAir } from './physics';
 import { FighterState, canAct, type FighterState as StateName } from './state';
 import type { Entity, World } from './world';
@@ -42,6 +50,10 @@ export class Fighter implements Entity {
   meter = 0;
   /** 气绝值，攒满进晕眩 */
   stunGauge = 0;
+  /** 削防值，攒满进崩防 */
+  guardGauge = 0;
+  /** MAX 模式剩余帧（> 0 时攻击力提升） */
+  maxMode = 0;
   /** 自己正在承受的连段（连击数/累计伤害），恢复中立时清零 */
   combo: ComboState = newCombo();
 
@@ -78,6 +90,13 @@ export class Fighter implements Entity {
   /** 命中停顿/受击里按下的指令先存这儿，解冻那一帧再生效（否则取消窗口里的输入会丢） */
   private pendingMove: MoveDef | null = null;
   private pendingFrames = 0;
+
+  /** 当前招式的位移方向（+1 朝前 / -1 朝后，回避要看输入） */
+  private travelForward: 1 | -1 = 1;
+  /** 本次跳跃是否已经"切"过高度（轻点↑只切一次） */
+  private jumpCut = false;
+  /** A+B 按下缓冲帧数：倒地/冻结期间按的受身键不能丢 */
+  private abBuffer = 0;
 
   constructor(char: CharDef, init: FighterInit = {}) {
     this.char = char;
@@ -208,6 +227,11 @@ export class Fighter implements Entity {
     this.landLag = 0;
     this.airborne = false;
     this.stunGauge = 0;
+    this.guardGauge = 0;
+    this.maxMode = 0;
+    this.abBuffer = 0;
+    this.jumpCut = false;
+    this.travelForward = 1;
     this.combo = newCombo();
     this.input = { held: 0, pressed: 0, released: 0 };
   }
@@ -233,7 +257,6 @@ export class Fighter implements Entity {
 
   /** 不看当前状态，强行起手（取消通道与测试用；仍然检查空中/气槽） */
   forceStart(move: MoveDef): boolean {
-    if (this.hitstop > 0) return false;
     if (move.meterCost !== undefined && this.meter < move.meterCost) return false;
     if (move.meterCost !== undefined) this.meter -= move.meterCost;
     this.move = move;
@@ -241,13 +264,54 @@ export class Fighter implements Entity {
     this.stateFrame = 0;
     this.usedHits.clear();
     this.cancelSet = null;
+    this.travelForward = move.travelFollowInput === true && this.holdsBack() ? -1 : 1;
     if (!this.airborne) this.vx = 0;
     this.state = FighterState.Attack;
     return true;
   }
 
+  /** 是否按着"后退"方向（回避/位移用） */
+  private holdsBack(): boolean {
+    const back = this.facing === 1 ? Btn.Left : Btn.Right;
+    return (this.input.held & back) !== 0;
+  }
+
+  /** 取走 AB 缓冲（受身用） */
+  private takeAbBuffer(): boolean {
+    if (this.abBuffer <= 0) return false;
+    this.abBuffer = 0;
+    return true;
+  }
+
+  /** AB 同帧（回避/受身） */
+  private abPressed(): boolean {
+    return (this.input.pressed & (Btn.A | Btn.B)) === (Btn.A | Btn.B);
+  }
+
+  /** CD 同帧（吹飞 / 防御取消） */
+  private cdPressed(): boolean {
+    return (this.input.pressed & (Btn.C | Btn.D)) === (Btn.C | Btn.D);
+  }
+
+  /** ABC 同帧（启动 MAX 模式） */
+  private abcPressed(): boolean {
+    return (this.input.pressed & (Btn.A | Btn.B | Btn.C)) === (Btn.A | Btn.B | Btn.C);
+  }
+
+  /** 满槽 + 中立时 ABC 启动 MAX 模式 */
+  private tryActivateMax(): boolean {
+    if (!this.abcPressed()) return false;
+    if (this.maxMode > 0) return false;
+    if (this.meter < MAX_MODE_METER) return false;
+    if (!canAct(this.state)) return false;
+    this.meter -= MAX_MODE_METER;
+    this.maxMode = MAX_MODE_FRAMES;
+    return true;
+  }
+
   /** 本帧按了键 → 挑一招出来（出招中则只认取消表里的招） */
   private tryInputMove(): boolean {
+    if (this.tryActivateMax()) return true; // ABC 是"启动 MAX"，不出招
     if (!acceptsMoveInput(this)) return false;
     const cancelling = this.state === FighterState.Attack;
     const move = this.controls.pick(this.opponent, cancelling ? (m) => this.canCancelInto(m.id) : undefined);
@@ -268,12 +332,22 @@ export class Fighter implements Entity {
     return ok;
   }
 
+  /**
+   * 起跳。高度先按大跳算，之后 `stepAir` 里发现↑很快就松了再"切"成小跳——
+   * KOF 的规则是"轻点↑ = 小跳、按住↑ = 大跳"，起跳那一帧是分不出来的。
+   */
   startJump(dx: number): void {
     if (dx !== 0) this.facing = dx > 0 ? 1 : -1;
     this.vy = -this.char.jump.vy;
     this.vx = dx * this.char.jump.vx;
     this.airborne = true;
+    this.jumpCut = false;
     this.setState(FighterState.Jump);
+  }
+
+  /** 小跳初速（没配就按大跳的比例算） */
+  get smallJumpVy(): number {
+    return this.char.jump.smallVy ?? this.char.jump.vy * 0.62;
   }
 
   // ---------------------------------------------------------------- 被命中入口（hit.ts 调用）
@@ -342,6 +416,14 @@ export class Fighter implements Entity {
     this.input = input;
     // 指令历史每帧都要攒（冻结期间也不例外），否则连段里的摇杆会断
     this.controls.feed(input);
+    if (this.abPressed()) this.abBuffer = 8;
+    else if (this.abBuffer > 0) this.abBuffer--;
+
+    // 防御取消：防御硬直（含命中停顿）里按 CD 直接吹飞反击
+    if (this.state === FighterState.Block && this.cdPressed()) {
+      const cd = this.char.moves['CD'];
+      if (cd) this.forceStart(cd);
+    }
 
     // 命中停顿：整帧冻结（状态帧号也不动），这是格斗手感的关键。
     // 但按键仍然解析并存下来——命中停顿里摇出来的取消，解冻后要能生效。
@@ -359,6 +441,8 @@ export class Fighter implements Entity {
     }
 
     this.stateFrame++;
+    if (this.maxMode > 0) this.maxMode--;
+    this.decayGauges();
 
     if (this.pendingFrames > 0) {
       this.pendingFrames--;
@@ -373,7 +457,7 @@ export class Fighter implements Entity {
         this.stepAttack();
         break;
       case FighterState.Jump:
-        this.stepAir();
+        this.stepAir(input);
         break;
       case FighterState.Hit:
       case FighterState.Block:
@@ -381,7 +465,12 @@ export class Fighter implements Entity {
         this.stepStun();
         break;
       case FighterState.Down:
-        if (this.stateFrame >= KNOCKDOWN_FRAMES) this.setState(FighterState.Wakeup);
+        // 受身：倒地后按 AB 可以快速起身（起身阶段本身无敌）
+        if (this.stateFrame >= QUICK_WAKEUP_MIN && this.takeAbBuffer()) {
+          this.setState(FighterState.Wakeup);
+        } else if (this.stateFrame >= KNOCKDOWN_FRAMES) {
+          this.setState(FighterState.Wakeup);
+        }
         break;
       case FighterState.Wakeup:
         if (this.stateFrame >= WAKEUP_FRAMES) this.toNeutral();
@@ -434,6 +523,15 @@ export class Fighter implements Entity {
     }
     this.moveFrame = this.stateFrame;
 
+    // 位移型招式（回避/突进）：均匀分摊到 travelFrames 帧里
+    if (move.travel !== undefined && !this.airborne) {
+      const frames = Math.max(1, move.travelFrames ?? move.total);
+      if (this.moveFrame <= frames) {
+        this.x += (move.travel / frames) * this.travelForward * this.facing;
+        this.clampX();
+      }
+    }
+
     if (this.airborne) {
       if (integrateAir(this)) {
         this.airborne = false;
@@ -446,7 +544,14 @@ export class Fighter implements Entity {
     if (this.moveFrame >= move.total) this.toNeutral();
   }
 
-  private stepAir(): void {
+  private stepAir(input: InputState): void {
+    // 轻点↑：起跳后很快松手 → 把上升速度切掉，变成小跳（只切一次）
+    if (!this.jumpCut && this.stateFrame <= JUMP_CUT_FRAMES && (input.held & Btn.Up) === 0) {
+      this.jumpCut = true;
+      const small = -this.smallJumpVy;
+      if (this.vy < small) this.vy = small;
+    }
+
     const landed = integrateAir(this);
     this.clampX();
     if (landed) {
@@ -456,7 +561,22 @@ export class Fighter implements Entity {
     }
   }
 
+  /** 削防/气绝的自然衰减：站着不动会慢慢降下来 */
+  private decayGauges(): void {
+    const active = canAct(this.state);
+    if (this.guardGauge > 0) {
+      this.guardGauge = Math.max(0, this.guardGauge - (active ? 0.3 : 0.12));
+    }
+    if (this.stunGauge > 0) {
+      this.stunGauge = Math.max(0, this.stunGauge - (active ? 0.25 : 0.08));
+    }
+  }
+
   private stepStun(): void {
+    // 晕眩时连按按键能提前醒（KOF 的摇醒）
+    if (this.state === FighterState.Dizzy && this.input.pressed !== 0) {
+      this.stunTimer = Math.max(1, this.stunTimer - 1);
+    }
     if (this.airborne) {
       const landed = integrateAir(this);
       this.clampX();
@@ -494,6 +614,7 @@ export class Fighter implements Entity {
     h.i32(this.combo.hits).i32(this.combo.damage);
     h.str(this.state).i32(this.stateFrame).i32(this.moveFrame);
     h.i32(this.hitstop).i32(this.stunTimer).bool(this.airborne);
+    h.f64(this.guardGauge).i32(this.maxMode);
     h.u32(this.usedHits.size);
   }
 }

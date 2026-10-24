@@ -19,9 +19,10 @@ export const THROW_RANGE = 46;
 const KIND_ORDER: Record<MoveDef['kind'], number> = {
   super: 0,
   special: 1,
-  command: 2,
-  throw: 3,
-  system: 4,
+  // 系统技（AB 回避 / CD 吹飞）要压过指令技：按住前 + A+B 应该是前转，不是 6B
+  system: 2,
+  command: 3,
+  throw: 4,
   normal: 5,
 };
 
@@ -92,9 +93,11 @@ export class FighterControls {
       candidates.push(move);
     }
 
-    // 2) 系统技（CD 吹飞：必须同帧按下 C+D）
+    // 2) 系统技：CD 吹飞（C+D 同帧）、AB 紧急回避（A+B 同帧）
     const cd = f.char.moves['CD'];
     if (cd && (pressed & (Btn.C | Btn.D)) === (Btn.C | Btn.D)) candidates.push(cd);
+    const dodge = f.char.moves['AB'];
+    if (dodge && (pressed & (Btn.A | Btn.B)) === (Btn.A | Btn.B)) candidates.push(dodge);
 
     // 3) 通常技（站/蹲/空 三套由姿态推导）
     const normalKey = normalKeyFor(f, pressed, input.held);

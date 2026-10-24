@@ -19,6 +19,8 @@ export interface PlayerHud {
   wins: number;
   /** 被 KO：血条全空并转红 */
   ko?: boolean;
+  /** 正在 MAX 模式（气槽满档启动，攻击力提升） */
+  maxMode?: boolean;
   /** 掉血残影比例（延迟下降的红色部分），不传就等于当前血量比例 */
   trail?: number;
 }
@@ -201,14 +203,15 @@ function drawMeter(ctx: Ctx2D, p: PlayerHud, side: 1 | 2): void {
     ctx.fillRect(x, rect.y, fillW, rect.h);
   }
 
+  const active = p.maxMode === true;
   text(
     ctx,
-    ratio >= 1 ? 'MAX' : 'POWER',
+    active ? 'MAX MODE' : ratio >= 1 ? 'MAX' : 'POWER',
     side === 1 ? rect.x : rect.x + rect.w,
     rect.y - 10,
     side === 1 ? 'left' : 'right',
     7,
-    ratio >= 1 ? HUD_COLORS.meterMax : HUD_COLORS.text,
+    active || ratio >= 1 ? HUD_COLORS.meterMax : HUD_COLORS.text,
   );
 }
 

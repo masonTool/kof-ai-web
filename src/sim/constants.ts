@@ -25,3 +25,22 @@ export const METER_MAX = 100;
 export const WAKEUP_FRAMES = 12;
 /** 倒地到起身的帧数 */
 export const KNOCKDOWN_FRAMES = 24;
+
+/** 削防：连续防御累积到这个值就崩防 */
+export const GUARD_CRUSH_MAX = 100;
+/** 崩防后的受击硬直帧（KOF97 崩防 = 大硬直，够打一套） */
+export const GUARD_CRUSH_STUN = 38;
+/** 气绝：晕眩值上限 */
+export const STUN_MAX = 100;
+/** 晕眩持续时间（摇杆/按键能缩短） */
+export const DIZZY_FRAMES = 96;
+/** MAX 模式：启动消耗的气槽 */
+export const MAX_MODE_METER = 100;
+/** MAX 模式持续时间（15 秒） */
+export const MAX_MODE_FRAMES = 900;
+/** MAX 模式下的伤害倍率 */
+export const MAX_MODE_DAMAGE = 1.25;
+/** 轻点↑多久内松手算小跳 */
+export const JUMP_CUT_FRAMES = 6;
+/** 倒地后最早几帧可以按 AB 受身 */
+export const QUICK_WAKEUP_MIN = 4;

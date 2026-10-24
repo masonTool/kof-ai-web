@@ -182,6 +182,7 @@ export class TrainingSession {
       }
       lines.push(`   输入 ${describeInput(f.input.held)}`);
     }
+    lines.push('A 轻拳 B 轻脚 C 重拳 D 重脚 · A+B 回避 · C+D 吹飞 · ABC MAX');
     lines.push(`假人 ${this.settings.dummy} · F1 判定框 ${onOff(this.settings.showBoxes)} · F2 帧数 ${onOff(this.settings.showFrameData)}`);
     lines.push(`F3 无限气 ${onOff(this.settings.infiniteMeter)} · F4 无限血 ${onOff(this.settings.infiniteHp)} · F5 假人 · R 重开`);
     return lines;
