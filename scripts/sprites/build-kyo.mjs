@@ -10,12 +10,14 @@
  *
  * 用法：node scripts/sprites/build-kyo.mjs
  */
-import { readFileSync, writeFileSync, existsSync } from 'node:fs';
+import { readFileSync, readdirSync, writeFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { createImage, decodePng, encodePng, blit } from './png.mjs';
 import { cutout, scaleToHeight, scaleToWidth } from './cutout.mjs';
 
-const RAW = 'art-source/kyo-raw';
+/** 画风：决定读哪一套原始图（与 gen-poses.mjs 的 KYO_STYLE 对应） */
+const STYLE = process.env.KYO_STYLE ?? 'ink';
+const RAW = `art-source/kyo-raw-${STYLE}`;
 const OUT_IMAGE = 'public/sheets/kyo.png';
 const OUT_JSON = 'public/sheets/kyo.json';
 
@@ -25,11 +27,13 @@ const CHAR_H = 84;
 /**
  * 贴图分辨率：一个逻辑像素烘几个源像素。
  *
- * 游戏逻辑分辨率 320×224，在 1280 宽的窗口里整数放大 3 倍、Retina 再 ×2，
- * 屏幕上**一个逻辑像素 = 6 个物理像素**。所以 1:1 的贴图得是 84×6=504px 高。
- * 烘 4 倍（336px）= 放大 1.5 倍，肉眼已经看不出糊；再高只是白占显存。
+ * 屏幕上**一个逻辑像素**占多少物理像素，是窗口大小 + dpr 决定的：
+ *   1280×720 窗口 → 整数放大 3 倍，Retina ×2 ⇒ 6 个物理像素/逻辑像素
+ *   再叠加渲染层的 `RENDER_SCALE = 2`（后备缓冲超采样）⇒ 光栅化时是 12 个
+ * 所以按 8 倍（84×8 = 672px 高）烘：比屏幕实际需要的 6 倍多一点余量，
+ * 窗口再大一点也不会立刻糊，图集又没到"打开就卡"的地步（约 1MB）。
  */
-const RES = 6;
+const RES = 8;
 
 /** 只有这些动画会被闪白用到（`renderer.ts` 里 Hit 状态前 3 帧），别给所有帧烘剪影，图集受不了 */
 const FLASH_ANIMS = new Set(['hit']);
@@ -41,48 +45,24 @@ const FLASH_ANIMS = new Set(['hit']);
  * 运行时下标由 `poseFrameIndex()` 给，帧数少了会自己循环回来（出拳就是"收-出-收"）。
  */
 const ANIMS = {
-  idle: ['idle/yb-1792861279285-0.png'],
-  walkF: [
-    'walk/yb-1792861485832-0.png',
-    'walk/yb-1792861486055-2.png',
-    'walk/yb-1792861485954-1.png',
-    'walk/yb-1792861486055-2.png',
-  ],
-  walkB: ['walk/yb-1792861485832-0.png', 'walk/yb-1792861486055-2.png'],
-  guard: ['guard/yb-1792861464030-0.png', 'guard/yb-1792861464030-0.png'],
-  crouch: ['crouch2/yb-1792861816158-0.png'],
-  jump: ['jump/yb-1792861651568-3.png', 'jump/yb-1792861651412-1.png', 'jump/yb-1792861651568-3.png'],
-  punchLight: [
-    'punch-windup/yb-1792861418371-0.png',
-    'punch/yb-1792861301787-0.png',
-    'punch/yb-1792861301787-0.png',
-  ],
-  punchHeavy: [
-    'punch-windup/yb-1792861418563-2.png',
-    'punch/yb-1792861301987-2.png',
-    'punch/yb-1792861301987-2.png',
-  ],
-  attack: [
-    'punch-windup/yb-1792861418371-0.png',
-    'punch/yb-1792861301787-0.png',
-    'punch/yb-1792861301787-0.png',
-  ],
-  kickLight: [
-    'kick-windup/yb-1792861440527-0.png',
-    'kick/yb-1792861324352-3.png',
-    'kick/yb-1792861324352-3.png',
-  ],
-  kickHeavy: [
-    'kick-windup/yb-1792861440822-3.png',
-    'kick/yb-1792861324352-3.png',
-    'kick/yb-1792861324352-3.png',
-  ],
-  hit: ['hit/yb-1792861346088-3.png', 'hit/yb-1792861346088-3.png', 'hit/yb-1792861346088-3.png'],
-  win: ['win/yb-1792861389316-0.png', 'win/yb-1792861389316-0.png'],
-  win2: ['win/yb-1792861389316-0.png', 'win/yb-1792861389316-0.png'],
-  win3: ['win/yb-1792861389524-2.png', 'win/yb-1792861389524-2.png'],
+  idle: ['idle'],
+  // 走 4 帧只出了 2 个姿势，循环回来正好是"左右左右"
+  walkF: ['walk1', 'walk2', 'walk1', 'walk2'],
+  walkB: ['walk2', 'walk1'],
+  guard: ['guard', 'guard'],
+  crouch: ['crouch'],
+  jump: ['jumpup', 'jumpdown', 'jumpup'],
+  punchLight: ['punchwindup', 'punchout', 'punchout'],
+  punchHeavy: ['punchwindup', 'punchout', 'punchout'],
+  attack: ['punchwindup', 'punchout', 'punchout'],
+  kickLight: ['kickwindup', 'kickout', 'kickout'],
+  kickHeavy: ['kickwindup', 'kickout', 'kickout'],
+  hit: ['hit', 'hit', 'hit'],
+  win: ['win', 'win'],
+  win2: ['win', 'win'],
+  win3: ['win', 'win'],
   // 躺在地上：按"宽度"归一，锚点用包围盒中心（横躺的人没有"脚底"这个概念）
-  down: ['down/yb-1792861368088-3.png'],
+  down: ['down'],
 };
 
 /** 这些动画按宽度归一 + 水平居中（横躺姿势） */
@@ -96,10 +76,26 @@ const LYING = new Set(['down']);
  */
 const HEIGHT_OVERRIDE = { crouch: 64 };
 
-function loadRaw(rel) {
-  const path = join(RAW, rel);
-  if (!existsSync(path)) throw new Error(`找不到原始图 ${path}`);
-  return cutout(decodePng(readFileSync(path))).img;
+/**
+ * 姿势目录 → 抠好的图。
+ *
+ * 目录名就是姿势（idle / punchout / kickwindup …），里面放元宝出的候选图，
+ * 取文件名排序第一张——挑图时把想要的改成 `00.png` 就行，不用改代码。
+ */
+const poseCache = new Map();
+function loadPose(pose) {
+  if (poseCache.has(pose)) return poseCache.get(pose);
+  const dir = join(RAW, pose);
+  if (!existsSync(dir)) {
+    throw new Error(`缺少姿势 ${pose}：${dir}\n  先跑 node scripts/sprites/gen-poses.mjs --only ${pose}`);
+  }
+  const file = readdirSync(dir)
+    .filter((f) => f.endsWith('.png'))
+    .sort()[0];
+  if (!file) throw new Error(`姿势目录是空的：${dir}`);
+  const img = cutout(decodePng(readFileSync(join(dir, file)))).img;
+  poseCache.set(pose, img);
+  return img;
 }
 
 /**
@@ -178,19 +174,19 @@ function legAnchorX(img) {
 // ---------- 主流程 ----------
 const raws = new Map();
 for (const list of Object.values(ANIMS)) {
-  for (const rel of list) if (!raws.has(rel)) raws.set(rel, loadRaw(rel));
+  for (const pose of list) if (!raws.has(pose)) raws.set(pose, loadPose(pose));
 }
 // 统一 scale：以 idle 第一帧的身高为"角色身高"
-const refRel = ANIMS.idle[0];
-const refH = raws.get(refRel).height;
+const refPose = ANIMS.idle[0];
+const refH = raws.get(refPose).height;
 const scale = (CHAR_H * RES) / refH;
 
 const frames = {};
 for (const [anim, list] of Object.entries(ANIMS)) {
   const lying = LYING.has(anim);
   const targetH = HEIGHT_OVERRIDE[anim];
-  frames[anim] = list.map((rel) => {
-    const raw = raws.get(rel);
+  frames[anim] = list.map((pose) => {
+    const raw = raws.get(pose);
     const sized = lying
       ? scaleToWidth(raw, Math.round(CHAR_H * RES * 1.05))
       : targetH !== undefined

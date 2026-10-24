@@ -117,7 +117,8 @@ describe('京的贴图产物（build-kyo.mjs 的输出）', () => {
     expect(px).toBeGreaterThanOrEqual(4); // 320×224 逻辑分辨率整数放大 3 倍 + Retina 2 倍 = 6
     expect(sheet.anims.idle[0]!.h / px).toBeCloseTo(84, 0);
     expect(sheet.anims.crouch[0]!.h).toBeLessThan(sheet.anims.idle[0]!.h - 12 * px);
-    expect(sheet.anims.down[0]!.h).toBeLessThan(sheet.anims.idle[0]!.h / 2); // 躺着
+    // 躺地是"宽大于高"，比高度更可靠（横躺的人还有肩膀厚度）
+    expect(sheet.anims.down[0]!.w).toBeGreaterThan(sheet.anims.down[0]!.h);
   });
 
   it('换算回世界单位后，站姿仍是 84 高、脚底仍在原点', () => {

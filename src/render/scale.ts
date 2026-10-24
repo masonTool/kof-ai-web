@@ -24,6 +24,16 @@ export interface Viewport {
 /** 设备像素比上限：手机上 3x 屏按 3x 渲染是纯浪费（像素画 2x 已经足够锐利） */
 export const MAX_DPR = 2;
 
+/**
+ * 渲染超采样倍数：后备缓冲再乘一遍，交给浏览器缩回 CSS 尺寸。
+ *
+ * 为什么不是"直接调大逻辑分辨率"：逻辑分辨率一改，全部世界坐标/判定盒/镜头都要跟着走，
+ * 而屏幕上能显示的物理像素是窗口大小决定的、不会因此变多。超采样只动**光栅化密度**——
+ * 线条、文字、贴图都在 2 倍的缓冲里画完再缩回去，等于把整个画面提升一档分辨率，
+ * 而世界坐标一个都不用改。代价是填充率 ×4（3840×2688），独显/Apple Silicon 无压力。
+ */
+export const RENDER_SCALE = 2;
+
 /** 刘海屏/圆角的安全区（CSS 像素），由页面上的探针元素读出来 */
 export interface SafeInsets {
   top: number;
@@ -74,11 +84,14 @@ export function computeViewport(
   };
 }
 
-/** 把视口应用到 canvas：CSS 尺寸 + 居中 + 后备缓冲按 dpr 放大，返回绘制用的 device 缩放。 */
+/**
+ * 把视口应用到 canvas：CSS 尺寸 + 居中 + 后备缓冲按 dpr × 超采样放大，
+ * 返回绘制用的 device 缩放（含超采样，直接用 `setTransform(device,0,0,device,0,0)`）。
+ */
 export function applyViewport(canvas: HTMLCanvasElement, vp: Viewport): number {
-  const device = vp.scale * vp.dpr;
-  canvas.width = Math.round(vp.cssWidth * vp.dpr);
-  canvas.height = Math.round(vp.cssHeight * vp.dpr);
+  const device = vp.scale * vp.dpr * RENDER_SCALE;
+  canvas.width = Math.round(vp.cssWidth * vp.dpr * RENDER_SCALE);
+  canvas.height = Math.round(vp.cssHeight * vp.dpr * RENDER_SCALE);
   canvas.style.width = `${vp.cssWidth}px`;
   canvas.style.height = `${vp.cssHeight}px`;
   canvas.style.left = `${vp.offsetX}px`;
