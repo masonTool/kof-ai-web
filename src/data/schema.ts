@@ -188,8 +188,10 @@ export const MOVE_KEY = /^(?:j?[1-9]?[ABCD]|CD|AB|throw|\d{2,8}(?:AC|[ABCDPK])(?
 export function validateMove(move: MoveDef): string[] {
   const problems: string[] = [];
   if (!Number.isInteger(move.total) || move.total <= 0) problems.push(`${move.id}: total 必须是正整数`);
-  if (move.hits.length === 0 && move.kind !== 'system' && !move.projectile) {
-    problems.push(`${move.id}: 没有判定盒（也没有飞行道具）`);
+  // 没有判定的招式只有三类是合法的：系统技（回避/受身）、纯位移技（瞬移/酔歩）、飞行道具
+  const isMovementOnly = move.travel !== undefined;
+  if (move.hits.length === 0 && move.kind !== 'system' && !move.projectile && !isMovementOnly) {
+    problems.push(`${move.id}: 没有判定盒（也不是位移技/飞行道具）`);
   }
   const seen = new Set<string>();
   for (const h of move.hits) {

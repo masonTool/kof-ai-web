@@ -114,6 +114,33 @@ export const PALETTES: Record<string, Palette> = {
     trim: '#dee6ef',
     accent: '#ff7b5c',
   },
+  /** 麻宫雅典娜：红白水手服 */
+  athena: {
+    skin: '#f6cda8',
+    hair: '#7a4bb5',
+    primary: '#e8484f',
+    secondary: '#2f2f6b',
+    trim: '#fdf6ec',
+    accent: '#8fe3ff',
+  },
+  /** 椎拳崇：绿色功夫装 */
+  kensou: {
+    skin: '#eab98d',
+    hair: '#2f2620',
+    primary: '#3f7a4a',
+    secondary: '#262a30',
+    trim: '#efe6d4',
+    accent: '#ffd166',
+  },
+  /** 镇元斋：褐色长袍 */
+  chin: {
+    skin: '#dfae84',
+    hair: '#e8e4dc',
+    primary: '#7a5a3a',
+    secondary: '#2a2620',
+    trim: '#e8dfca',
+    accent: '#b8e06a',
+  },
   /** 特瑞·博加德 */
   terry: {
     skin: '#f0c39a',

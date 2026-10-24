@@ -4,7 +4,7 @@
  */
 import type { CharDef } from '../data/schema';
 import { VIEW_HEIGHT, VIEW_WIDTH } from '../sim/constants';
-import type { AppFlow } from '../ui/flow';
+import { gridColumns, type AppFlow } from '../ui/flow';
 import type { Ctx2D } from './ctx';
 import { drawFighter } from './fighter-draw';
 
@@ -41,16 +41,21 @@ function text(
  * 选人格子：3 行（12 人）以内都放得下。
  * 行高按人数自动收一点——36 人时会变成 9 列 4 行，格子更小。
  */
-export function cellRect(index: number, columns = 4): { x: number; y: number; w: number; h: number } {
-  const w = 56;
-  const h = 44;
-  const gapX = 10;
+export function cellRect(index: number, count: number, columns = gridColumns(count)): { x: number; y: number; w: number; h: number } {
+  const rows = Math.max(1, Math.ceil(count / columns));
+  const gapX = columns > 5 ? 6 : 10;
   const gapY = 6;
+  const top = 50;
+  const bottom = 198;
+  // 列数一多（16 人起是 6 列），格子必须变窄，否则整排会横出屏幕
+  const w = Math.min(56, Math.floor((VIEW_WIDTH - 12 - (columns - 1) * gapX) / columns));
+  // 行数多了就把格子压扁，保证 320×224 里一定放得下
+  const h = Math.max(18, Math.min(44, Math.floor((bottom - top - (rows - 1) * gapY) / rows)));
   const col = index % columns;
   const row = Math.floor(index / columns);
   const totalW = columns * w + (columns - 1) * gapX;
   const left = (VIEW_WIDTH - totalW) / 2;
-  return { x: left + col * (w + gapX), y: 56 + row * (h + gapY), w, h };
+  return { x: left + col * (w + gapX), y: top + row * (h + gapY), w, h };
 }
 
 export function drawTitle(ctx: Ctx2D, blinkOn: boolean): void {
@@ -76,8 +81,9 @@ export function drawSelect(ctx: Ctx2D, flow: AppFlow, blinkOn: boolean): void {
   ctx.fillRect(0, 0, VIEW_WIDTH, VIEW_HEIGHT);
   text(ctx, 'SELECT YOUR FIGHTER', VIEW_WIDTH / 2, 22, 'center', 12, SCREEN_COLORS.gold);
 
+  const count = flow.roster.length;
   flow.roster.forEach((char: CharDef, i: number) => {
-    const r = cellRect(i, flow.config.columns);
+    const r = cellRect(i, count, flow.columns);
     const p1Here = flow.cursor[0] === i;
     const p2Here = flow.cursor[1] === i;
 
@@ -101,7 +107,8 @@ export function drawSelect(ctx: Ctx2D, flow: AppFlow, blinkOn: boolean): void {
     // 格子里放一个缩小版的待机姿势，比纯色块好认
     ctx.save();
     ctx.translate(r.x + r.w / 2, r.y + r.h - 9);
-    ctx.scale(0.42, 0.42);
+    const figScale = Math.max(0.22, Math.min(0.42, Math.min(r.h / 105, r.w / 140)));
+    ctx.scale(figScale, figScale);
     drawFighter(ctx, {
       palette: char.palette,
       facing: 1,
@@ -112,7 +119,9 @@ export function drawSelect(ctx: Ctx2D, flow: AppFlow, blinkOn: boolean): void {
     });
     ctx.restore();
 
-    text(ctx, char.name, r.x + r.w / 2, r.y + 6, 'center', 8, SCREEN_COLORS.text);
+    // 名字长的（安迪·博加德这种）用小一号字，别顶出格子
+    const nameSize = char.name.length >= 6 ? 6 : 8;
+    text(ctx, char.name, r.x + r.w / 2, r.y + 5, 'center', nameSize, SCREEN_COLORS.text);
     if (p1Here) text(ctx, 'P1', r.x + 2, r.y + r.h - 11, 'left', 6, '#ffd9cf');
     if (p2Here) text(ctx, 'CPU', r.x + r.w - 2, r.y + r.h - 11, 'right', 6, '#cfe4ff');
   });
@@ -146,9 +155,9 @@ export function drawResult(ctx: Ctx2D, winnerName: string, blinkOn: boolean): vo
 }
 
 /** 选人格子命中测试（鼠标/触屏点选） */
-export function hitTestCell(x: number, y: number, count: number, columns = 4): number {
+export function hitTestCell(x: number, y: number, count: number, columns = gridColumns(count)): number {
   for (let i = 0; i < count; i++) {
-    const r = cellRect(i, columns);
+    const r = cellRect(i, count, columns);
     if (x >= r.x && x < r.x + r.w && y >= r.y && y < r.y + r.h) return i;
   }
   return -1;

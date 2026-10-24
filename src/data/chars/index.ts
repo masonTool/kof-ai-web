@@ -4,6 +4,9 @@
  */
 import type { CharDef } from '../schema';
 import { ANDY } from './andy';
+import { ATHENA } from './athena';
+import { CHIN } from './chin';
+import { KENSOU } from './kensou';
 import { BENIMARU } from './benimaru';
 import { DAIMON } from './daimon';
 import { CLARK } from './clark';
@@ -31,10 +34,30 @@ export const ROSTER: readonly CharDef[] = [
   LEONA,
   RALF,
   CLARK,
+  ATHENA,
+  KENSOU,
+  CHIN,
 ];
 
 export function charById(id: string): CharDef | undefined {
   return ROSTER.find((c) => c.id === id);
 }
 
-export { KYO, IORI, BENIMARU, DAIMON, TERRY, ANDY, JOE, RYO, ROBERT, YURI, LEONA, RALF, CLARK };
+export {
+  KYO,
+  IORI,
+  BENIMARU,
+  DAIMON,
+  TERRY,
+  ANDY,
+  JOE,
+  RYO,
+  ROBERT,
+  YURI,
+  LEONA,
+  RALF,
+  CLARK,
+  ATHENA,
+  KENSOU,
+  CHIN,
+};

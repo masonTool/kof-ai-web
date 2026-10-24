@@ -12,19 +12,26 @@ export type ScreenId = 'title' | 'select' | 'vs' | 'fight' | 'result';
 /** `step()` 返回给外层的动作 */
 export type FlowAction = 'none' | 'start-match' | 'to-title';
 
+/** 花名册越大列数越多（4/6/8），保证 320×224 里排得下 */
+export function gridColumns(count: number): number {
+  if (count <= 12) return 4;
+  if (count <= 24) return 6;
+  return 8;
+}
+
 export interface FlowConfig {
   /** VS 演出停留帧数 */
   vsFrames: number;
   /** 电脑选人时犹豫多久（帧） */
   cpuThinkFrames: number;
-  /** 选人栅格每行几个 */
+  /** 选人栅格每行几个；0 = 按人数自动算 */
   columns: number;
 }
 
 export const DEFAULT_FLOW: FlowConfig = {
   vsFrames: 90,
   cpuThinkFrames: 24,
-  columns: 4,
+  columns: 0,
 };
 
 export class AppFlow {
@@ -50,6 +57,11 @@ export class AppFlow {
     return this.roster.length;
   }
 
+  /** 当前栅格列数（配置里写死就用配置，否则按人数算） */
+  get columns(): number {
+    return this.config.columns > 0 ? this.config.columns : gridColumns(this.rosterSize);
+  }
+
   /** 电脑的选择（确定性伪随机，测试里可复现） */
   private cpuRand(): number {
     this.cpuSeed = (this.cpuSeed * 1103515245 + 12345) & 0x7fffffff;
@@ -72,8 +84,8 @@ export class AppFlow {
         if (!this.locked[0]) {
           if ((pressed & Btn.Left) !== 0) this.moveCursor(0, -1);
           if ((pressed & Btn.Right) !== 0) this.moveCursor(0, 1);
-          if ((pressed & Btn.Up) !== 0) this.moveCursor(0, -this.config.columns);
-          if ((pressed & Btn.Down) !== 0) this.moveCursor(0, this.config.columns);
+          if ((pressed & Btn.Up) !== 0) this.moveCursor(0, -this.columns);
+          if ((pressed & Btn.Down) !== 0) this.moveCursor(0, this.columns);
           if ((pressed & (Btn.A | Btn.C)) !== 0) this.locked[0] = true;
         } else if ((pressed & (Btn.B | Btn.D)) !== 0) {
           this.locked[0] = false;
