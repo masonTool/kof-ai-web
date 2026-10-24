@@ -19,7 +19,7 @@ async (page) => {
 
   await page.goto('http://localhost:5174/');
   await wait(1200);
-  record('花名册 27 人', await page.evaluate(() => window.__kof.flow.roster.length), 27);
+  record('花名册 29 人', await page.evaluate(() => window.__kof.flow.roster.length), 29);
 
   // 标题 → 选人，光标移到第 4 人（大门）
   await tapKey('KeyJ');
@@ -345,6 +345,37 @@ async (page) => {
   record('暴走庵与庵并存', orochi.hasBoth, true);
   record('暴走庵招式数一致', orochi.sameMoveCount, true);
   record('暴走庵伤害更高', orochi.stronger, true);
+
+  // 大蛇：全屏攻击真的打到屏幕另一端的人
+  // （这里直接 startMove 起招——指令解析路径已由单元测试和上面的 236+A 覆盖，
+  //   这条自测要验的是"判定盒铺满舞台之后，浏览器里真的结算到了"）
+  await page.evaluate(() => {
+    const k = window.__kof;
+    k.flow.picks = [k.flow.roster[28], k.flow.roster[0]];
+    k.flow.screen = 'fight';
+    k.startMatch();
+  });
+  await wait(1200);
+  const fullscreen = await page.evaluate(() => {
+    const k = window.__kof;
+    const m = k.match;
+    m.softReset();
+    k.training.settings.dummy = 'stand';
+    m.p1.x = 40;
+    m.p2.x = 480; // 舞台两端
+    m.p1.meter = 100;
+    m.p1.startMove(m.p1.char.moves['236236A']);
+    return { id: m.p1.char.id, move: m.p1.move && m.p1.move.id };
+  });
+  await wait(1500);
+  const bossSnap = await page.evaluate(() => {
+    const m = window.__kof.match;
+    return { hp2: m.p2.hp, boss: m.p1.char.boss };
+  });
+  record('大蛇在场上', fullscreen.id, 'orochi');
+  record('全屏超必杀起手成功', fullscreen.move, '236236A');
+  record('BOSS 有减伤/回气属性', bossSnap.boss !== undefined, true);
+  record('全屏技打到舞台另一端的人', bossSnap.hp2 < 1000, true);
 
   return report.join('\n') + `\n\nOVERALL: ${report.every((r) => r.startsWith('PASS')) ? 'ALL PASS' : 'HAS FAIL'}`;
 }

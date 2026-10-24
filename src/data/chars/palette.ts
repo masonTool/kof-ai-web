@@ -240,6 +240,24 @@ export const PALETTES: Record<string, Palette> = {
     trim: '#ffd9d9',
     accent: '#ff4d6d',
   },
+  /** ゲーニッツ：白色神父装 */
+  goenitz: {
+    skin: '#eec8a4',
+    hair: '#d8d4c8',
+    primary: '#f2eee2',
+    secondary: '#3a3f52',
+    trim: '#c8b06a',
+    accent: '#9fd8ff',
+  },
+  /** 大蛇：白袍金饰 */
+  orochi: {
+    skin: '#f6e2c8',
+    hair: '#f2ead0',
+    primary: '#eae6d4',
+    secondary: '#5a4a7a',
+    trim: '#ffd166',
+    accent: '#ffef9f',
+  },
   /** 特瑞·博加德 */
   terry: {
     skin: '#f0c39a',

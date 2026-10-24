@@ -13,6 +13,7 @@ import { EIJI } from './eiji';
 import { CHOI } from './choi';
 import { KENSOU } from './kensou';
 import { KIM } from './kim';
+import { OROCHI } from './orochi';
 import { OROCHI_IORI } from './orochi-iori';
 import { OROCHI_LEONA } from './orochi-leona';
 import { SHERMIE } from './shermie';
@@ -21,6 +22,7 @@ import { YASHIRO } from './yashiro';
 import { BENIMARU } from './benimaru';
 import { DAIMON } from './daimon';
 import { CLARK } from './clark';
+import { GOENITZ } from './goenitz';
 import { IORI } from './iori';
 import { JOE } from './joe';
 import { KYO } from './kyo';
@@ -59,6 +61,8 @@ export const ROSTER: readonly CharDef[] = [
   CHRIS,
   OROCHI_IORI,
   OROCHI_LEONA,
+  GOENITZ,
+  OROCHI,
 ];
 
 export function charById(id: string): CharDef | undefined {
@@ -93,4 +97,6 @@ export {
   CHRIS,
   OROCHI_IORI,
   OROCHI_LEONA,
+  GOENITZ,
+  OROCHI,
 };

@@ -171,6 +171,16 @@ export interface CharDef {
   boxes: HitBoxes;
   /** 推挤盒宽度（以角色 x 为中心）；不写就用默认 24 */
   push?: { w: number };
+  /**
+   * BOSS 属性（只有 BOSS 角色写）：原版 BOSS 是"血厚、气回得快、挨打没那么痛"，
+   * 这三条都不是招式数据能表达的，所以放在角色上、由 Fighter 统一消费。
+   */
+  boss?: {
+    /** 受到伤害的倍率（0.75 = 减伤 25%） */
+    damageTaken?: number;
+    /** 每帧自动回气（普通角色无） */
+    meterRegen?: number;
+  };
   /** 招式表，key 见 docs/ARCHITECTURE.md §6 */
   moves: Record<string, MoveDef>;
 }
@@ -217,6 +227,12 @@ export function validateChar(char: CharDef): string[] {
   if (char.hp <= 0) problems.push(`${char.id}: hp 必须为正`);
   if (char.walk.fwd <= 0 || char.walk.back <= 0) problems.push(`${char.id}: 行走速度必须为正`);
   if (char.push && char.push.w <= 0) problems.push(`${char.id}: 推挤盒宽度必须为正`);
+  if (char.boss?.damageTaken !== undefined && (char.boss.damageTaken <= 0 || char.boss.damageTaken > 1)) {
+    problems.push(`${char.id}: boss.damageTaken 必须在 (0,1] 内`);
+  }
+  if (char.boss?.meterRegen !== undefined && char.boss.meterRegen < 0) {
+    problems.push(`${char.id}: boss.meterRegen 不能为负`);
+  }
   for (const key of Object.keys(char.moves)) {
     const move = char.moves[key]!;
     if (!MOVE_KEY.test(key)) problems.push(`${char.id}: 招式键名 "${key}" 不符合约定（见 schema.ts 的 MOVE_KEY）`);

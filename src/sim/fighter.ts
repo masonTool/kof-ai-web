@@ -12,6 +12,7 @@ import type { Box, CharDef, HitDef, MoveDef } from '../data/schema';
 import { newCombo, type ComboState } from './combo';
 import {
   GROUND_Y,
+  METER_MAX,
   JUMP_CUT_FRAMES,
   KNOCKDOWN_FRAMES,
   MAX_MODE_FRAMES,
@@ -406,7 +407,10 @@ export class Fighter implements Entity {
   }
 
   takeDamage(amount: number): void {
-    this.hp = Math.max(0, this.hp - Math.max(0, amount | 0));
+    // BOSS 减伤：倍率挂在角色数据上，结算层不用知道谁是 BOSS
+    const taken = this.char.boss?.damageTaken ?? 1;
+    const dealt = Math.max(0, Math.round(Math.max(0, amount | 0) * taken));
+    this.hp = Math.max(0, this.hp - dealt);
     if (this.hp === 0) {
       this.airborne = false;
       this.vx = 0;
@@ -416,7 +420,9 @@ export class Fighter implements Entity {
   }
 
   addMeter(amount: number): void {
-    this.meter = Math.max(0, this.meter + amount);
+    // 气槽有上限：不夹住的话会一直涨到几百，HUD 只是显示上截断，
+    // 而"气够不够"的判断仍读真实值——这种不一致最难查。
+    this.meter = Math.min(METER_MAX, Math.max(0, this.meter + amount));
   }
 
   // ---------------------------------------------------------------- 每帧推进
@@ -451,6 +457,9 @@ export class Fighter implements Entity {
 
     this.stateFrame++;
     if (this.maxMode > 0) this.maxMode--;
+    // BOSS 每帧回气（原版 BOSS 气槽回得比谁都快的观感）
+    const regen = this.char.boss?.meterRegen ?? 0;
+    if (regen > 0 && !this.isDead) this.addMeter(regen);
     this.decayGauges();
 
     if (this.pendingFrames > 0) {
