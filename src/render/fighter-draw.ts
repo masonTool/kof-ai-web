@@ -107,19 +107,19 @@ function limb(ctx: Ctx2D, from: Point, to: Point, width: number, color: string):
  * 早期版本是逐格扫描（每格一个 fillRect），一个头就要上百次调用，
  * 一帧两个角色直接掉到 48fps。按行填同样有像素锯齿，调用数只有 1/4。
  */
-function disc(ctx: Ctx2D, at: Point, radius: number, color: string, outline = false): void {
+function disc(ctx: Ctx2D, at: Point, radius: number, color: string, outline = false, squashX = 1): void {
   const r = Math.max(PX, radius);
   const rowSpan = (rr: number, y: number): number => Math.sqrt(Math.max(0, rr * rr - y * y));
   if (outline) {
     const rr = r + PX;
     for (let y = -rr; y <= rr; y += PX) {
-      const half = rowSpan(rr, y);
+      const half = rowSpan(rr, y) * squashX;
       if (half <= 0) continue;
       block(ctx, at[0] - half, at[1] + y, half * 2, PX, OUTLINE);
     }
   }
   for (let y = -r; y <= r; y += PX) {
-    const half = rowSpan(r, y);
+    const half = rowSpan(r, y) * squashX;
     if (half <= 0) continue;
     block(ctx, at[0] - half, at[1] + y, half * 2, PX, color);
   }
@@ -190,7 +190,7 @@ function drawTorso(
   const n = torsoNormal(frame);
   const shoulder = alongTorso(frame, 0.96);
   const waist = alongTorso(frame, 0.16);
-  const shoulderW = 9.8 * opts.build;
+  const shoulderW = 8.8 * opts.build;
   const waistW = 6.3 * opts.build;
 
   const pts: Point[] = [
@@ -460,11 +460,11 @@ function drawFineDetails(
 
   // ---- 立领 + 胸口徽章：京的学生服是"高立领"，这条领子是他的招牌 ----
   const neck = frame.neck;
-  block(ctx, neck[0] - 2.2, neck[1] - 1.4, 4.4, 1, o.flash ? '#ffffff' : o.trim);
-  block(ctx, neck[0] - 2.2, neck[1] + 0.2, 4.4, 1, o.flash ? '#ffffff' : o.trim);
+  block(ctx, neck[0] - 2.4, neck[1] - 1.6, 4.8, 2, o.flash ? '#ffffff' : o.primary);
+  block(ctx, neck[0] - 2.4, neck[1] - 1.6, 4.8, 1, o.flash ? '#ffffff' : dark(o.primary, 0.82));
   // 领口内侧的皮肤（V 字）
   block(ctx, neck[0] + 0.4, neck[1] - 0.4, 1.4, 1.2, o.flash ? '#ffffff' : o.skin);
-  block(ctx, neck[0] + 2.4, neck[1] + 2, 1.6, 1.6, o.flash ? '#ffffff' : o.accent);
+  block(ctx, neck[0] + 2.2, neck[1] + 2.4, 1, 2.2, dark(o.primary, 0.86));
 
   // ---- 头发：后层深、前层亮、几缕发丝 ----
   if (o.look.hair !== 'bald') {
@@ -494,7 +494,7 @@ function drawHead(
 
   // 后脑/头发（秃头角色不画）
   if (look.hair !== 'bald') {
-    disc(ctx, [hx - 1, hy - 1], r + 1, hair, true);
+    disc(ctx, [hx - 1, hy - 1], r + 1, hair, true, 0.86);
 
     if (look.hair === 'spiky') {
       // 三根发尖：三角填充比圆更"刺"
@@ -531,16 +531,16 @@ function drawHead(
   }
 
   // 脸
-  disc(ctx, [hx + 1.5, hy + 1], r - 1, skin);
+  disc(ctx, [hx + 1.5, hy + 1], r - 1, skin, false, 0.84);
   // 下巴：脸下半部加一点，头才不是个正圆
   ctx.beginPath();
-  ctx.arc(hx + 1.5, hy + 1.5, r - 2.4, 0.15 * Math.PI, 0.85 * Math.PI);
+  ctx.arc(hx + 1.5, hy + 1.5, r - 2.4, 0.05 * Math.PI, 0.75 * Math.PI);
   ctx.lineTo(hx + 1.5, hy + 1.5);
   ctx.closePath();
   ctx.fillStyle = skin;
   ctx.fill();
   // 耳朵（后侧一个小圆）
-  disc(ctx, [hx - r * 0.75, hy + 0.5], 1.6, skin);
+  disc(ctx, [hx - r * 0.62, hy + 0.6], 1.6, skin);
   // 眼睛：像素风里就是两个方块（1 个方块太糊，看不出是眼）
   const eye = flash ? '#ffffff' : OUTLINE;
   block(ctx, hx + 3.5, hy - 1.5, PX, PX, eye);

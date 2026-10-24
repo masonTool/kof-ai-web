@@ -8,13 +8,13 @@ import type { Palette } from '../schema';
 export const PALETTES: Record<string, Palette> = {
   /** 草薙京：黑色学生服 + 白 T 恤 */
   kyo: {
-    skin: '#f2c9a0',
-    hair: '#241c17',
-    // 原版：白色学生服上衣 + 黑色立领/腰带 + 黑色裤子
-    primary: '#e8e3d6',
-    secondary: '#1d1f26',
-    trim: '#15161b',
-    accent: '#ff4d3d',
+    // 色值取自参考图（白衣 #f8f8f8、裤子 #203028、皮肤 #f8c080、描边 #000）
+    skin: '#f8c080',
+    hair: '#101a14',
+    primary: '#f6f6f4',
+    secondary: '#22302a',
+    trim: '#2a2f34',
+    accent: '#e0402c',
   },
   /** 八神庵：红上衣 + 黑裤（后续角色波次用） */
   iori: {
