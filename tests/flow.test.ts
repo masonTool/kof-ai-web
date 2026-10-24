@@ -53,7 +53,7 @@ describe('选人屏', () => {
     expect(flow.cursor[0]).toBe(0);
     tap(Btn.Right);
     expect(flow.cursor[0]).toBe(1);
-    tap(Btn.Right);
+    for (let i = 1; i < ROSTER.length; i++) tap(Btn.Right); // 转一圈
     expect(flow.cursor[0]).toBe(0); // 环绕
     tap(Btn.Up); // 只有一行时上下移动不该越界
     expect(flow.cursor[0]).toBeGreaterThanOrEqual(0);

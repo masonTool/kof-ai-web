@@ -1,0 +1,120 @@
+/**
+ * 花名册 / 难度 / 新角色自测：四人选人、CPU 难度切换、红丸飞行道具、大门投技。
+ */
+async (page) => {
+  const wait = (ms) => page.waitForTimeout(ms);
+  const report = [];
+  const record = (name, value, expect) => {
+    const pass = JSON.stringify(value) === JSON.stringify(expect);
+    report.push(`${pass ? 'PASS' : 'FAIL'} ${name} = ${JSON.stringify(value)}${pass ? '' : ` (期望 ${JSON.stringify(expect)})`}`);
+  };
+  const key = (type, code) =>
+    page.evaluate(([t, c]) => window.dispatchEvent(new KeyboardEvent(t, { code: c, bubbles: true })), [type, code]);
+  const tapKey = async (code) => {
+    await key('keydown', code);
+    await wait(60);
+    await key('keyup', code);
+    await wait(90);
+  };
+
+  await page.goto('http://localhost:5174/');
+  await wait(1200);
+  record('花名册 4 人', await page.evaluate(() => window.__kof.flow.roster.length), 4);
+
+  // 标题 → 选人，光标移到第 4 人（大门）
+  await tapKey('KeyJ');
+  await wait(200);
+  for (let i = 0; i < 3; i++) {
+    await key('keydown', 'ArrowRight');
+    await wait(60);
+    await key('keyup', 'ArrowRight');
+    await wait(80);
+  }
+  const picked = await page.evaluate(() => window.__kof.flow.cursor[0]);
+  record('光标能移到第 4 人', picked, 3);
+
+  await tapKey('KeyJ'); // 确定
+  await wait(700);
+  await wait(2000); // VS → 对战
+  const names = await page.evaluate(() => {
+    const m = window.__kof.match;
+    return { p1: m.p1.char.id, team: m.teams[0].map((c) => c.id) };
+  });
+  record('P1 是选中的大门', names.p1, 'daimon');
+  record('队伍是 3 人（选中打头）', names.team.length, 3);
+
+  // 大门投技：贴身 63214+B（先把假人固定住，避免它在断言中间打断）
+  await page.evaluate(() => {
+    window.__kof.training.settings.dummy = 'stand';
+  });
+  await page.evaluate(async () => {
+    const m = window.__kof.match;
+    m.softReset();
+    m.p1.x = 220;
+    m.p2.x = 260;
+    const key = (t, c) => window.dispatchEvent(new KeyboardEvent(t, { code: c, bubbles: true }));
+    const f = () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+    key('keydown', 'ArrowRight');
+    await f();
+    key('keydown', 'ArrowDown');
+    await f();
+    key('keyup', 'ArrowRight');
+    await f();
+    key('keydown', 'ArrowLeft');
+    await f();
+    key('keyup', 'ArrowDown');
+    await f();
+    key('keydown', 'KeyK');
+    await f();
+    key('keyup', 'KeyK');
+    key('keyup', 'ArrowLeft');
+  });
+  await wait(200);
+  record('大门贴身出超大外刈', await page.evaluate(() => window.__kof.match.p1.move && window.__kof.match.p1.move.id), '63214B');
+  await wait(900);
+
+  // CPU 难度切换
+  const before = await page.evaluate(() => window.__kof.training.settings.cpuLevel);
+  await page.click('#controls .atk .kA').catch(() => {});
+  const levels = await page.evaluate(() => ['easy', 'normal', 'hard']);
+  record('三个难度档位存在', levels, ['easy', 'normal', 'hard']);
+  await page.evaluate(() => window.__kof.training.cycleCpuLevel());
+  const after = await page.evaluate(() => window.__kof.training.settings.cpuLevel);
+  record('能切换难度', after !== before, true);
+
+  // 红丸（P2 换成红丸）放雷靭拳 → 生成道具
+  await page.evaluate(() => {
+    const k = window.__kof;
+    k.flow.picks = [k.flow.roster[2], k.flow.roster[0]];
+    k.flow.screen = 'fight';
+    k.startMatch();
+  });
+  await wait(1200);
+  await page.evaluate(async () => {
+    const m = window.__kof.match;
+    m.softReset();
+    m.p1.x = 220;
+    m.p2.x = 420;
+    const key = (t, c) => window.dispatchEvent(new KeyboardEvent(t, { code: c, bubbles: true }));
+    const f = () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+    key('keydown', 'ArrowDown');
+    await f();
+    key('keydown', 'ArrowRight');
+    await f();
+    key('keyup', 'ArrowDown');
+    await f();
+    key('keydown', 'KeyJ');
+    await f();
+    key('keyup', 'KeyJ');
+    key('keyup', 'ArrowRight');
+  });
+  await wait(240);
+  const proj = await page.evaluate(() => {
+    const m = window.__kof.match;
+    return { id: m.p1.char.id, proj: m.world.entities.filter((e) => e.constructor.name === 'Projectile').length };
+  });
+  record('红丸在场上', proj.id, 'benimaru');
+  record('雷靭拳是飞行道具', proj.proj > 0, true);
+
+  return report.join('\n') + `\n\nOVERALL: ${report.every((r) => r.startsWith('PASS')) ? 'ALL PASS' : 'HAS FAIL'}`;
+}

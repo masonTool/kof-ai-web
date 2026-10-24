@@ -4,6 +4,7 @@
  * 屏幕按 `AppFlow` 走：标题 → 选人 → VS → 对战 → 结果 → 标题。
  * 玩法逻辑一律在 `sim/` + `data/`，这里只做"把谁喂给谁"。
  */
+import { CPU_LEVEL_LABEL } from './ai/cpu';
 import { sfxForWorldEvent, WebAudioSink } from './audio/sfx';
 import { FixedStepper, startAnimationLoop } from './core/loop';
 import { ROSTER } from './data/chars';
@@ -58,7 +59,8 @@ window.addEventListener('blur', () => {
  */
 function teamFor(starter: CharDef): CharDef[] {
   const first = ROSTER.indexOf(starter);
-  return [ROSTER[first]!, ...ROSTER.filter((_, i) => i !== first)];
+  // KOF 是 3v3：选中的打头，剩下的按花名册顺序补到 3 人
+  return [ROSTER[first]!, ...ROSTER.filter((_, i) => i !== first)].slice(0, 3);
 }
 
 /** 开始一场新对局（选人结果已定） */
@@ -95,6 +97,7 @@ const controls = mountTouchControls(pad, [
     run: () => void training?.toggle('infiniteHp'),
   },
   { id: 'dummy', label: dummyLabel, run: () => void training?.cycleDummy() },
+  { id: 'level', label: () => `难度:${CPU_LEVEL_LABEL[training?.settings.cpuLevel ?? 'normal']}`, run: () => void training?.cycleCpuLevel() },
   {
     id: 'reset',
     label: () => (match?.phase === 'over' ? '再来一场' : '重开'),
@@ -127,6 +130,10 @@ window.addEventListener('keydown', (e) => {
     case 'F5':
       e.preventDefault();
       training?.cycleDummy();
+      break;
+    case 'F6':
+      e.preventDefault();
+      training?.cycleCpuLevel();
       break;
     case 'KeyR':
       if (match) {

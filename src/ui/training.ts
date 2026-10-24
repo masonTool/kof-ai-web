@@ -4,8 +4,8 @@
  * 刻意做成**纯逻辑**（不碰 DOM）：这样"无限气是否真的满槽""假人是否真的在防"
  * 都能在 node 里断言，而不是靠肉眼盯着画面猜。
  */
+import { CpuBrain, CPU_LEVELS, CPU_LEVEL_LABEL, type CpuLevel } from '../ai/cpu';
 import { Btn, NO_INPUT, type InputSample } from '../core/input';
-import { FighterState } from '../sim/state';
 import type { Match } from '../game/match';
 import { METER_MAX } from '../sim/constants';
 import type { Ctx2D } from '../render/ctx';
@@ -25,6 +25,8 @@ export interface TrainingSettings {
   autoReset: boolean;
   /** 假人行为 */
   dummy: DummyAction;
+  /** 假人是 cpu 时的难度 */
+  cpuLevel: CpuLevel;
 }
 
 /**
@@ -38,6 +40,7 @@ export const DEFAULT_TRAINING: TrainingSettings = {
   infiniteMeter: false,
   autoReset: false,
   dummy: 'cpu',
+  cpuLevel: 'normal',
 };
 
 /** 把按住的键翻译成给人看的符号（调试面板用） */
@@ -70,6 +73,14 @@ export class TrainingSession {
     return this.settings[key];
   }
 
+  /** 切换 CPU 难度（循环） */
+  cycleCpuLevel(): CpuLevel {
+    const idx = CPU_LEVELS.indexOf(this.settings.cpuLevel);
+    this.settings.cpuLevel = CPU_LEVELS[(idx + 1) % CPU_LEVELS.length]!;
+    this.cpu = null; // 换档要重建，否则旧的档位参数还留在实例里
+    return this.settings.cpuLevel;
+  }
+
   /** 切换假人行为（循环） */
   cycleDummy(): DummyAction {
     const idx = DUMMY_ORDER.indexOf(this.settings.dummy);
@@ -98,53 +109,12 @@ export class TrainingSession {
     }
   }
 
-  /** 简易 CPU 用的状态（确定性伪随机，不碰世界 rng） */
-  private cpuPlan: { held: number; frames: number } = { held: 0, frames: 0 };
-  private cpuSeed = 0x2f6e;
+  /** CPU 大脑（难度档位在 settings.cpuLevel，换档时重建） */
+  private cpu: CpuBrain | null = null;
 
-  private rand(): number {
-    this.cpuSeed = (this.cpuSeed * 1103515245 + 12345) & 0x7fffffff;
-    return this.cpuSeed / 0x7fffffff;
-  }
-
-  /**
-   * 简易 CPU：走近 → 近身出招 → 看到对手出招就防。
-   * 这不是正式 AI（T12 会做成难度档位），只为了"单人也能打一局"。
-   */
   private cpuInput(): InputSample {
-    const m = this.match;
-    const me = m.p2;
-    const foe = m.p1;
-    if (m.phase !== 'fight' || me.state === FighterState.Dead) return NO_INPUT;
-
-    if (this.cpuPlan.frames > 0) {
-      this.cpuPlan.frames--;
-      return { held: this.cpuPlan.held };
-    }
-
-    const dist = Math.abs(foe.x - me.x);
-    const toward = foe.x >= me.x ? Btn.Right : Btn.Left;
-    const back = me.facing === 1 ? Btn.Left : Btn.Right;
-
-    // 对手在出招且够得着 → 有一半机会防（蹲防/站防都试试）
-    if (foe.isAttacking && dist < 84 && this.rand() < 0.55) {
-      const held = back | (this.rand() < 0.35 ? Btn.Down : 0);
-      this.cpuPlan = { held, frames: 10 };
-      return { held };
-    }
-
-    // 通常技最远够到约 46px，再远打就是挥空
-    if (dist > 44) {
-      this.cpuPlan = { held: toward, frames: 8 + Math.floor(this.rand() * 8) };
-      return { held: this.cpuPlan.held };
-    }
-
-    // 近身出招：一帧按下算一次攻击，然后留出收招间隔
-    const roll = this.rand();
-    const button = roll < 0.45 ? Btn.B : roll < 0.8 ? Btn.C : Btn.A;
-    const held = button | (this.rand() < 0.25 ? Btn.Down : 0);
-    this.cpuPlan = { held: 0, frames: 10 + Math.floor(this.rand() * 12) };
-    return { held };
+    if (!this.cpu) this.cpu = new CpuBrain(this.match.p2, this.match.p1, this.settings.cpuLevel);
+    return this.cpu.step();
   }
 
   /** 推进一帧（训练模式的所有"作弊"都在这层做，模拟层保持干净） */
@@ -183,7 +153,7 @@ export class TrainingSession {
       lines.push(`   输入 ${describeInput(f.input.held)}`);
     }
     lines.push('A 轻拳 B 轻脚 C 重拳 D 重脚 · A+B 回避 · C+D 吹飞 · ABC MAX');
-    lines.push(`假人 ${this.settings.dummy} · F1 判定框 ${onOff(this.settings.showBoxes)} · F2 帧数 ${onOff(this.settings.showFrameData)}`);
+    lines.push(`假人 ${this.settings.dummy}${this.settings.dummy === 'cpu' ? `(${CPU_LEVEL_LABEL[this.settings.cpuLevel]})` : ''} · F1 判定框 ${onOff(this.settings.showBoxes)} · F2 帧数 ${onOff(this.settings.showFrameData)}`);
     lines.push(`F3 无限气 ${onOff(this.settings.infiniteMeter)} · F4 无限血 ${onOff(this.settings.infiniteHp)} · F5 假人 · R 重开`);
     return lines;
   }

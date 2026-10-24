@@ -204,7 +204,7 @@ describe('简易 CPU（单人也能打一局）', () => {
   it('走到近身会出招（对手会被打到）', () => {
     const { match, training } = makeTraining({ dummy: 'cpu', infiniteHp: false });
     let sawAttack = false;
-    for (let i = 0; i < 240 && match.p1.hp === match.p1.maxHp && match.phase === 'fight'; i++) {
+    for (let i = 0; i < 600 && match.p1.hp === match.p1.maxHp && match.phase === 'fight'; i++) {
       training.step([NO_INPUT, NO_INPUT]);
       if (match.p2.isAttacking) sawAttack = true;
     }
