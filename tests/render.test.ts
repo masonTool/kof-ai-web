@@ -227,7 +227,7 @@ describe('命中特效', () => {
     expect(fx.count).toBe(13);
     fx.clear();
     fx.spawnGuard(10, 10);
-    expect(fx.count).toBe(7);
+    expect(fx.count).toBe(6); // 防御火花 6 颗（带属性时才多一颗本色）
     fx.clear();
     fx.spawnDust(10, 10);
     expect(fx.count).toBe(5);
@@ -260,6 +260,6 @@ describe('命中特效', () => {
     fx.spawnHit(5, 5);
     fx.spawnGuard(6, 6);
     expect(() => fx.draw(ctx)).not.toThrow();
-    expect(ctx.count('fillRect')).toBe(16);
+    expect(ctx.count('fillRect')).toBe(15); // 9 颗命中火花 + 6 颗防御火花
   });
 });

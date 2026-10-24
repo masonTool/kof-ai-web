@@ -7,7 +7,8 @@
  * 免得"火球能不能被防""火球算不算反击"两套规则各写一遍。
  */
 import type { Hasher } from '../core/hash';
-import type { Box, HitDef, ProjectileDef } from '../data/schema';
+import type { Box, FxStyle, HitDef, ProjectileDef } from '../data/schema';
+import { styleOfMove } from '../data/fx-style';
 import type { Fighter } from './fighter';
 import type { Entity, World } from './world';
 
@@ -22,6 +23,8 @@ export interface ProjectileInit {
   hit: HitDef;
   anim: string;
   life: number;
+  /** 命中特效风格（生成那一刻从主人的招式上取，之后主人收招也不影响） */
+  style?: FxStyle;
 }
 
 export class Projectile implements Entity {
@@ -33,6 +36,8 @@ export class Projectile implements Entity {
   readonly owner: Fighter;
   readonly hit: HitDef;
   readonly anim: string;
+  /** 命中特效风格：生成时定下来，不随后续动作变化 */
+  readonly style: FxStyle;
   life: number;
   /** 这一帧之后就该从世界里移除 */
   dead = false;
@@ -45,6 +50,7 @@ export class Projectile implements Entity {
     this.facing = init.facing;
     this.hit = init.hit;
     this.anim = init.anim;
+    this.style = init.style ?? 'none';
     this.life = init.life;
   }
 
@@ -82,6 +88,7 @@ export function spawnProjectile(world: World, owner: Fighter, def: ProjectileDef
     hit: def.hit,
     anim: def.anim,
     life: def.life > 0 ? def.life : DEFAULT_PROJECTILE_LIFE,
+    style: styleOfMove(owner.char.id, owner.move),
   });
   return world.add(projectile);
 }

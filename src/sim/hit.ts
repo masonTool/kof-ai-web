@@ -6,7 +6,8 @@
  * 但它的攻击在第一轮收集时就已经成立了。若边收边算，结果会取决于遍历顺序。
  */
 import { Btn } from '../core/input';
-import type { HitDef } from '../data/schema';
+import type { FxStyle, HitDef } from '../data/schema';
+import { styleOfMove } from '../data/fx-style';
 import { centerOf, intersects } from './collision';
 import { addComboHit, scaledDamage } from './combo';
 import { DIZZY_FRAMES, GUARD_CRUSH_MAX, GUARD_CRUSH_STUN, MAX_MODE_DAMAGE, STUN_MAX } from './constants';
@@ -28,6 +29,8 @@ export interface HitResolution {
   /** 反击（打断对手出招的起手） */
   counter: boolean;
   ko: boolean;
+  /** 命中特效风格（给特效层） */
+  style: FxStyle;
   /** 命中点（世界坐标，给特效层） */
   x: number;
   y: number;
@@ -125,11 +128,15 @@ export interface HitCandidate {
   counter: boolean;
   x: number;
   y: number;
+  /** 命中特效风格（近身从招式取，道具从道具自己身上取） */
+  style?: FxStyle;
 }
 
 /** 结算一次撞击：伤害 / 硬直 / 削防 / 气槽 / 连段 / 事件 */
 export function applyHit(world: World, c: HitCandidate): HitResolution {
   const { attacker, defender, hit } = c;
+  // 近身命中的风格来自招式；道具命中由调用方从道具身上带过来（主人可能已经收招了）
+  const style: FxStyle = c.style ?? styleOfMove(attacker.char.id, attacker.move);
   attacker.addHitstop(hit.hitstop);
   defender.addHitstop(hit.hitstop);
 
@@ -152,13 +159,14 @@ export function applyHit(world: World, c: HitCandidate): HitResolution {
     defender.push(attacker.facing * hit.blockPushback);
     attacker.push(-attacker.facing * hit.blockPushback * 0.5);
     attacker.addMeter(Math.floor(hit.damage * 0.15));
-    world.emit('guard', { x: c.x, y: c.y, level: hit.level });
+    world.emit('guard', { x: c.x, y: c.y, level: hit.level, style });
     return {
       kind: 'block',
       hit,
       attacker,
       defender,
       damage: 0,
+      style,
       comboHits: comboBefore,
       counter: false,
       ko: false,
@@ -204,6 +212,7 @@ export function applyHit(world: World, c: HitCandidate): HitResolution {
     y: c.y,
     damage,
     level: hit.level,
+    style,
     counter: c.counter,
     combo: defender.combo.hits,
     sfx: hit.sfx ?? 'hit',
@@ -218,6 +227,7 @@ export function applyHit(world: World, c: HitCandidate): HitResolution {
     attacker,
     defender,
     damage,
+    style,
     comboHits: defender.combo.hits,
     counter: c.counter,
     ko,
@@ -275,6 +285,7 @@ export function resolveProjectiles(world: World, fighters: readonly Fighter[]): 
           counter: false,
           x: p.x,
           y: p.y,
+          style: p.style,
         }),
       );
       p.dead = true;

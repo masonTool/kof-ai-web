@@ -21,6 +21,12 @@ export type HitLevel = 'high' | 'mid' | 'low' | 'overhead';
 
 export type Knockdown = 'none' | 'slam' | 'trip' | 'air';
 
+/**
+ * 命中特效风格：只影响表现层（粒子颜色/形状），不影响判定。
+ * 放在招式数据里而不是写死在渲染层，是因为"谁的火是紫的"属于角色信息，不属于渲染器。
+ */
+export type FxStyle = 'none' | 'fire' | 'darkfire' | 'thunder' | 'wind' | 'ki';
+
 /** 一次"命中事件"的定义：同一招式可以有多段（用不同 id 区分） */
 export interface HitDef {
   /** 招式内唯一；同一段判定不会重复命中同一个目标 */
@@ -107,6 +113,8 @@ export interface ProjectileDef {
 export interface MoveDef {
   /** moves 里的 key，同时是取消表引用的 id */
   id: string;
+  /** 命中特效风格；不写就按角色默认（见 data/fx-style.ts） */
+  fx?: FxStyle;
   name: string;
   /** 渲染层姿势名（render/poses.ts 里的 key） */
   anim: string;

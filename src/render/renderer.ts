@@ -9,6 +9,7 @@ import type { Fighter } from '../sim/fighter';
 import { FighterState } from '../sim/state';
 import type { Ctx2D } from './ctx';
 import { drawFighter } from './fighter-draw';
+import { STYLE_COLORS } from './fx';
 import { lookFor } from './looks';
 import { drawHud } from './hud';
 import { STATE_ANIM } from './poses';
@@ -74,22 +75,25 @@ export function drawFrame(ctx: Ctx2D, match: Match, opts: RenderOptions = {}): v
       look: lookFor(f.char.id),
     });
   }
-  // 飞行道具：外圈发光 + 内芯，按朝向拖一条尾巴
+  // 飞行道具：外圈发光 + 内芯，按朝向拖一条尾巴；颜色按属性（火/雷/气）区分
   for (const entity of match.world.entities) {
     if (!(entity instanceof Projectile) || entity.dead) continue;
     const p = entity;
     const theme = p.owner.char.palette;
+    const style = p.style;
+    const core = style === 'none' ? theme.accent : STYLE_COLORS[style][1]!;
+    const inner = style === 'none' ? theme.trim : STYLE_COLORS[style][0]!;
     ctx.globalAlpha = 0.35;
-    ctx.fillStyle = theme.accent;
+    ctx.fillStyle = core;
     ctx.beginPath();
     ctx.arc(p.x - p.facing * 10, p.y, 9, 0, Math.PI * 2);
     ctx.fill();
     ctx.globalAlpha = 1;
-    ctx.fillStyle = theme.accent;
+    ctx.fillStyle = core;
     ctx.beginPath();
     ctx.arc(p.x, p.y, 7, 0, Math.PI * 2);
     ctx.fill();
-    ctx.fillStyle = theme.trim;
+    ctx.fillStyle = inner;
     ctx.beginPath();
     ctx.arc(p.x, p.y, 3.5, 0, Math.PI * 2);
     ctx.fill();

@@ -175,8 +175,8 @@ export class Match {
 
   private applyHitEffects(hits: readonly HitResolution[]): void {
     for (const h of hits) {
-      if (h.kind === 'block') this.fx.spawnGuard(h.x, h.y);
-      else this.fx.spawnHit(h.x, h.y, { heavy: h.hit.damage >= 60, counter: h.counter });
+      if (h.kind === 'block') this.fx.spawnGuard(h.x, h.y, h.style);
+      else this.fx.spawnHit(h.x, h.y, { heavy: h.hit.damage >= 60, counter: h.counter, style: h.style });
     }
   }
 
