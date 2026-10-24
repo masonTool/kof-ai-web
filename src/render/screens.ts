@@ -5,6 +5,7 @@
 import type { CharDef } from '../data/schema';
 import { VIEW_HEIGHT, VIEW_WIDTH } from '../sim/constants';
 import { MODE_ITEMS, gridColumns, type AppFlow } from '../ui/flow';
+import { PAUSE_ITEMS } from '../ui/pause';
 import type { Ctx2D } from './ctx';
 import { drawFighter } from './fighter-draw';
 
@@ -215,6 +216,24 @@ export function drawContinue(ctx: Ctx2D, flow: AppFlow, blinkOn: boolean): void 
   text(ctx, `${seconds}`, VIEW_WIDTH / 2, 96, 'center', 30, SCREEN_COLORS.gold);
   text(ctx, `已续关 ${flow.continues} 次`, VIEW_WIDTH / 2, 138, 'center', 7, SCREEN_COLORS.dim);
   if (blinkOn) text(ctx, '按 A 继续挑战', VIEW_WIDTH / 2, 162, 'center', 9, SCREEN_COLORS.text);
+}
+
+export function drawPause(ctx: Ctx2D, cursor: number, blinkOn: boolean): void {
+  ctx.fillStyle = 'rgba(5,7,10,0.72)';
+  ctx.fillRect(0, 0, VIEW_WIDTH, VIEW_HEIGHT);
+  text(ctx, 'PAUSE', VIEW_WIDTH / 2, 54, 'center', 16, SCREEN_COLORS.accent);
+
+  PAUSE_ITEMS.forEach((item, i) => {
+    const y = 100 + i * 24;
+    const active = cursor === i;
+    if (active) {
+      ctx.fillStyle = 'rgba(255,91,61,0.22)';
+      ctx.fillRect(84, y - 4, VIEW_WIDTH - 168, 20);
+    }
+    text(ctx, item.label, VIEW_WIDTH / 2, y, 'center', active ? 11 : 9, active ? SCREEN_COLORS.text : SCREEN_COLORS.dim);
+  });
+
+  if (blinkOn) text(ctx, '↑↓ 选择 · A 确认 · Esc 返回游戏', VIEW_WIDTH / 2, 194, 'center', 6, SCREEN_COLORS.dim);
 }
 
 /** 选人格子命中测试（鼠标/触屏点选） */

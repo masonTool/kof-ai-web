@@ -5,18 +5,20 @@
  * 玩法逻辑一律在 `sim/` + `data/`，这里只做"把谁喂给谁"。
  */
 import { CPU_LEVEL_LABEL } from './ai/cpu';
+import { WebAudioBgm } from './audio/bgm';
 import { sfxForWorldEvent, WebAudioSink } from './audio/sfx';
 import { FixedStepper, startAnimationLoop } from './core/loop';
 import { ROSTER } from './data/chars';
 import type { CharDef } from './data/schema';
 import { Match } from './game/match';
-import { DEFAULT_KEYMAP_P1, DEFAULT_KEYMAP_P2, KeyboardSource } from './input/keyboard';
+import { KeyboardSource, keyPresetAt } from './input/keyboard';
 import type { Ctx2D } from './render/ctx';
 import { drawFrame } from './render/renderer';
 import { applyViewport, computeViewport } from './render/scale';
 import {
   drawContinue,
   drawMode,
+  drawPause,
   drawOptions,
   drawResult,
   drawSelect,
@@ -25,7 +27,9 @@ import {
   hitTestCell,
 } from './render/screens';
 import { VIEW_HEIGHT, VIEW_WIDTH } from './sim/constants';
+import { Btn } from './core/input';
 import { AppFlow } from './ui/flow';
+import { PauseMenu } from './ui/pause';
 import { SettingsStore, type StorageLike } from './ui/settings';
 import { TrainingSession, drawTrainingOverlay } from './ui/training';
 import { mountTouchControls } from './ui/touch-controls';
@@ -59,18 +63,33 @@ function browserStorage(): StorageLike | null {
 }
 
 const audio = new WebAudioSink();
+const bgm = new WebAudioBgm();
+const pause = new PauseMenu();
 const settings = new SettingsStore(browserStorage());
 audio.setVolume(settings.settings.volume);
+bgm.setVolume(settings.settings.volume);
 const flow = new AppFlow(ROSTER, undefined, settings);
 const pad = new VirtualPad();
 
 let match: Match | null = null;
 let training: TrainingSession | null = null;
 
-const p1keys = new KeyboardSource(DEFAULT_KEYMAP_P1);
-const p2keys = new KeyboardSource(DEFAULT_KEYMAP_P2);
+const preset = keyPresetAt(settings.settings.keyPreset);
+const p1keys = new KeyboardSource(preset.p1);
+const p2keys = new KeyboardSource(preset.p2);
 p1keys.attach(window);
 p2keys.attach(window);
+
+/** 设置里的键位预设变了就换映射表（不用重建监听） */
+let appliedPreset = settings.settings.keyPreset;
+function syncPreset(): void {
+  const next = settings.settings.keyPreset;
+  if (next === appliedPreset) return;
+  appliedPreset = next;
+  const p = keyPresetAt(next);
+  p1keys.setMap(p.p1);
+  p2keys.setMap(p.p2);
+}
 window.addEventListener('blur', () => {
   p1keys.clear();
   p2keys.clear();
@@ -109,6 +128,15 @@ function startMatch(): void {
   });
   audio.setVolume(cfg.volume);
 }
+
+/** 每个屏配哪首曲子（同屏不重复设置，setTrack 内部会去重） */
+function trackFor(screen: string): string | null {
+  if (screen === 'fight' || screen === 'continue') return 'fight';
+  if (screen === 'result') return 'result';
+  return 'title';
+}
+
+let prevPauseHeld = 0;
 
 function dummyLabel(): string {
   return `假人:${training?.settings.dummy ?? 'cpu'}`;
@@ -182,9 +210,15 @@ window.addEventListener('keydown', (e) => {
       }
       break;
     case 'Escape':
-      flow.reset();
-      match = null;
-      training = null;
+      if (flow.screen === 'fight') {
+        pause.toggle();
+        bgm.setDucked(pause.open);
+      } else if (flow.screen === 'options') {
+        flow.screen = 'mode';
+      } else if (pause.open) {
+        pause.hide();
+        bgm.setDucked(false);
+      }
       break;
     default:
       return;
@@ -220,10 +254,35 @@ let uiTick = 0;
 startAnimationLoop(
   {
     step: () => {
+      syncPreset();
+      bgm.setVolume(settings.settings.volume);
+      bgm.update(performance.now());
+
       const p1In = { held: (p1keys.sample.held | pad.sampleFrame().held) >>> 0 };
       const p2In = p2keys.sample;
+
+      // 暂停：世界完全冻结，只处理菜单输入
+      if (pause.open) {
+        const pressed = p1In.held & ~prevPauseHeld;
+        prevPauseHeld = p1In.held;
+        if ((pressed & Btn.Up) !== 0) pause.move(-1);
+        if ((pressed & Btn.Down) !== 0) pause.move(1);
+        if ((pressed & (Btn.A | Btn.Start)) !== 0) {
+          const action = pause.confirm();
+          bgm.setDucked(false);
+          if (action === 'restart') match?.restart();
+          if (action === 'title') {
+            flow.reset();
+            match = null;
+            training = null;
+          }
+        }
+        return;
+      }
+      prevPauseHeld = p1In.held;
       const matchOver = match !== null && match.phase === 'over';
       const action = flow.step([p1In, p2In], { matchOver, matchWinner: match?.matchWinner ?? 0 });
+      bgm.setTrack(trackFor(flow.screen));
 
       if (action === 'start-match') {
         audio.resume();
@@ -293,6 +352,8 @@ startAnimationLoop(
           break;
       }
 
+      if (pause.open) drawPause(ctx, pause.cursor, blink);
+
       uiTick++;
       if (uiTick % 20 === 0) {
         controls.refresh();
@@ -307,6 +368,8 @@ startAnimationLoop(
 (window as unknown as { __kof: unknown }).__kof = {
   flow,
   audio,
+  bgm,
+  pause,
   pad,
   startMatch,
   get match() {

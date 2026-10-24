@@ -145,13 +145,13 @@ describe('选项屏', () => {
     expect(flow.screen).toBe('mode');
   });
 
-  it('六行都能选到（上下环绕）', () => {
+  it('每一行都能选到（上下环绕）', () => {
     const { flow, tap } = makeFlow();
     tap(Btn.A);
     for (let i = 0; i < MODE_ITEMS.length - 1; i++) tap(Btn.Down);
     tap(Btn.A);
     const rows = flow.options.length;
-    expect(rows).toBe(6);
+    expect(rows).toBe(7);
     for (let i = 0; i < rows; i++) tap(Btn.Down);
     expect(flow.optionCursor).toBe(0); // 转一圈回到第一行
   });

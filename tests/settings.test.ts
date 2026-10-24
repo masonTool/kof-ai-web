@@ -53,7 +53,15 @@ describe('消毒（读盘必过）', () => {
 
   it('合法值原样保留', () => {
     const s = sanitize({ roundsToWin: 3, roundSeconds: 30, cpuLevel: 'hard', volume: 0.5, showFrameData: true });
-    expect(s).toEqual({ roundsToWin: 3, roundSeconds: 30, cpuLevel: 'hard', volume: 0.5, showFrameData: true, showBoxes: false });
+    expect(s).toEqual({
+      roundsToWin: 3,
+      roundSeconds: 30,
+      cpuLevel: 'hard',
+      volume: 0.5,
+      showFrameData: true,
+      showBoxes: false,
+      keyPreset: 0,
+    });
   });
 });
 
@@ -126,12 +134,31 @@ describe('循环切换', () => {
 });
 
 describe('选项屏的行', () => {
-  it('六行、有标签有值，音量为 0 显示静音', () => {
+  it('七行、有标签有值，音量为 0 显示静音', () => {
     const rows = optionRows({ ...DEFAULT_SETTINGS, volume: 0 });
-    expect(rows).toHaveLength(6);
-    expect(rows.map((r) => r.key)).toEqual(['roundsToWin', 'roundSeconds', 'cpuLevel', 'volume', 'showFrameData', 'showBoxes']);
+    expect(rows).toHaveLength(7);
+    expect(rows.map((r) => r.key)).toEqual([
+      'roundsToWin',
+      'roundSeconds',
+      'cpuLevel',
+      'volume',
+      'showFrameData',
+      'showBoxes',
+      'keyPreset',
+    ]);
     expect(rows[3]!.value).toBe('静音');
     expect(rows[4]!.value).toBe('关');
+  });
+
+  it('键盘预设显示名字，切换后跟着变', () => {
+    const store = new SettingsStore(null);
+    const first = optionRows(store.settings).at(-1)!.value;
+    store.cycle('keyPreset');
+    const second = optionRows(store.settings).at(-1)!.value;
+    expect(first).not.toBe(second);
+    expect(store.settings.keyPreset).toBe(1);
+    store.cycle('keyPreset');
+    expect(store.settings.keyPreset).toBe(0); // 只有两套，转一圈回来
   });
 
   it('难度用中文显示', () => {

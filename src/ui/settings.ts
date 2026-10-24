@@ -7,6 +7,7 @@
  * 3. **存的是数值本身**，不是下标——以后选项顺序变了，老存档不会错位。
  */
 import { CPU_LEVELS, type CpuLevel } from '../ai/cpu';
+import { KEY_PRESETS } from '../input/keyboard';
 
 export interface GameSettings {
   /** 先赢几回合（1~3） */
@@ -21,6 +22,8 @@ export interface GameSettings {
   showFrameData: boolean;
   /** 显示判定框 */
   showBoxes: boolean;
+  /** 键盘预设下标（见 input/keyboard.ts 的 KEY_PRESETS） */
+  keyPreset: number;
 }
 
 export const DEFAULT_SETTINGS: GameSettings = {
@@ -30,13 +33,14 @@ export const DEFAULT_SETTINGS: GameSettings = {
   volume: 0.25,
   showFrameData: false,
   showBoxes: false,
+  keyPreset: 0,
 };
 
 export const ROUNDS_CHOICES = [1, 2, 3] as const;
 export const TIME_CHOICES = [30, 60, 99] as const;
 export const VOLUME_CHOICES = [0, 0.25, 0.5, 0.75, 1] as const;
 
-export type OptionKey = 'roundsToWin' | 'roundSeconds' | 'cpuLevel' | 'volume' | 'showFrameData' | 'showBoxes';
+export type OptionKey = 'roundsToWin' | 'roundSeconds' | 'cpuLevel' | 'volume' | 'showFrameData' | 'showBoxes' | 'keyPreset';
 
 export interface OptionRow {
   key: OptionKey;
@@ -71,6 +75,7 @@ export function sanitize(raw: unknown): GameSettings {
     volume: Math.min(1, Math.max(0, clampNumber(obj['volume'], VOLUME_CHOICES, DEFAULT_SETTINGS.volume))),
     showFrameData: typeof obj['showFrameData'] === 'boolean' ? obj['showFrameData'] : DEFAULT_SETTINGS.showFrameData,
     showBoxes: typeof obj['showBoxes'] === 'boolean' ? obj['showBoxes'] : DEFAULT_SETTINGS.showBoxes,
+    keyPreset: Math.round(clampNumber(obj['keyPreset'], [0, KEY_PRESETS.length - 1], DEFAULT_SETTINGS.keyPreset)),
   };
 }
 
@@ -83,6 +88,7 @@ export function optionRows(s: GameSettings): OptionRow[] {
     { key: 'volume', label: '音量', value: s.volume === 0 ? '静音' : `${Math.round(s.volume * 100)}%` },
     { key: 'showFrameData', label: '帧数面板', value: s.showFrameData ? '开' : '关' },
     { key: 'showBoxes', label: '判定框', value: s.showBoxes ? '开' : '关' },
+    { key: 'keyPreset', label: '键盘布局', value: KEY_PRESETS[s.keyPreset]?.name ?? '默认' },
   ];
 }
 
@@ -143,6 +149,9 @@ export class SettingsStore {
         break;
       case 'showBoxes':
         s.showBoxes = !s.showBoxes;
+        break;
+      case 'keyPreset':
+        s.keyPreset = ((s.keyPreset + dir) % KEY_PRESETS.length + KEY_PRESETS.length) % KEY_PRESETS.length;
         break;
     }
     this.save();
