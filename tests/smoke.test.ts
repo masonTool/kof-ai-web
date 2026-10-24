@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { LOGICAL_HEIGHT, LOGICAL_WIDTH, computeViewport } from '../src/render/scale';
+import { LOGICAL_HEIGHT, LOGICAL_WIDTH, computeViewport, effectiveDpr, shouldRotate } from '../src/render/scale';
 
 describe('视口缩放', () => {
   it('逻辑分辨率是 MVS 的 320×224', () => {
@@ -32,5 +32,38 @@ describe('视口缩放', () => {
 
   it('非法 dpr 退回 1', () => {
     expect(computeViewport(640, 480, 0).dpr).toBe(1);
+  });
+});
+
+describe('移动端适配', () => {
+  it('DPR 被夹在 [1, 2]', () => {
+    expect(effectiveDpr(3)).toBe(2); // 3x 屏按 2x 渲染就够
+    expect(effectiveDpr(2)).toBe(2);
+    expect(effectiveDpr(1.5)).toBe(1.5);
+    expect(effectiveDpr(0.5)).toBe(1);
+    expect(effectiveDpr(Number.NaN)).toBe(1);
+    expect(computeViewport(640, 360, 3).dpr).toBe(2);
+  });
+
+  it('安全区会从可用区域里扣掉，画面居中在剩余区域', () => {
+    const plain = computeViewport(640, 360, 2);
+    const inset = computeViewport(640, 360, 2, { top: 20, right: 0, bottom: 40, left: 10 });
+    // 上下被切掉 60px 之后虽然还是能放下同样的整数倍，但偏移要重新算
+    expect(inset.offsetY).toBeGreaterThanOrEqual(20);
+    expect(inset.offsetX).toBeGreaterThanOrEqual(10);
+    expect(inset.cssWidth).toBeLessThanOrEqual(plain.cssWidth);
+  });
+
+  it('可用区域变小会导致缩放变小', () => {
+    const big = computeViewport(640, 480, 1);
+    const shrunk = computeViewport(640, 480, 1, { top: 100, right: 0, bottom: 100, left: 0 });
+    expect(shrunk.scale).toBeLessThan(big.scale);
+  });
+
+  it('竖屏判定：明显竖着才提示旋转', () => {
+    expect(shouldRotate(390, 844)).toBe(true); // 手机竖屏
+    expect(shouldRotate(844, 390)).toBe(false); // 手机横屏
+    expect(shouldRotate(1280, 800)).toBe(false); // 桌面
+    expect(shouldRotate(800, 800)).toBe(false); // 正方形不算
   });
 });

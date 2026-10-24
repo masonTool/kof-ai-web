@@ -368,6 +368,7 @@ export class Match {
 
   /** 状态指纹（确定性断言用） */
   hash(): string {
-    return `${this.world.hash()}|${this.phase}|${this.round}|${this.wins.join(',')}|${this.timerFrames}`;
+    // indexes（组队战换到第几个人）必须进哈希：否则"人换了但状态一样"会被判成同一场
+    return `${this.world.hash()}|${this.phase}|${this.round}|${this.wins.join(',')}|${this.indexes.join(',')}|${this.timerFrames}`;
   }
 }

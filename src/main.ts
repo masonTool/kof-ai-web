@@ -11,10 +11,11 @@ import { FixedStepper, startAnimationLoop } from './core/loop';
 import { ROSTER } from './data/chars';
 import type { CharDef } from './data/schema';
 import { Match } from './game/match';
+import { ReplayPlayer, ReplayRecorder, matchFromReplay, type Replay } from './game/replay';
 import { KeyboardSource, keyPresetAt } from './input/keyboard';
 import type { Ctx2D } from './render/ctx';
 import { drawFrame } from './render/renderer';
-import { applyViewport, computeViewport } from './render/scale';
+import { applyViewport, computeViewport, shouldRotate, type SafeInsets } from './render/scale';
 import {
   drawContinue,
   drawMode,
@@ -44,10 +45,28 @@ if (!raw) throw new Error('无法创建 2D context');
 const ctx = raw as unknown as Ctx2D;
 
 let device = 1;
+
+/** 从探针元素读刘海/圆角的安全区（拿不到就按 0 处理） */
+function safeInsets(): SafeInsets {
+  const probe = document.getElementById('safe-probe');
+  if (!probe) return { top: 0, right: 0, bottom: 0, left: 0 };
+  const cs = getComputedStyle(probe);
+  const px = (v: string): number => {
+    const n = Number.parseFloat(v);
+    return Number.isFinite(n) ? n : 0;
+  };
+  return { top: px(cs.paddingTop), right: px(cs.paddingRight), bottom: px(cs.paddingBottom), left: px(cs.paddingLeft) };
+}
+
 function resize(): void {
-  device = applyViewport(canvas!, computeViewport(window.innerWidth, window.innerHeight, window.devicePixelRatio));
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  device = applyViewport(canvas!, computeViewport(w, h, window.devicePixelRatio, safeInsets()));
+  // 竖屏时盖一层"请横屏"，否则画面只有拇指大小
+  document.getElementById('rotate-hint')?.classList.toggle('show', shouldRotate(w, h));
 }
 window.addEventListener('resize', resize);
+window.addEventListener('orientationchange', () => setTimeout(resize, 120));
 resize();
 
 /** localStorage 可能被禁（隐私模式），拿不到就用 null —— 设置只是不持久化，不影响开局 */
@@ -73,6 +92,12 @@ const pad = new VirtualPad();
 
 let match: Match | null = null;
 let training: TrainingSession | null = null;
+/** 本局录制器（每帧输入） */
+let recorder: ReplayRecorder | null = null;
+/** 上一场录好的回放 */
+let lastReplay: Replay | null = null;
+/** 正在回放时，输入来自回放而不是键盘 */
+let replayPlayer: ReplayPlayer | null = null;
 
 const preset = keyPresetAt(settings.settings.keyPreset);
 const p1keys = new KeyboardSource(preset.p1);
@@ -116,6 +141,11 @@ function startMatch(): void {
   match = new Match(teamFor(a), teamFor(b), {
     roundsToWin: cfg.roundsToWin,
     roundSeconds: cfg.roundSeconds,
+  });
+  recorder = new ReplayRecorder({
+    seed: match.world.seed,
+    config: match.config,
+    teams: [teamFor(a).map((c) => c.id), teamFor(b).map((c) => c.id)],
   });
   training = new TrainingSession(match, {
     showBoxes: cfg.showBoxes,
@@ -202,6 +232,21 @@ window.addEventListener('keydown', (e) => {
     case 'F6':
       e.preventDefault();
       training?.cycleCpuLevel();
+      break;
+    case 'F9':
+      e.preventDefault();
+      if (!lastReplay) break;
+      try {
+        match = matchFromReplay(lastReplay, (id) => ROSTER.find((c) => c.id === id));
+        replayPlayer = new ReplayPlayer(lastReplay);
+        recorder = null;
+        training = new TrainingSession(match, { dummy: 'human', showBoxes: false, showFrameData: false });
+        flow.screen = 'fight';
+        flow.mode = 'arcade';
+        audio.play('confirm');
+      } catch {
+        audio.play('menu');
+      }
       break;
     case 'KeyR':
       if (match) {
@@ -291,6 +336,9 @@ startAnimationLoop(
         return;
       }
       if (action === 'to-title') {
+        if (recorder) lastReplay = recorder.finish();
+        recorder = null;
+        replayPlayer = null;
         match = null;
         training = null;
         audio.play('confirm');
@@ -303,7 +351,15 @@ startAnimationLoop(
       }
 
       if (flow.screen === 'fight' && match && training) {
+        // 回放模式：输入只来自录像，播完就冻住画面（不能继续走，否则"看结局"会把状态改掉）
+        if (replayPlayer) {
+          if (replayPlayer.done) return;
+          training.step(replayPlayer.next());
+          return;
+        }
         training.step([p1In, p2In]);
+        // 录"真正喂给模拟层的输入"——街机模式里 P2 是 CPU，它的输入也得录进去
+        if (recorder) recorder.record(training.lastInputs);
         for (const ev of match.world.events) {
           const sfx = sfxForWorldEvent(ev.type, ev.data);
           if (sfx) audio.play(sfx);
@@ -364,6 +420,30 @@ startAnimationLoop(
   stepper,
 );
 
+/** 收尾当前录制并返回回放（调试/自测用；正常流程里在回标题时自动收尾） */
+function stopRecording(): Replay | null {
+  if (!recorder) return null;
+  const replay = recorder.finish();
+  recorder = null;
+  lastReplay = replay;
+  return replay;
+}
+
+/** 播放一段回放（同一份种子 + 同一串输入必然重演出同一场） */
+function playReplay(replay: Replay): boolean {
+  try {
+    match = matchFromReplay(replay, (id) => ROSTER.find((c) => c.id === id));
+  } catch {
+    return false;
+  }
+  replayPlayer = new ReplayPlayer(replay);
+  recorder = null;
+  training = new TrainingSession(match, { dummy: 'human', showBoxes: false, showFrameData: false });
+  flow.screen = 'fight';
+  flow.mode = 'arcade';
+  return true;
+}
+
 // 调试/自测用的把手（不参与玩法）
 (window as unknown as { __kof: unknown }).__kof = {
   flow,
@@ -372,6 +452,17 @@ startAnimationLoop(
   pause,
   pad,
   startMatch,
+  stopRecording,
+  playReplay,
+  get lastReplay() {
+    return lastReplay;
+  },
+  get replayDone() {
+    return replayPlayer === null || replayPlayer.done;
+  },
+  get recordedFrames() {
+    return recorder?.frames ?? 0;
+  },
   get match() {
     return match;
   },

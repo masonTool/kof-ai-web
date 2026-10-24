@@ -15,7 +15,35 @@
         -webkit-user-select: none;
         user-select: none;
       }
-      #screen {
+      #safe-probe {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 0;
+      height: 0;
+      pointer-events: none;
+      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom)
+        env(safe-area-inset-left);
+    }
+
+    #rotate-hint {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(5, 7, 10, 0.92);
+      color: #ffd166;
+      font: 600 20px/1.6 system-ui, sans-serif;
+      letter-spacing: 2px;
+      z-index: 30;
+    }
+
+    #rotate-hint.show {
+      display: flex;
+    }
+
+    #screen {
         display: block;
         position: absolute;
         left: 0;
@@ -119,7 +147,11 @@
     </style>
   </head>
   <body>
-    <canvas id="screen"></canvas>
+    <!-- 安全区探针：读 env(safe-area-inset-*) 的真实值（CSS 里设 padding，JS 读 computedStyle） -->
+  <div id="safe-probe" aria-hidden="true"></div>
+  <!-- 竖屏提示：手机竖着拿时没法玩，直接盖一层提示 -->
+  <div id="rotate-hint" aria-hidden="true">请横屏游玩</div>
+  <canvas id="screen"></canvas>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

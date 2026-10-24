@@ -117,6 +117,9 @@ export class TrainingSession {
     return this.cpu.step();
   }
 
+  /** 上一帧真正喂进模拟层的输入（含 CPU/假人的输入），录制回放用 */
+  lastInputs: [InputSample, InputSample] = [{ held: 0 }, { held: 0 }];
+
   /** 推进一帧（训练模式的所有"作弊"都在这层做，模拟层保持干净） */
   step(inputs: readonly [InputSample, InputSample]): void {
     if (this.settings.infiniteMeter) {
@@ -128,7 +131,11 @@ export class TrainingSession {
       this.match.p2.hp = this.match.p2.maxHp;
     }
 
-    this.match.step([inputs[0], this.dummyInput(inputs[1])]);
+    // 真正喂给模拟层的那一对输入（假人/CPU 的输入也算在内）——录制回放要用它，
+    // 否则录到的是"键盘输入"，重演时 CPU 不在，状态就对不上。
+    const p2 = this.dummyInput(inputs[1]);
+    this.lastInputs = [inputs[0], p2];
+    this.match.step([inputs[0], p2]);
 
     if (this.settings.autoReset && (this.match.phase === 'roundEnd' || this.match.phase === 'over')) {
       this.match.softReset();

@@ -45,7 +45,11 @@ export class World {
   private prevHeld: number[] = [];
   private nextId = 0;
 
+  /** 世界种子（回放要原样存下来，否则重演不出同一场） */
+  readonly seed: number;
+
   constructor(seed: number) {
+    this.seed = seed;
     this.rng = new Rng(seed);
   }
 

@@ -230,3 +230,24 @@ describe('简易 CPU（单人也能打一局）', () => {
     expect(run()).toBe(run());
   });
 });
+
+describe('喂进模拟层的输入（回放要用）', () => {
+  it('lastInputs 记的是假人的输入，不是键盘的', () => {
+    const { match, training } = makeTraining({ dummy: 'guard' });
+    training.step([NO_INPUT, NO_INPUT]);
+    // 假人面朝左 → 防御方向是右
+    expect(training.lastInputs[1].held).toBe(Btn.Right);
+    expect(training.lastInputs[0].held).toBe(0);
+    void match;
+  });
+
+  it('CPU 打出的输入也会进 lastInputs', () => {
+    const { training } = makeTraining({ dummy: 'cpu' });
+    let sawInput = false;
+    for (let i = 0; i < 120; i++) {
+      training.step([NO_INPUT, NO_INPUT]);
+      if (training.lastInputs[1].held !== 0) sawInput = true;
+    }
+    expect(sawInput).toBe(true);
+  });
+});
