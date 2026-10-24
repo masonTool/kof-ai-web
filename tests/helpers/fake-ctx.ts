@@ -24,7 +24,7 @@ export class FakeCtx implements Ctx2D {
   lineWidths: number[] = [];
   rects: Rect[] = [];
   lines: Line[] = [];
-  texts: { text: string; x: number; y: number }[] = [];
+  texts: { text: string; x: number; y: number; align: string; font: string; color: string }[] = [];
   fillStyle = '#000';
   strokeStyle = '#000';
   lineWidth = 1;
@@ -107,7 +107,12 @@ export class FakeCtx implements Ctx2D {
 
   fillText(text: string, x: number, y: number): void {
     this.calls.push('fillText');
-    this.texts.push({ text, x, y });
+    this.texts.push({ text, x, y, align: this.textAlign, font: this.font, color: this.fillStyle });
+  }
+
+  /** 某段文字最后画出来的那次（阴影会先画一次，所以取最后一个） */
+  lastText(text: string): { text: string; x: number; y: number; align: string; font: string; color: string } | undefined {
+    return [...this.texts].reverse().find((t) => t.text === text);
   }
 
   count(name: string): number {
