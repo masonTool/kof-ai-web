@@ -15,7 +15,8 @@
     "art:preview": "node scripts/sprites/preview.mjs",
     "art:base": "node scripts/sprites/gen-base.mjs",
     "art:poses": "node scripts/sprites/gen-poses.mjs",
-    "art:all": "node scripts/sprites/gen-all.mjs"
+    "art:all": "node scripts/sprites/gen-all.mjs",
+    "continue:worktree": "node .continue/hooks/worktree.mjs"
   },
   "devDependencies": {
     "typescript": "^5.9.3",

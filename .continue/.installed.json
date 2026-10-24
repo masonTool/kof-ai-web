@@ -1,15 +1,15 @@
 {
-  "version": "1.0.0",
-  "installedAt": "2026-10-24T08:10:24.287Z",
+  "version": "1.1.0",
+  "installedAt": "2026-10-24T20:15:31.373Z",
   "files": {
     ".continue/.gitignore": "322d1cdbcbadd026e528fa1bcd5f03168e0f2362bfea02559dd44ff318eee9cb",
-    ".continue/config.json": "682da8f763ff8058609822e18fcfd6f582bdff7ae95a49a47557a1c0a70f1da6",
-    ".continue/TASKS.md": "d21105f5085670e1bc585c30a54ab51c36e9771e6e5feedcfd6e41be073f45f1",
-    ".continue/DONE.md": "52b0c96c7d19aaf00beea822ff850918071419ff05f0c37179cb73ea77bc74f0",
-    ".continue/OVERVIEW.md": "a472316c3a6b5c78e58dc4c1b0cabb32625fbb49687f472ab352c61d0c6c1b6d",
-    ".continue/TIPS.md": "78ae6114d739818416435a5da793b66787b9993561e5a46da653d99e8df51bb2",
-    ".continue/README.md": "612566838747acb5c237ffce0ef82f085572f0c3060eefa5d51e022457709281",
-    "AGENTS.md": "18ac10130105b28c9f06025e6f7fed0d8eb554127c8f9c07fab31a5fdfbfc30f",
+    ".continue/config.json": "c1d134fd23072f92c4c5bc33177b732679e0f08903115a2c45f682cb09dd78d2",
+    ".continue/TASKS.md": "2a0edbf938a8d35b028938047d29afd5761687a438f3e23432d85dc11d2981a9",
+    ".continue/DONE.md": "1df19a556d71f1d76c21f75d8dd3faf899cfee4a20032f2dbb8d99498eef0a8f",
+    ".continue/OVERVIEW.md": "27977732e0baa0e4649c993bffdf1ab122c63fdece25a4a37af1fe7a4ec1580d",
+    ".continue/TIPS.md": "1284e5d4d106a3d4ffa9b37a29ee05fbc540a5166450f4fd5b8a7754fd05b004",
+    ".continue/README.md": "e0cb19e6f21ee7f0768fb637af540777f8013560652f2eef1da4d863f545a751",
+    "AGENTS.md": "ceb2887bfa482114f008345fe645b5ad3c9d2ee30459b63cc7007d9506fa6e1c",
     ".continue/hooks/archive-done.mjs": "da87aa09b3561ad45fea90af2addbc1a29c16ca3c38613b737a39d8b556a095f",
     ".continue/hooks/archive-queue.mjs": "0af614e4aa432a04c2944115bc405dee00b1809abb3c15d69715cd02419fc9f3",
     ".continue/hooks/audit-config.mjs": "250bf136afe870d067555f613a5870907416c81f54663414f306d607f56ef075",
@@ -24,7 +24,7 @@
     ".continue/hooks/pre-commit.mjs": "e5bfdcfd331bee27569ce96a1a78c666714d0107de119aa6fc8873562a5e34e2",
     ".continue/hooks/queue-init.mjs": "c72dc15f5f9d3626d609aed0659937121747cbe29781797181ec6d159d76767f",
     ".continue/hooks/run.mjs": "fc3fcdf087ab3e09f968ef2656be0c2bc37e752a08d157ae83f02f6ae12961d7",
-    ".continue/hooks/selftest.mjs": "c53229341c3b8eb54771aa645913b197447dfe98c489cc8a77a39f0e2724413f",
+    ".continue/hooks/selftest.mjs": "abd374ccaa32828bc9234417aa8a2e4ff30e763a8384d8a70f593db295ec634d",
     ".continue/hooks/worktree.mjs": "1f77ef0d91cb22c6ce79fb488201295d5eb5159b17a1534ec704c2978b2afab2"
   },
   "templates": {
@@ -34,7 +34,7 @@
     ".continue/DONE.md": "52b0c96c7d19aaf00beea822ff850918071419ff05f0c37179cb73ea77bc74f0",
     ".continue/OVERVIEW.md": "a472316c3a6b5c78e58dc4c1b0cabb32625fbb49687f472ab352c61d0c6c1b6d",
     ".continue/TIPS.md": "78ae6114d739818416435a5da793b66787b9993561e5a46da653d99e8df51bb2",
-    ".continue/README.md": "612566838747acb5c237ffce0ef82f085572f0c3060eefa5d51e022457709281",
+    ".continue/README.md": "e0cb19e6f21ee7f0768fb637af540777f8013560652f2eef1da4d863f545a751",
     "AGENTS.md": "18ac10130105b28c9f06025e6f7fed0d8eb554127c8f9c07fab31a5fdfbfc30f",
     ".continue/hooks/archive-done.mjs": "da87aa09b3561ad45fea90af2addbc1a29c16ca3c38613b737a39d8b556a095f",
     ".continue/hooks/archive-queue.mjs": "0af614e4aa432a04c2944115bc405dee00b1809abb3c15d69715cd02419fc9f3",
@@ -50,7 +50,7 @@
     ".continue/hooks/pre-commit.mjs": "e5bfdcfd331bee27569ce96a1a78c666714d0107de119aa6fc8873562a5e34e2",
     ".continue/hooks/queue-init.mjs": "c72dc15f5f9d3626d609aed0659937121747cbe29781797181ec6d159d76767f",
     ".continue/hooks/run.mjs": "fc3fcdf087ab3e09f968ef2656be0c2bc37e752a08d157ae83f02f6ae12961d7",
-    ".continue/hooks/selftest.mjs": "c53229341c3b8eb54771aa645913b197447dfe98c489cc8a77a39f0e2724413f",
+    ".continue/hooks/selftest.mjs": "abd374ccaa32828bc9234417aa8a2e4ff30e763a8384d8a70f593db295ec634d",
     ".continue/hooks/worktree.mjs": "1f77ef0d91cb22c6ce79fb488201295d5eb5159b17a1534ec704c2978b2afab2"
   }
 }

@@ -788,6 +788,56 @@ check('audit-config：慢脚本放进 checks.project 要报错，挪到 projectS
   return expect(ok.status === 0, '挪进 projectSlow 后应通过', `${ok.stdout}${ok.stderr}`);
 });
 
+// ------------------------ 31. 钩子自检缓存：没改动就复用、改了就重跑
+/**
+ * 挡的是缓存最危险的那种坏法：**判据写成"永远命中"**。
+ * 那时 `check.mjs hooks` 会一直绿、还很快，看起来是最健康的状态——实际门禁已经空转。
+ * 所以这里必须有一条**负向断言**：动了钩子就必须重跑，拿旧结论不算数。
+ */
+check('钩子自检按内容哈希缓存：未改动复用结论，改了钩子必须重跑', (dir) => {
+  git(dir, ['init', '-q']);
+  const r = run(dir);
+  if (r.status !== 0) return expect(false, 'install 应 exit 0', r.stderr.slice(0, 300));
+
+  /**
+   * 直接跑 `selftest.mjs`、不走 `check.mjs`：聚合入口对**通过**的检查不打印 stdout
+   * （契约 4：一单元一行），从这里看"有没有命中缓存"只会永远看到空串。
+   */
+  const selftest = () =>
+    spawnSync(process.execPath, [join(dir, '.continue', 'hooks', 'selftest.mjs')], {
+      cwd: dir,
+      env: baseEnv,
+      encoding: 'utf8',
+    });
+
+  const first = selftest();
+  if (first.status !== 0) return expect(false, '第一次自检应通过', `${first.stdout}${first.stderr}`.slice(0, 300));
+  if (/缓存/.test(first.stdout)) return expect(false, '第一次没有缓存可用，不该走缓存分支', first.stdout);
+
+  const second = selftest();
+  if (second.status !== 0) return expect(false, '第二次自检应通过');
+  if (!/缓存/.test(second.stdout)) return expect(false, '同一份钩子第二次应命中缓存（白跑了一遍 5 秒）', second.stdout);
+
+  // 动了钩子 → 缓存必须失效（否则这套门禁会永久假绿）
+  const lib = join(dir, '.continue', 'hooks', 'lib.mjs');
+  writeFileSync(lib, `${readFileSync(lib, 'utf8')}\n// cache-probe\n`);
+  const third = selftest();
+  if (third.status !== 0) return expect(false, '改了钩子后仍应通过');
+  if (/缓存/.test(third.stdout)) {
+    return expect(false, '钩子内容变了却复用了旧结论——缓存把门禁变成了永久假绿', third.stdout);
+  }
+
+  // `--no-cache` 也必须真跑（它是"怀疑缓存骗人"时的唯一出口）
+  const forced = spawnSync(process.execPath, [join(dir, '.continue', 'hooks', 'selftest.mjs'), '--no-cache'], {
+    cwd: dir,
+    env: baseEnv,
+    encoding: 'utf8',
+  });
+  if (forced.status !== 0) return expect(false, '--no-cache 自检应通过');
+  if (/缓存/.test(forced.stdout)) return expect(false, '--no-cache 还在走缓存', forced.stdout);
+  return true;
+});
+
 // ------------------------------------------------------------------ 输出
 const failed = results.filter((r) => !r.ok);
 for (const r of failed) console.error(`  ✗ ${r.name}\n      ${r.why}`);
