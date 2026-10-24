@@ -166,12 +166,33 @@ export function drawVs(ctx: Ctx2D, flow: AppFlow): void {
   text(ctx, 'VS', VIEW_WIDTH / 2, 96, 'center', 26, SCREEN_COLORS.accent);
 }
 
-export function drawResult(ctx: Ctx2D, winnerName: string, blinkOn: boolean): void {
-  ctx.fillStyle = 'rgba(5,7,10,0.72)';
-  ctx.fillRect(0, 0, VIEW_WIDTH, VIEW_HEIGHT);
-  text(ctx, winnerName, VIEW_WIDTH / 2, 84, 'center', 16, SCREEN_COLORS.gold);
-  text(ctx, 'WINS', VIEW_WIDTH / 2, 104, 'center', 12, SCREEN_COLORS.text);
-  if (blinkOn) text(ctx, '按 A 回到标题', VIEW_WIDTH / 2, 140, 'center', 8, SCREEN_COLORS.dim);
+export function drawResult(ctx: Ctx2D, winnerName: string, quote: string, blinkOn: boolean): void {
+  // 赢家名与 WINS 由 HUD 的中央横幅负责（K.O. 横幅就一直挂在那儿），
+  // 这里只画台词框，否则屏幕正中会有两行"某某 WINS"。
+  const boxY = 148;
+  ctx.fillStyle = 'rgba(5,7,10,0.82)';
+  ctx.fillRect(14, boxY, VIEW_WIDTH - 28, 44);
+  ctx.strokeStyle = SCREEN_COLORS.gold;
+  ctx.lineWidth = 1;
+  ctx.strokeRect(14.5, boxY + 0.5, VIEW_WIDTH - 29, 43);
+  // 说话人放在框内左上角：放到框外会压住角色
+  text(ctx, winnerName, 20, boxY + 3, 'left', 6, SCREEN_COLORS.gold);
+
+  // 台词长了就折行（像素字体等宽，按字数近似切）
+  // 注意用下标代替 indexOf：两行内容相同时 indexOf 会返回同一个下标，两行会画在同一个 y 上
+  wrapText(quote, 22).forEach((line, i) => {
+    text(ctx, line, VIEW_WIDTH / 2, boxY + 15 + i * 11, 'center', 7, SCREEN_COLORS.text);
+  });
+
+  if (blinkOn) text(ctx, '按 A 回到标题', VIEW_WIDTH / 2, boxY + 58, 'center', 7, SCREEN_COLORS.dim);
+}
+
+/** 按字数粗折行（像素字体等宽，20 字 ≈ 一行） */
+export function wrapText(text: string, perLine: number): string[] {
+  if (perLine <= 0) return [text];
+  const out: string[] = [];
+  for (let i = 0; i < text.length; i += perLine) out.push(text.slice(i, i + perLine));
+  return out.length > 0 ? out : [''];
 }
 
 export function drawMode(ctx: Ctx2D, flow: AppFlow, blinkOn: boolean): void {

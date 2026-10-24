@@ -22,7 +22,19 @@ export interface RenderOptions {
   showBoxes?: boolean;
 }
 
-function animFor(f: Fighter): { anim: string; elapsed: number; duration?: number } {
+/**
+ * 整场结束后的姿势：赢家摆胜利姿势、输家跪地。
+ * 纯函数单独导出，方便断言"结束那一刻谁该摆什么"，而不是靠截图看。
+ */
+export function resultAnimFor(match: Match, side: 1 | 2): 'win' | 'lose' | null {
+  if (match.phase !== 'over') return null;
+  if (match.matchWinner === 0) return null; // 平局：两边都不摆
+  return match.matchWinner === side ? 'win' : 'lose';
+}
+
+function animFor(f: Fighter, match: Match): { anim: string; elapsed: number; duration?: number } {
+  const result = resultAnimFor(match, f === match.p1 ? 1 : 2);
+  if (result) return { anim: result, elapsed: f.stateFrame };
   if (f.isAttacking && f.move) {
     return { anim: f.move.anim, elapsed: f.moveFrame, duration: f.move.total };
   }
@@ -61,7 +73,7 @@ export function drawFrame(ctx: Ctx2D, match: Match, opts: RenderOptions = {}): v
   ctx.save();
   match.cam.applyTo(ctx);
   for (const f of match.fighters) {
-    const { anim, elapsed, duration } = animFor(f);
+    const { anim, elapsed, duration } = animFor(f, match);
     drawFighter(ctx, {
       palette: f.char.palette,
       facing: f.facing,

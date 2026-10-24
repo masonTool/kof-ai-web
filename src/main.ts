@@ -9,6 +9,7 @@ import { WebAudioBgm } from './audio/bgm';
 import { sfxForWorldEvent, WebAudioSink } from './audio/sfx';
 import { FixedStepper, startAnimationLoop } from './core/loop';
 import { ROSTER } from './data/chars';
+import { winQuoteFor } from './data/chars/quotes';
 import type { CharDef } from './data/schema';
 import { Match } from './game/match';
 import { ReplayPlayer, ReplayRecorder, matchFromReplay, type Replay } from './game/replay';
@@ -450,8 +451,11 @@ startAnimationLoop(
         case 'result': {
           if (match) {
             drawFrame(ctx, match);
-            const name = match.matchWinner === 2 ? (flow.picks?.[1]?.name ?? 'CPU') : (flow.picks?.[0]?.name ?? 'P1');
-            drawResult(ctx, name, blink);
+            const side = match.matchWinner === 2 ? 2 : 1;
+            const winner = side === 2 ? match.p2 : match.p1;
+            const name = flow.picks?.[side - 1]?.name ?? (side === 2 ? 'CPU' : 'P1');
+            // 台词按胜场数轮换：同一场里是固定的，回放/录屏不会变
+            drawResult(ctx, name, winQuoteFor(winner.char.id, match.wins[side - 1] ?? 0), blink);
           }
           break;
         }
