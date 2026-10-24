@@ -53,11 +53,16 @@ export interface HitDef {
 
 export type ButtonId = 'A' | 'B' | 'C' | 'D';
 
-/** 指令类型（由 input/parser.ts 实现识别） */
+/**
+ * 指令类型（由 input/parser.ts 实现识别）。
+ * 数字串 = 需要依次经过的方向（朝向相对：6 = 前，4 = 后）；
+ * 单个数字 = "当前正按住该方向"（指令通常技用，如 3K）。
+ */
 export type MotionId =
   | 'none'
   | '236' | '214' | '623' | '41236' | '63214' | '22' | 'doubleTapF' | 'doubleTapB'
-  | 'chargeBack' | 'chargeDown';
+  | 'chargeBack' | 'chargeDown'
+  | '6' | '4' | '2' | '8' | '3' | '1';
 
 /** 必杀技的输入要求：motion（可选）+ 必须同帧按下的键 */
 export interface InputSpec {
