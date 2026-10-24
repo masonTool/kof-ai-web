@@ -1,0 +1,20 @@
+{
+  "name": "kof97-web",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "拳皇'97 的 Web 复刻（程序化美术，60Hz 逐帧模拟）",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "check": "npm run typecheck && npm run test"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "vite": "^7.1.12",
+    "vitest": "^3.2.4"
+  }
+}

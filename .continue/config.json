@@ -3,7 +3,7 @@
     "fast": "node .continue/hooks/check.mjs --fast",
     "full": "node .continue/hooks/check.mjs",
     "timeoutSec": 60,
-    "project": [],
+    "project": ["npm run check"],
     "projectSlow": []
   },
   "git": {
