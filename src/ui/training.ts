@@ -27,6 +27,8 @@ export interface TrainingSettings {
   dummy: DummyAction;
   /** 假人是 cpu 时的难度 */
   cpuLevel: CpuLevel;
+  /** P1 也交给 CPU（观战模式：两边自动打） */
+  cpuP1: boolean;
 }
 
 /**
@@ -41,6 +43,7 @@ export const DEFAULT_TRAINING: TrainingSettings = {
   autoReset: false,
   dummy: 'cpu',
   cpuLevel: 'normal',
+  cpuP1: false,
 };
 
 /** 把按住的键翻译成给人看的符号（调试面板用） */
@@ -117,6 +120,14 @@ export class TrainingSession {
     return this.cpu.step();
   }
 
+  /** 观战模式用的 P1 大脑（和 P2 各一个实例，共用同一档难度） */
+  private cpuP1Brain: CpuBrain | null = null;
+
+  private p1CpuInput(): InputSample {
+    if (!this.cpuP1Brain) this.cpuP1Brain = new CpuBrain(this.match.p1, this.match.p2, this.settings.cpuLevel);
+    return this.cpuP1Brain.step();
+  }
+
   /** 上一帧真正喂进模拟层的输入（含 CPU/假人的输入），录制回放用 */
   lastInputs: [InputSample, InputSample] = [{ held: 0 }, { held: 0 }];
 
@@ -133,9 +144,11 @@ export class TrainingSession {
 
     // 真正喂给模拟层的那一对输入（假人/CPU 的输入也算在内）——录制回放要用它，
     // 否则录到的是"键盘输入"，重演时 CPU 不在，状态就对不上。
+    // 观战模式：P1 也由 CPU 打，键盘不再参与
+    const p1 = this.settings.cpuP1 ? this.p1CpuInput() : inputs[0];
     const p2 = this.dummyInput(inputs[1]);
-    this.lastInputs = [inputs[0], p2];
-    this.match.step([inputs[0], p2]);
+    this.lastInputs = [p1, p2];
+    this.match.step([p1, p2]);
 
     if (this.settings.autoReset && (this.match.phase === 'roundEnd' || this.match.phase === 'over')) {
       this.match.softReset();

@@ -19,6 +19,7 @@ import { drawFrame } from './render/renderer';
 import { applyViewport, computeViewport, shouldRotate, type SafeInsets } from './render/scale';
 import {
   drawContinue,
+  drawChallengePanel,
   drawKeyBind,
   drawMode,
   drawPause,
@@ -32,6 +33,7 @@ import {
 import { VIEW_HEIGHT, VIEW_WIDTH } from './sim/constants';
 import { Btn } from './core/input';
 import { AppFlow } from './ui/flow';
+import { ChallengeBoard } from './ui/challenges';
 import { KeyBindMenu } from './ui/keybind';
 import { PauseMenu } from './ui/pause';
 import { SettingsStore, keymapFor, type StorageLike } from './ui/settings';
@@ -88,6 +90,7 @@ const audio = new WebAudioSink();
 const bgm = new WebAudioBgm();
 const pause = new PauseMenu();
 const keybind = new KeyBindMenu();
+const challenges = new ChallengeBoard();
 const settings = new SettingsStore(browserStorage());
 audio.setVolume(settings.settings.volume);
 bgm.setVolume(settings.settings.volume);
@@ -159,7 +162,9 @@ function startMatch(): void {
     // 训练模式：无限血/气，站着不动的木桩，方便练连段
     infiniteHp: flow.mode === 'training',
     infiniteMeter: flow.mode === 'training',
+    // 观战：两边都交给 CPU；训练：站着不动的木桩；双人：P2 用键盘
     dummy: flow.mode === 'training' ? 'stand' : flow.mode === 'versus' ? 'human' : 'cpu',
+    cpuP1: flow.mode === 'watch',
   });
   audio.setVolume(cfg.volume);
 }
@@ -286,6 +291,14 @@ window.addEventListener('keydown', (e) => {
     case 'F6':
       e.preventDefault();
       training?.cycleCpuLevel();
+      break;
+    case 'F7':
+      e.preventDefault();
+      challenges.next();
+      break;
+    case 'F8':
+      e.preventDefault();
+      challenges.resetAll();
       break;
     case 'F9':
       e.preventDefault();
@@ -428,6 +441,16 @@ startAnimationLoop(
         training.step([p1In, p2In]);
         // 录"真正喂给模拟层的输入"——街机模式里 P2 是 CPU，它的输入也得录进去
         if (recorder) recorder.record(training.lastInputs);
+
+        // 训练挑战：只统计 P1 打出来的东西
+        for (const h of match.lastHits) {
+          if (h.kind === 'block') {
+            if (h.defender === match.p1) challenges.observeBlock();
+            continue;
+          }
+          if (h.attacker !== match.p1) continue;
+          challenges.observeHit(h.comboHits, h.attacker.move?.kind === 'super');
+        }
         for (const ev of match.world.events) {
           const sfx = sfxForWorldEvent(ev.type, ev.data);
           if (sfx) audio.play(sfx);
@@ -453,6 +476,7 @@ startAnimationLoop(
         case 'fight':
           if (match && training) {
             drawFrame(ctx, match, { showBoxes: training.settings.showBoxes });
+            if (flow.mode === 'training' || flow.mode === 'watch') drawChallengePanel(ctx, challenges);
             if (training.settings.showFrameData) drawTrainingOverlay(ctx, training.frameDataLines());
           }
           break;
@@ -525,6 +549,7 @@ function playReplay(replay: Replay): boolean {
   bgm,
   pause,
   keybind,
+  challenges,
   pad,
   startMatch,
   stopRecording,

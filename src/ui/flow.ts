@@ -16,7 +16,7 @@ import { SettingsStore, optionRows, type OptionKey } from './settings';
 export type ScreenId =
   | 'title' | 'mode' | 'select' | 'vs' | 'fight' | 'result' | 'continue' | 'options' | 'keybind';
 
-export type GameMode = 'arcade' | 'versus' | 'training';
+export type GameMode = 'arcade' | 'versus' | 'training' | 'watch';
 
 /** `step()` 返回给外层的动作 */
 export type FlowAction = 'none' | 'start-match' | 'to-title';
@@ -25,6 +25,7 @@ export const MODE_ITEMS: readonly { id: GameMode | 'options'; label: string }[] 
   { id: 'arcade', label: '街机模式（单人）' },
   { id: 'versus', label: '双人对战' },
   { id: 'training', label: '训练模式' },
+  { id: 'watch', label: '观战（CPU 对 CPU）' },
   { id: 'options', label: '选项' },
 ];
 

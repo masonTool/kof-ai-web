@@ -6,6 +6,7 @@ import type { CharDef } from '../data/schema';
 import { VIEW_HEIGHT, VIEW_WIDTH } from '../sim/constants';
 import { MODE_ITEMS, gridColumns, type AppFlow } from '../ui/flow';
 import { PAUSE_ITEMS } from '../ui/pause';
+import type { ChallengeBoard } from '../ui/challenges';
 import type { KeyBindMenu } from '../ui/keybind';
 import { KEY_ACTIONS, keyLabelFor, type GameSettings } from '../ui/settings';
 import type { Ctx2D } from './ctx';
@@ -275,6 +276,21 @@ export function drawKeyBind(ctx: Ctx2D, menu: KeyBindMenu, settings: GameSetting
   const hint = menu.capturing ? '按任意键绑定 · Esc 取消' : '↑↓ 选择 · A 改键 · B 返回';
   if (blinkOn || menu.capturing) text(ctx, hint, VIEW_WIDTH / 2, 200, 'center', 6, SCREEN_COLORS.dim);
   text(ctx, '左/右 切换 P1/P2 · C 恢复预设', VIEW_WIDTH / 2, 210, 'center', 6, SCREEN_COLORS.dim);
+}
+
+export function drawChallengePanel(ctx: Ctx2D, board: ChallengeBoard): void {
+  const run = board.current;
+  const y = 34;
+  ctx.fillStyle = 'rgba(5,7,10,0.72)';
+  ctx.fillRect(6, y - 4, 168, 26);
+  ctx.strokeStyle = run.completed ? SCREEN_COLORS.gold : SCREEN_COLORS.dim;
+  ctx.lineWidth = 1;
+  ctx.strokeRect(6.5, y - 3.5, 167, 25);
+
+  const color = run.completed ? SCREEN_COLORS.gold : SCREEN_COLORS.text;
+  text(ctx, `${run.completed ? '✓ ' : ''}${run.label}`, 12, y, 'left', 7, color);
+  text(ctx, run.def.hint, 12, y + 10, 'left', 6, SCREEN_COLORS.dim);
+  text(ctx, `${board.doneCount}/${board.runs.length}`, 168, y, 'right', 6, SCREEN_COLORS.dim);
 }
 
 export function drawPause(ctx: Ctx2D, cursor: number, blinkOn: boolean): void {

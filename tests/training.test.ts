@@ -251,3 +251,33 @@ describe('喂进模拟层的输入（回放要用）', () => {
     expect(sawInput).toBe(true);
   });
 });
+
+describe('观战模式（P1 也交给 CPU）', () => {
+  it('开了 cpuP1 之后，键盘不按也会自己动', () => {
+    const { match, training } = makeTraining({ cpuP1: true, dummy: 'cpu' });
+    const start = match.p1.x;
+    let moved = false;
+    for (let i = 0; i < 180 && !moved; i++) {
+      training.step([NO_INPUT, NO_INPUT]);
+      if (Math.abs(match.p1.x - start) > 2) moved = true;
+    }
+    expect(moved).toBe(true);
+  });
+
+  it('关掉 cpuP1 时 P1 只吃键盘输入（站着不动）', () => {
+    const { match, training } = makeTraining({ cpuP1: false, dummy: 'stand' });
+    const start = match.p1.x;
+    for (let i = 0; i < 60; i++) training.step([NO_INPUT, NO_INPUT]);
+    expect(Math.abs(match.p1.x - start)).toBeLessThanOrEqual(1);
+  });
+
+  it('录制的输入是 CPU 真实打出来的（回放才对得上）', () => {
+    const { training } = makeTraining({ cpuP1: true, dummy: 'cpu' });
+    let sawP1Input = false;
+    for (let i = 0; i < 120; i++) {
+      training.step([NO_INPUT, NO_INPUT]);
+      if (training.lastInputs[0].held !== 0) sawP1Input = true;
+    }
+    expect(sawP1Input).toBe(true);
+  });
+});

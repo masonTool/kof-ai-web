@@ -63,8 +63,8 @@ describe('标题屏', () => {
 });
 
 describe('模式选择', () => {
-  it('四项：街机 / 双人 / 训练 / 选项', () => {
-    expect(MODE_ITEMS.map((m) => m.id)).toEqual(['arcade', 'versus', 'training', 'options']);
+  it('五项：街机 / 双人 / 训练 / 观战 / 选项', () => {
+    expect(MODE_ITEMS.map((m) => m.id)).toEqual(['arcade', 'versus', 'training', 'watch', 'options']);
   });
 
   it('上下移动光标并环绕', () => {
