@@ -39,12 +39,12 @@ export const DEFAULT_SETTINGS: GameSettings = {
   showFrameData: false,
   showBoxes: false,
   keyPreset: 0,
-  pixelSize: 1,
+  pixelSize: 0.5,
   customKeys: { p1: {}, p2: {} },
 };
 
 /** 可选的像素粒度（越大越"马赛克"：1 = 每逻辑像素一块，4 = 4×4 一块） */
-export const PIXEL_SIZES: readonly number[] = [1, 2, 4];
+export const PIXEL_SIZES: readonly number[] = [0.5, 1, 2, 4];
 
 export const ROUNDS_CHOICES = [1, 2, 3] as const;
 export const TIME_CHOICES = [30, 60, 99] as const;

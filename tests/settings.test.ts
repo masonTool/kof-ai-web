@@ -61,7 +61,7 @@ describe('消毒（读盘必过）', () => {
       showFrameData: true,
       showBoxes: false,
       keyPreset: 0,
-      pixelSize: 1,
+      pixelSize: 0.5,
       customKeys: { p1: {}, p2: {} },
     });
   });
@@ -172,26 +172,28 @@ describe('选项屏的行', () => {
 
 describe('像素粒度', () => {
   it('默认最细（1×1），选项文案跟着变', () => {
-    expect(DEFAULT_SETTINGS.pixelSize).toBe(1);
+    expect(DEFAULT_SETTINGS.pixelSize).toBe(0.5);
     const rows = optionRows(DEFAULT_SETTINGS);
-    expect(rows.find((r) => r.key === 'pixelSize')!.value).toBe('1×1');
+    expect(rows.find((r) => r.key === 'pixelSize')!.value).toBe('0.5×0.5');
   });
 
   it('循环切换 1 → 2 → 4 → 1', () => {
     const store = new SettingsStore(null);
     store.cycle('pixelSize');
+    expect(store.settings.pixelSize).toBe(1);
+    store.cycle('pixelSize');
     expect(store.settings.pixelSize).toBe(2);
     store.cycle('pixelSize');
     expect(store.settings.pixelSize).toBe(4);
     store.cycle('pixelSize');
-    expect(store.settings.pixelSize).toBe(1); // 转一圈回来
+    expect(store.settings.pixelSize).toBe(0.5); // 转一圈回来
     store.cycle('pixelSize', -1);
     expect(store.settings.pixelSize).toBe(4); // 反向也能绕
   });
 
   it('读盘时非法粒度回落默认（用户手改成 9 也不崩）', () => {
-    expect(sanitize({ pixelSize: 9 }).pixelSize).toBe(1);
-    expect(sanitize({ pixelSize: '粗' }).pixelSize).toBe(1);
+    expect(sanitize({ pixelSize: 9 }).pixelSize).toBe(0.5);
+    expect(sanitize({ pixelSize: '粗' }).pixelSize).toBe(0.5);
     expect(sanitize({ pixelSize: 4 }).pixelSize).toBe(4);
   });
 });

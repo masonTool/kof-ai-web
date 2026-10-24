@@ -11,8 +11,14 @@ export const GROUND_SCREEN_Y = GROUND_Y;
 
 /** 视野最宽时的缩放（1 = 角色按原始大小画） */
 export const ZOOM_MIN = 1;
-/** 贴脸时的放大上限 */
-export const ZOOM_MAX = 1.2;
+/**
+ * 贴脸时的放大上限。
+ *
+ * 这个值是"视觉精细度"的性价比开关：世界坐标与判定盒都不用改，
+ * 只是把人画得更大——角色在 320×224 里占的像素越多，细节就越经得住看。
+ * 调大 = 更近、更细，但视野变窄（远距离仍会退回 ZOOM_MIN=1）。
+ */
+export const ZOOM_MAX = 1.5;
 /** 距离 ≤ 这个值就是最近（拉满） */
 export const ZOOM_NEAR_DIST = 56;
 /** 距离 ≥ 这个值就是最远（放开） */

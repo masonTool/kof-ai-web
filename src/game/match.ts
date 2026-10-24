@@ -43,7 +43,7 @@ export interface MatchConfig {
 /** 超必杀起手：闪几帧、双方定格几帧、运镜拉近到多少 */
 export const SUPER_FLASH_FRAMES = 12;
 export const SUPER_FREEZE_FRAMES = 10;
-export const SUPER_CINEMA_ZOOM = 1.45;
+export const SUPER_CINEMA_ZOOM = 1.85;
 
 export const DEFAULT_MATCH: MatchConfig = {
   roundsToWin: 2,

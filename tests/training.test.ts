@@ -170,8 +170,9 @@ describe('整帧渲染（无 DOM）', () => {
     const { match } = makeTraining();
     const ctx = new FakeCtx();
     expect(() => drawFrame(ctx, match)).not.toThrow();
-    expect(ctx.count('stroke')).toBeGreaterThan(10); // 角色的肢体
-    expect(ctx.count('fillRect')).toBeGreaterThan(5); // 舞台与血条
+    // 角色现在是像素块画的（fillRect 上千次），stroke 主要来自 HUD 与拖尾
+    expect(ctx.count('stroke')).toBeGreaterThan(3);
+    expect(ctx.count('fillRect')).toBeGreaterThan(200);
     expect(ctx.count('save')).toBe(ctx.count('restore'));
     expect(ctx.texts.some((t) => t.text === '草薙京')).toBe(true);
   });
