@@ -14,8 +14,11 @@ export type FlowAction = 'none' | 'start-match' | 'to-title';
 
 /** 花名册越大列数越多（4/6/8），保证 320×224 里排得下 */
 export function gridColumns(count: number): number {
+  // 列数是"名字放得下"和"格子别太扁"之间的折中：同名册下 6 列时格子约 46px 宽，
+  // 中文名 6 个字还能读；8 列就只有 33px，名字必然被切。
   if (count <= 12) return 4;
-  if (count <= 24) return 6;
+  if (count <= 20) return 5;
+  if (count <= 30) return 6;
   return 8;
 }
 

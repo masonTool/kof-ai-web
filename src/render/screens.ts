@@ -86,6 +86,14 @@ export function drawSelect(ctx: Ctx2D, flow: AppFlow, blinkOn: boolean): void {
     const r = cellRect(i, count, flow.columns);
     const p1Here = flow.cursor[0] === i;
     const p2Here = flow.cursor[1] === i;
+    // 名字要保证放得进格子：中文/假名在等宽字体里约等于 1 个字宽 = 字号，
+    // 所以按 (格宽 / 字数) 反推字号；小于 4px 就截断加省略号，宁可短也别糊成一团。
+    const fitName = (name: string, maxW: number): { label: string; size: number } => {
+      const size = Math.min(8, Math.floor((maxW - 2) / Math.max(1, name.length)));
+      if (size >= 4) return { label: name, size };
+      const maxChars = Math.max(2, Math.floor((maxW - 2) / 4) - 1);
+      return { label: `${name.slice(0, maxChars)}…`, size: 5 };
+    };
 
     ctx.fillStyle = char.palette.primary;
     ctx.fillRect(r.x, r.y, r.w, r.h);
@@ -104,7 +112,15 @@ export function drawSelect(ctx: Ctx2D, flow: AppFlow, blinkOn: boolean): void {
       ctx.strokeRect(r.x - 4, r.y - 4, r.w + 8, r.h + 8);
     }
 
-    // 格子里放一个缩小版的待机姿势，比纯色块好认
+    // 格子里放一个缩小版的待机姿势；格子太扁（人多时）就不画，
+    // 否则小人会顶在名字上，反而更难认。
+    if (r.h < 30) {
+      const fittedFlat = fitName(char.name, r.w);
+      text(ctx, fittedFlat.label, r.x + r.w / 2, r.y + r.h / 2 - fittedFlat.size / 2, 'center', fittedFlat.size, SCREEN_COLORS.text);
+      if (p1Here) text(ctx, 'P1', r.x + 2, r.y + 2, 'left', 5, '#ffd9cf');
+      if (p2Here) text(ctx, 'CPU', r.x + r.w - 2, r.y + 2, 'right', 5, '#cfe4ff');
+      return;
+    }
     ctx.save();
     ctx.translate(r.x + r.w / 2, r.y + r.h - 9);
     const figScale = Math.max(0.22, Math.min(0.42, Math.min(r.h / 105, r.w / 140)));
@@ -119,9 +135,8 @@ export function drawSelect(ctx: Ctx2D, flow: AppFlow, blinkOn: boolean): void {
     });
     ctx.restore();
 
-    // 名字长的（安迪·博加德这种）用小一号字，别顶出格子
-    const nameSize = char.name.length >= 6 ? 6 : 8;
-    text(ctx, char.name, r.x + r.w / 2, r.y + 5, 'center', nameSize, SCREEN_COLORS.text);
+    const fitted = fitName(char.name, r.w);
+    text(ctx, fitted.label, r.x + r.w / 2, r.y + 4, 'center', fitted.size, SCREEN_COLORS.text);
     if (p1Here) text(ctx, 'P1', r.x + 2, r.y + r.h - 11, 'left', 6, '#ffd9cf');
     if (p2Here) text(ctx, 'CPU', r.x + r.w - 2, r.y + r.h - 11, 'right', 6, '#cfe4ff');
   });
