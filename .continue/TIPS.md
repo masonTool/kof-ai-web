@@ -105,3 +105,21 @@
 - 适用面：`sim/hit.ts`、`data/schema.ts` 的任何可选字段（invuln / travel / meterCost / cancel.window 都曾或仍可能没被读）。
 - 批次：20261024-1720
 
+## 界面流程与音效
+
+### 长指令被短指令吃掉：63214 出成了 214
+
+- 症状：八神贴身摇 63214+A 想要屑風（指令投），实际出来的是葵花；把距离拉远反而正常。
+- 根因：招式选择按"类别"排序（必杀 > 投技），而 63214 的尾段本身就包含 214，两个指令同时成立时，短的那个类别更高就先出了。
+- 处置：排序第一关键字改成**指令长度**（`motionLength()`，无指令的招按 1 算），长度相同再比类别。这样 63214 压过 214、236 压过 6（普通投），而 AB/CD 仍靠类别压过指令技。
+- 适用面：`sim/controls.ts` 的候选排序；以后加任何"带方向前缀的投技/派生技"都会撞上。
+- 批次：20261024-1726
+
+### playwright-cli 的 run-code 不是浏览器环境
+
+- 症状：自测脚本里用 `setTimeout` 报 `ReferenceError: setTimeout is not defined`；直接写 `async (page) => {...};` 报 `Unexpected token ';'`。
+- 根因：`run-code` 把参数当"函数源码"在 Node 侧求值，只有 `page` 可用，没有 DOM 的定时器；结尾多一个分号会让它拼出来的调用表达式语法错。
+- 处置：等待一律用 `page.waitForTimeout(ms)`；脚本文件结尾不要分号；页面内的定时/动画用 `page.evaluate(async () => { ... requestAnimationFrame ... })`。
+- 适用面：`scripts/*.mjs` 这类自测脚本。
+- 批次：20261024-1726
+
