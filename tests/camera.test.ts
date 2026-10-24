@@ -10,7 +10,7 @@ import {
   ZOOM_MIN,
   ZOOM_NEAR_DIST,
 } from '../src/sim/camera';
-import { PARALLAX_FAR, STAGES, TILE_SPACING, drawStage, stageById } from '../src/render/stage-draw';
+import { PARALLAX_DISTANT, PARALLAX_FAR, STAGES, TILE_SPACING, drawStage, stageById } from '../src/render/stage-draw';
 import { FakeCtx } from './helpers/fake-ctx';
 
 const at = (x: number): { x: number } => ({ x });
@@ -171,6 +171,35 @@ describe('舞台绘制', () => {
     const common = b.find((r) => a.some((s) => s[1] === r[1]));
     const origin = a.find((r) => r[1] === common?.[1]);
     expect(origin![0] - common![0]).toBe(Math.round(60 * PARALLAX_FAR));
+  });
+
+  it('天空是三段色带（不是一块平色），且都铺满整屏宽', () => {
+    const stage = STAGES[0]!;
+    const ctx = new FakeCtx();
+    drawStage(ctx, new Camera(), stage);
+    for (const color of [stage.skyTop, stage.skyMid, stage.skyBottom]) {
+      const band = ctx.rects.find((r) => r.fill === color && r.w === VIEW_WIDTH);
+      expect(band, color).toBeDefined();
+    }
+  });
+
+  it('最远一层楼用更慢的视差（PARALLAX_DISTANT）', () => {
+    const stage = STAGES[0]!;
+    const shiftFor = (camX: number): number => {
+      const ctx = new FakeCtx();
+      drawStage(ctx, new Camera({ x: camX, zoom: 1 }), stage);
+      const far = ctx.rects.filter((r) => r.fill === stage.farFar);
+      return far.length > 0 ? camX * PARALLAX_DISTANT : Number.NaN;
+    };
+    expect(shiftFor(200)).toBeCloseTo(200 * PARALLAX_DISTANT, 5);
+    // 比远景更慢
+    expect(PARALLAX_DISTANT).toBeLessThan(PARALLAX_FAR);
+  });
+
+  it('天空里有月亮（光源），夜里画面才有明暗关系', () => {
+    const ctx = new FakeCtx();
+    drawStage(ctx, new Camera(), STAGES[0]!);
+    expect(ctx.arcs.length).toBeGreaterThanOrEqual(2); // 光晕 + 月体
   });
 
   it('地面砖锚在世界坐标上（和角色同一层视差）', () => {

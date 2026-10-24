@@ -17,9 +17,14 @@ import { cutout, scaleToHeight, scaleToWidth } from './cutout.mjs';
 
 /** 画风：决定读哪一套原始图（与 gen-poses.mjs 的 KYO_STYLE 对应） */
 const STYLE = process.env.KYO_STYLE ?? 'ink';
-const RAW = `art-source/kyo-raw-${STYLE}`;
-const OUT_IMAGE = 'public/sheets/kyo.png';
-const OUT_JSON = 'public/sheets/kyo.json';
+/** 角色 id（--char，默认 kyo）：一套素材一个角色 */
+const CHAR_ID = (() => {
+  const i = process.argv.indexOf('--char');
+  return i >= 0 && process.argv[i + 1] ? process.argv[i + 1] : 'kyo';
+})();
+const RAW = `art-source/${CHAR_ID}-raw-${STYLE}`;
+const OUT_IMAGE = `public/sheets/${CHAR_ID}.png`;
+const OUT_JSON = `public/sheets/${CHAR_ID}.json`;
 
 /** 角色身高（逻辑像素）：跟程序化绘制的京同高，站上去才对得上判定盒 */
 const CHAR_H = 84;
@@ -356,13 +361,13 @@ writeFileSync(
   OUT_JSON,
   JSON.stringify(
     // scale：一个源像素等于多少世界单位（绘制时宽高都要乘它，否则贴图会被放大 RES 倍）
-    { image: 'kyo.png', width: atlasW, height: atlasH, scale: 1 / RES, anims: animsJson, flash: flashJson },
+    { image: `${CHAR_ID}.png`, width: atlasW, height: atlasH, scale: 1 / RES, anims: animsJson, flash: flashJson },
     null,
     1,
   ),
 );
 
-console.log(`缩放 ${scale.toFixed(4)} · 图集 ${atlasW}×${atlasH}`);
+console.log(`${CHAR_ID}：缩放 ${scale.toFixed(4)} · 图集 ${atlasW}×${atlasH}`);
 for (const [anim, list] of Object.entries(frames)) {
   console.log(`  ${anim.padEnd(11)} ${list.length} 帧  ${list.map((f) => `${f.rect.w}×${f.rect.h}`).join(' ')}`);
 }

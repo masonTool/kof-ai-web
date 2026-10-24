@@ -11,8 +11,11 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "check": "npm run typecheck && npm run test",
-    "art": "node scripts/sprites/build-kyo.mjs",
-    "art:preview": "node scripts/sprites/preview.mjs"
+    "art": "node scripts/sprites/build-sheet.mjs",
+    "art:preview": "node scripts/sprites/preview.mjs",
+    "art:base": "node scripts/sprites/gen-base.mjs",
+    "art:poses": "node scripts/sprites/gen-poses.mjs",
+    "art:all": "node scripts/sprites/gen-all.mjs"
   },
   "devDependencies": {
     "typescript": "^5.9.3",

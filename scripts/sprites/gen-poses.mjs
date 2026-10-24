@@ -1,18 +1,32 @@
 /**
- * 用元宝「带参考图」的方式，把京的每个姿势都重出一遍。
+ * 用元宝「带参考图」的方式，把一个角色的每个姿势都出一遍。
  *
  * 为什么必须带参考图：不带的时候，每个姿势是"另一次独立想象"，出来的人长得都不一样
  * （发型、脸型、衣服开合、裤子长度全都会漂）。带同一张 idle 当锚点，服装和脸才稳得住。
  *
  * 依赖：本机的 yuanbao-mcp（默认 ~/DouDou/yuanbao-mcp），走它的 CLI（等价于 MCP 工具）：
- *   node scripts/sprites/gen-poses.mjs [--only punch,kick] [--force]
+ *   node scripts/sprites/gen-poses.mjs [--char iori] [--only punch,kick] [--force]
  *
- * 输出：art-source/kyo-raw-v2/<姿势>/yb-*.png
+ * 输出：art-source/<角色>-raw-<画风>/<姿势>/yb-*.png
  */
 import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readdirSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
+import { CHARS, STYLE_LINE } from './chars.mjs';
+
+function argOf(name) {
+  const i = process.argv.indexOf(`--${name}`);
+  return i >= 0 ? process.argv[i + 1] : undefined;
+}
+
+/** 角色 id；决定外观描述、垫图目录与输出目录 */
+const CHAR_ID = argOf('char') ?? 'kyo';
+const INFO = CHARS[CHAR_ID];
+if (!INFO) {
+  console.error(`未知角色 ${CHAR_ID}（看 scripts/sprites/chars.mjs）`);
+  process.exit(1);
+}
 
 const MCP_DIR = process.env.YUANBAO_MCP_DIR ?? join(homedir(), 'DouDou', 'yuanbao-mcp');
 /** 画风：决定"用哪张基准图当垫图" + "提示词里怎么写画风"。基准图由 gen-base.mjs 出。 */
@@ -42,25 +56,11 @@ ensureProfileCopy();
  * 用基准图（不是旧的像素版）当垫图，风格才会跟着走——
  * 换画风只要换 `KYO_STYLE`，姿势表不用动。
  */
-const REF_DIR = `art-source/kyo-base/${STYLE}`;
-const OUT = `art-source/kyo-raw-${STYLE}`;
+const REF_DIR = `art-source/${CHAR_ID}-base/${STYLE}`;
+const OUT = `art-source/${CHAR_ID}-raw-${STYLE}`;
 
 /** 角色描述锁死（每个姿势都原样带一遍，模型才不会自由发挥） */
-const CHAR = [
-  '参照这张图的角色形象，画同一个角色的另一个动作。角色固定不变：',
-  '年轻日本男高中生格斗家，黑色刺猬头碎发，黄种人肤色，',
-  '白色高立领学生服上衣（敞开、袖子挽到手肘），深墨绿近黑的长裤，白色运动鞋，黑色腰带；',
-  '脸型、发型、五官、服装款式与配色必须和参照图完全一致。',
-].join('');
-
-/** 画风描述：与 gen-base.mjs 里同名的那一条保持一字不差，否则姿势会和基准图不是一个画风 */
-const STYLE_LINES = {
-  pixel: '画风：精细像素画（高密度像素），每个像素方块很小，1 像素黑色描边，明暗三到四档，颜色干净，无渐变过渡、无抗锯齿。',
-  cel: '画风：赛璐璐动画风，粗黑墨线描边，两到三段硬边阴影，边缘干净无模糊，头发和衣服有明确高光块，日式格斗游戏立绘质感。',
-  anime: '画风：精致日式动画立绘，细黑线描边，柔和但明确的阴影，布料有褶皱体积，皮肤有轻微渐变，接近现代格斗游戏的选人画面。',
-  semi: '画风：半写实厚涂，笔触明显，明暗对比强，布料褶皱与肌肉体积清晰，皮肤有真实感的明暗过渡，接近写实向格斗游戏概念图。',
-  ink: '画风：漫画墨线风，粗黑勾线、高对比平涂、少量网点阴影，头发用成块黑色，整体像格斗游戏宣传插画。',
-};
+const CHAR = `参照这张图的角色形象，画同一个角色的另一个动作。角色固定不变：${INFO.look}；脸型、发型、五官、服装款式与配色必须和参照图完全一致。`;
 
 /**
  * 构图与画法约束同样锁死。
@@ -121,7 +121,7 @@ if (!existsSync(refFile)) {
   console.error(`基准图目录是空的：${refDir}`);
   process.exit(1);
 }
-console.log(`画风 ${STYLE} · 垫图 ${refFile}`);
+console.log(`${INFO.name}（${CHAR_ID}）· 画风 ${STYLE} · 垫图 ${refFile}`);
 
 let failed = [];
 for (const pose of targets) {
@@ -136,7 +136,7 @@ for (const pose of targets) {
   const spec = POSES[pose];
   const text = typeof spec === 'string' ? spec : spec.text;
   const height = typeof spec === 'string' ? 85 : (spec.height ?? 85);
-  const prompt = `${CHAR}动作：${text}。${frame(height)}${STYLE_LINES[STYLE] ?? STYLE_LINES.ink}`;
+  const prompt = `${CHAR}动作：${text}。${frame(height)}${STYLE_LINE}`;
   console.log(`\n=== ${pose} ===`);
   const r = spawnSync(
     'npx',

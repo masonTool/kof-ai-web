@@ -19,9 +19,8 @@ import { drawPose, setPixelSize } from './render/fighter-draw';
 import { downloadCanvas, renderSheet, type SheetSpec } from './render/sheet-export';
 import { POSE_LIBRARY } from './render/poses';
 import { lookFor } from './render/looks';
-import { setAssetProvider } from './render/assets';
 import { drawFrame } from './render/renderer';
-import { loadCharSheet } from './render/sprite-loader';
+import { ensureCharSheets, installSheetProvider } from './render/sprite-loader';
 import { applyViewport, computeViewport, shouldRotate, type SafeInsets } from './render/scale';
 import {
   drawContinue,
@@ -105,12 +104,11 @@ function browserStorage(): StorageLike | null {
  * 自绘贴图：有就用，没有就用程序化骨架（同一套坐标，随时可切）。
  *
  * `?art=proc` 强制走程序化绘制，方便跟贴图版左右对比。
- * 只有京有素材；其它角色 `fighter()` 返回 null，自然回落到骨架。
+ * 素材是**按角色**加载的：开局只装场上这 6 个人的图集，没素材的角色自然回落。
  */
 if (new URLSearchParams(window.location.search).get('art') !== 'proc') {
-  void loadCharSheet('kyo', `${import.meta.env.BASE_URL}sheets/kyo.json`).then((provider) => {
-    if (provider) setAssetProvider(provider);
-  });
+  installSheetProvider();
+  void ensureCharSheets(['kyo']);
 }
 
 const audio = new WebAudioSink();
@@ -172,6 +170,8 @@ function teamFor(starter: CharDef): CharDef[] {
  */
 function startMatch(): void {
   const [a, b] = flow.picks ?? [ROSTER[0]!, ROSTER[1] ?? ROSTER[0]!];
+  // 把这 6 个人的图集装进来（没有素材的角色静默回落程序化）
+  void ensureCharSheets([...teamFor(a), ...teamFor(b)].map((c) => c.id));
   const cfg = settings.settings;
   match = new Match(teamFor(a), teamFor(b), {
     roundsToWin: cfg.roundsToWin,

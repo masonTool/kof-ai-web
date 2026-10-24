@@ -11,24 +11,30 @@ import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readdirSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
+import { CHARS, STYLE_LINE } from './chars.mjs';
 
 const MCP_DIR = process.env.YUANBAO_MCP_DIR ?? join(homedir(), 'DouDou', 'yuanbao-mcp');
 const PROFILE = process.env.YUANBAO_PROFILE_DIR ?? '/tmp/ybprof';
-/** 锚点：现在的站架图（保留"白衣黑裤刺猬头"这个设计，只换画风/精度） */
-const REF = 'art-source/kyo-raw-v2/idle';
-const OUT = 'art-source/kyo-base';
+/** 角色：决定描述文本与输出目录 */
+const CHAR = arg('char') ?? 'kyo';
+const INFO = CHARS[CHAR];
+if (!INFO) {
+  console.error(`未知角色 ${CHAR}（看 scripts/sprites/chars.mjs）`);
+  process.exit(1);
+}
+/** 京有早期像素图可以当垫图；其它角色没有，纯文本起手 */
+const REF_IMAGE = CHAR === 'kyo' ? 'art-source/kyo-raw-v2/idle' : null;
+const OUT = `art-source/${CHAR}-base`;
 
 /** 角色与构图锁死，只有画风这一句在变 */
 const SUBJECT = [
-  '单人全身立绘，2D 格斗游戏角色。角色：年轻日本男高中生格斗家，',
-  '黑色刺猬头碎发、额前碎刘海、黄种人肤色、黑色眼睛，',
-  '白色高立领学生服上衣（敞开、袖子挽到手肘）、黑色腰带、深墨绿近黑的长裤、白色运动鞋。',
+  `单人全身立绘，2D 格斗游戏角色。角色：${INFO.look}。`,
   '姿势：格斗站架，身体侧向右，前手抬到脸侧、后手护在胸前，双脚前后分开、膝盖微屈。',
   '构图：严格侧身朝右，全身入镜，脚踩画面底边，人物占画面高度 85%，水平居中。',
   '背景：纯洋红色（#FF00FF）平涂，无地面、无阴影、无文字、无水印、无边框。',
 ].join('');
 
-/** 画风候选：键名 = 目录名 */
+/** 画风候选：键名 = 目录名（当前只做 ink，其它留着以后换皮） */
 const STYLES = {
   // 1. 像素风的"高密度"版：还是像素，但格子更小、明暗层次更多
   pixel: '画风：精细像素画（高密度像素），每个像素方块很小，1 像素黑色描边，明暗三到四档，颜色干净，无渐变过渡、无抗锯齿。',
@@ -39,7 +45,7 @@ const STYLES = {
   // 4. 半写实厚涂（体积感最强）
   semi: '画风：半写实厚涂，笔触明显，明暗对比强，布料褶皱与肌肉体积清晰，皮肤有真实感的明暗过渡，接近写实向格斗游戏概念图。',
   // 5. 高对比墨线（接近 KOF 系列的手绘宣传图）
-  ink: '画风：漫画墨线风，粗黑勾线、高对比平涂、少量网点阴影，头发用成块黑色，整体像格斗游戏宣传插画。',
+  ink: STYLE_LINE,
 };
 
 function arg(name) {
@@ -49,18 +55,22 @@ function arg(name) {
 
 const only = arg('only')?.split(',').map((s) => s.trim()).filter(Boolean);
 const force = process.argv.includes('--force');
-const targets = Object.keys(STYLES).filter((k) => (only ? only.includes(k) : true));
+// 默认只出 ink（用户已经选定的画风）；要试别的风格再显式 --only
+const targets = only ?? ['ink'];
 
 if (!existsSync(PROFILE)) {
   console.error(`浏览器 profile 副本不存在：${PROFILE}\n先跑一次 scripts/sprites/gen-poses.mjs（它会自动复制登录态）`);
   process.exit(1);
 }
-/** 参考图取目录里第一张 */
-const refDir = join(process.cwd(), REF);
-const refFile = join(refDir, readdirSync(refDir).filter((f) => f.endsWith('.png')).sort()[0] ?? '');
-if (!existsSync(refFile)) {
-  console.error(`参考图不存在：${refFile}`);
-  process.exit(1);
+/** 有垫图就用（让京保持原设计），没有就纯文本起手 */
+let refFile = null;
+if (REF_IMAGE) {
+  const refDir = join(process.cwd(), REF_IMAGE);
+  refFile = join(refDir, readdirSync(refDir).filter((f) => f.endsWith('.png')).sort()[0] ?? '');
+  if (!existsSync(refFile)) {
+    console.error(`参考图不存在：${refFile}`);
+    process.exit(1);
+  }
 }
 
 const failed = [];
@@ -80,7 +90,7 @@ for (const style of targets) {
       '--count', '2',
       '--timeout', '300',
       '--save-dir', join(process.cwd(), dir),
-      '--ref', refFile,
+      ...(refFile ? ['--ref', refFile] : []),
       '--prompt', `${SUBJECT}${STYLES[style]}`,
     ],
     { cwd: MCP_DIR, stdio: 'inherit', env: { ...process.env, YUANBAO_PROFILE_DIR: PROFILE } },

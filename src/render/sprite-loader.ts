@@ -5,7 +5,7 @@
  * 运行时只做两件事：拿 JSON、等图片解码完，然后塞给 `setAssetProvider()`。
  * **拿不到就什么都不做**——绘制层会继续用程序化骨架，游戏照常能玩。
  */
-import { frameListProvider, type AssetProvider, type SpriteFrame } from './assets';
+import { frameListProvider, setAssetProvider, type AssetProvider, type SpriteFrame } from './assets';
 
 /** 图集里一帧的矩形 + 相对角色原点的偏移（都以逻辑像素为单位） */
 export interface SheetFrameJson {
@@ -120,4 +120,87 @@ export async function loadCharSheet(charId: string, jsonUrl: string): Promise<As
   } catch {
     return null;
   }
+}
+
+// ---------- 多角色图集：按需加载 + 合并成一个 provider ----------
+
+/** 已装好的角色图集（charId → provider） */
+const sheets = new Map<string, AssetProvider>();
+/** 正在加载中的请求（同一角色只发一次） */
+const pending = new Map<string, Promise<void>>();
+/** 同时在内存里最多保留几个角色的图集（一张约 1.7MB，全装 40+MB 太浪费） */
+const MAX_LOADED = 8;
+/** 最近使用顺序，用于淘汰 */
+const lru: string[] = [];
+
+function baseUrl(): string {
+  return import.meta.env.BASE_URL ?? '/';
+}
+
+function touch(charId: string): void {
+  const i = lru.indexOf(charId);
+  if (i >= 0) lru.splice(i, 1);
+  lru.push(charId);
+  while (lru.length > MAX_LOADED) {
+    const drop = lru.shift();
+    if (drop) sheets.delete(drop);
+  }
+}
+
+/**
+ * 装一个"多角色 provider"：查表而已，没装的角色返回 null（回落程序化绘制）。
+ *
+ * 这样切换对局只需要 `ensureCharSheets()` 把新上场的 6 个人装进来，
+ * 不用重建 provider、也不用通知渲染层。
+ */
+export function installSheetProvider(): void {
+  setAssetProvider({
+    fighter(charId: string, anim: string, frame: number, flash = false): SpriteFrame | null {
+      const sheet = sheets.get(charId);
+      if (!sheet) return null;
+      touch(charId);
+      return sheet.fighter(charId, anim, frame, flash);
+    },
+  });
+}
+
+/** 某个角色的图集是否已经装好（测试/调试用） */
+export function hasSheet(charId: string): boolean {
+  return sheets.has(charId);
+}
+
+/** 当前装了几个角色 */
+export function loadedSheetCount(): number {
+  return sheets.size;
+}
+
+/**
+ * 确保这些角色的图集可用。
+ *
+ * 只加载场上这 6 个人，而且失败静默（没有素材的角色继续走程序化）。
+ * 返回的 Promise 在本批全部结束（成功或失败）后 resolve。
+ */
+export async function ensureCharSheets(charIds: readonly string[]): Promise<void> {
+  const jobs = charIds.map(async (charId) => {
+    if (sheets.has(charId)) {
+      touch(charId);
+      return;
+    }
+    const running = pending.get(charId);
+    if (running) return running;
+    const job = (async () => {
+      const provider = await loadCharSheet(charId, `${baseUrl()}sheets/${charId}.json`);
+      if (provider) {
+        sheets.set(charId, provider);
+        touch(charId);
+      }
+    })();
+    pending.set(charId, job);
+    try {
+      await job;
+    } finally {
+      pending.delete(charId);
+    }
+  });
+  await Promise.all(jobs);
 }
