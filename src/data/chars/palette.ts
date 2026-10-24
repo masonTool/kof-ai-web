@@ -87,6 +87,33 @@ export const PALETTES: Record<string, Palette> = {
     trim: '#fdf6ec',
     accent: '#8fe3ff',
   },
+  /** 莉安娜：蓝色军装 */
+  leona: {
+    skin: '#e9bd96',
+    hair: '#3b5f8f',
+    primary: '#2f4a72',
+    secondary: '#26292f',
+    trim: '#e6dcc6',
+    accent: '#9fe0ff',
+  },
+  /** 拉尔夫：橄榄绿军装 */
+  ralf: {
+    skin: '#e8bb8e',
+    hair: '#4a3a22',
+    primary: '#4a5730',
+    secondary: '#242821',
+    trim: '#e9e2cf',
+    accent: '#ffb84d',
+  },
+  /** 克拉克：深蓝军装 + 墨镜 */
+  clark: {
+    skin: '#e6b489',
+    hair: '#26201a',
+    primary: '#33415c',
+    secondary: '#1f232b',
+    trim: '#dee6ef',
+    accent: '#ff7b5c',
+  },
   /** 特瑞·博加德 */
   terry: {
     skin: '#f0c39a',

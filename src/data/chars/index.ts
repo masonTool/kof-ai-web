@@ -6,9 +6,12 @@ import type { CharDef } from '../schema';
 import { ANDY } from './andy';
 import { BENIMARU } from './benimaru';
 import { DAIMON } from './daimon';
+import { CLARK } from './clark';
 import { IORI } from './iori';
 import { JOE } from './joe';
 import { KYO } from './kyo';
+import { LEONA } from './leona';
+import { RALF } from './ralf';
 import { ROBERT } from './robert';
 import { RYO } from './ryo';
 import { TERRY } from './terry';
@@ -25,10 +28,13 @@ export const ROSTER: readonly CharDef[] = [
   RYO,
   ROBERT,
   YURI,
+  LEONA,
+  RALF,
+  CLARK,
 ];
 
 export function charById(id: string): CharDef | undefined {
   return ROSTER.find((c) => c.id === id);
 }
 
-export { KYO, IORI, BENIMARU, DAIMON, TERRY, ANDY, JOE, RYO, ROBERT, YURI };
+export { KYO, IORI, BENIMARU, DAIMON, TERRY, ANDY, JOE, RYO, ROBERT, YURI, LEONA, RALF, CLARK };

@@ -96,10 +96,10 @@ describe.each(AOF)('$name：数据自洽', (char) => {
   });
 });
 
-describe('花名册已扩到龙虎队', () => {
-  it('十人，id 唯一', () => {
-    expect(ROSTER.length).toBe(10);
-    expect(new Set(ROSTER.map((c) => c.id)).size).toBe(10);
+describe('花名册', () => {
+  it('id 唯一，龙虎队三人都在册', () => {
+    expect(ROSTER.length).toBeGreaterThanOrEqual(10);
+    expect(new Set(ROSTER.map((c) => c.id)).size).toBe(ROSTER.length);
     expect(ROSTER.map((c) => c.id)).toEqual(expect.arrayContaining(['ryo', 'robert', 'yuri']));
   });
 });
