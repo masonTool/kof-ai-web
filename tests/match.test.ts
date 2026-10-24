@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { Btn, makeInput } from '../src/core/input';
+import { IORI } from '../src/data/chars/iori';
 import { KYO } from '../src/data/chars/kyo';
-import { DEFAULT_MATCH, Match, type MatchConfig } from '../src/game/match';
+import { DEFAULT_MATCH, Match, SUPER_FLASH_FRAMES, type MatchConfig } from '../src/game/match';
 import { GROUND_Y } from '../src/sim/constants';
 import { FighterState } from '../src/sim/state';
 
@@ -236,5 +237,46 @@ describe('确定性', () => {
     };
 
     expect(run()).toBe(run());
+  });
+});
+
+describe('超必杀起手演出', () => {
+  it('起手超必杀会给双方定格并点亮闪光', () => {
+    const m = new Match(KYO, IORI, { introFrames: 1, roundEndFrames: 3 }, 11);
+    while (m.phase === 'intro') m.step([{ held: 0 }, { held: 0 }]);
+    m.p1.meter = 100;
+    m.p1.startMove(KYO.moves['236236AC']!);
+    m.step([{ held: 0 }, { held: 0 }]);
+    expect(m.superFlash).toBe(SUPER_FLASH_FRAMES);
+    expect(m.p1.hitstop).toBeGreaterThan(0);
+    expect(m.p2.hitstop).toBeGreaterThan(0); // 对手也被定住
+  });
+
+  it('普通技/必杀不触发（只有超必杀有演出）', () => {
+    const m = new Match(KYO, IORI, { introFrames: 1, roundEndFrames: 3 }, 11);
+    while (m.phase === 'intro') m.step([{ held: 0 }, { held: 0 }]);
+    m.p1.startMove(KYO.moves['236A']!);
+    m.step([{ held: 0 }, { held: 0 }]);
+    expect(m.superFlash).toBe(0);
+  });
+
+  it('闪光会逐帧衰减到 0', () => {
+    const m = new Match(KYO, IORI, { introFrames: 1, roundEndFrames: 3 }, 11);
+    while (m.phase === 'intro') m.step([{ held: 0 }, { held: 0 }]);
+    m.p1.meter = 100;
+    m.p1.startMove(KYO.moves['236236AC']!);
+    m.step([{ held: 0 }, { held: 0 }]);
+    const start = m.superFlash;
+    for (let i = 0; i < SUPER_FLASH_FRAMES + 2; i++) m.step([{ held: 0 }, { held: 0 }]);
+    expect(start).toBeGreaterThan(0);
+    expect(m.superFlash).toBe(0);
+  });
+
+  it('闪光状态进哈希（回放能对齐）', () => {
+    const a = new Match(KYO, IORI, { introFrames: 1, roundEndFrames: 3 }, 11);
+    a.superFlash = 0;
+    const b = new Match(KYO, IORI, { introFrames: 1, roundEndFrames: 3 }, 11);
+    b.superFlash = 5;
+    expect(a.hash()).not.toBe(b.hash());
   });
 });

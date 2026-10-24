@@ -13,8 +13,8 @@ import {
 const FIGHT = TRACKS['fight']!;
 
 describe('曲子数据', () => {
-  it('三条曲子都在，步数与音符数组长度一致', () => {
-    expect(Object.keys(TRACKS).sort()).toEqual(['fight', 'result', 'title']);
+  it('四条曲子都在（BOSS 战单独一首），步数与音符数组长度一致', () => {
+    expect(Object.keys(TRACKS).sort()).toEqual(['fight', 'fightBoss', 'result', 'title']);
     for (const [id, track] of Object.entries(TRACKS)) {
       expect(track.lead.length, id).toBe(track.steps);
       expect(track.bass.length, id).toBe(track.steps);
@@ -120,5 +120,17 @@ describe('播放端', () => {
     const track: TrackDef = { ...FIGHT, steps: 4, lead: [60, null, 62, null], bass: [null, null, null, null] };
     const player = new BgmPlayer(track);
     expect(player.advance(400).map((n) => n.note)).toEqual([60, 62]);
+  });
+});
+
+describe('BOSS 战曲子', () => {
+  it('比普通战斗曲更快、更低（压迫感）', () => {
+    const boss = TRACKS['fightBoss']!;
+    expect(boss.bpm).toBeGreaterThan(TRACKS['fight']!.bpm);
+    const avgBass = (t: typeof boss): number => {
+      const notes = t.bass.filter((n): n is number => typeof n === 'number');
+      return notes.reduce((s, n) => s + n, 0) / Math.max(1, notes.length);
+    };
+    expect(avgBass(boss)).toBeLessThan(avgBass(TRACKS['fight']!));
   });
 });

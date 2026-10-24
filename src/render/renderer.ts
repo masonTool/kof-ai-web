@@ -4,7 +4,8 @@
  * 只在 `applyTo` 的区间里用世界坐标画，HUD 必须在 restore 之后画——
  * 否则血条会跟着镜头变焦一起放大，那种问题在截图里很明显、在代码里很难看出来。
  */
-import type { Match } from '../game/match';
+import { SUPER_FLASH_FRAMES, type Match } from '../game/match';
+import { VIEW_HEIGHT, VIEW_WIDTH } from '../sim/constants';
 import type { Fighter } from '../sim/fighter';
 import { FighterState } from '../sim/state';
 import type { Ctx2D } from './ctx';
@@ -195,4 +196,11 @@ export function drawFrame(ctx: Ctx2D, match: Match, opts: RenderOptions = {}): v
   ctx.restore();
 
   drawHud(ctx, match.toHudModel());
+
+  // 超必杀起手闪白：盖在最上层（含 HUD），随剩余帧衰减
+  if (match.superFlash > 0) {
+    const alpha = (match.superFlash / SUPER_FLASH_FRAMES) * 0.45;
+    ctx.fillStyle = `rgba(255,255,255,${alpha.toFixed(3)})`;
+    ctx.fillRect(0, 0, VIEW_WIDTH, VIEW_HEIGHT);
+  }
 }

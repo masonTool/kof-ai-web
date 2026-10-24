@@ -14,7 +14,7 @@ import {
 import { drawFighter, drawPose, shade } from '../src/render/fighter-draw';
 import { currentAssetProvider, hasCustomArt, setAssetProvider, spriteFor } from '../src/render/assets';
 import { FxSystem } from '../src/render/fx';
-import { drawProjectile, introAnimFor } from '../src/render/renderer';
+import { drawFrame, drawProjectile, introAnimFor } from '../src/render/renderer';
 import { Match } from '../src/game/match';
 import { Projectile } from '../src/sim/projectile';
 import { KYO } from '../src/data/chars/kyo';
@@ -340,5 +340,36 @@ describe('飞行道具形状', () => {
       return `${ctx.arcs.length}/${ctx.ellipses.length}`;
     });
     expect(new Set(sigs).size).toBe(4);
+  });
+});
+
+describe('超必杀闪光', () => {
+  const makeMatch = (): Match => new Match(KYO, IORI, { introFrames: 1, roundEndFrames: 2 }, 9);
+
+  const whiteRects = (ctx: FakeCtx): number =>
+    ctx.rects.filter((r) => r.fill.startsWith('rgba(255,255,255')).length;
+
+  it('没有闪光时不画那一层', () => {
+    const m = makeMatch();
+    const ctx = new FakeCtx();
+    drawFrame(ctx, m);
+    expect(whiteRects(ctx)).toBe(0);
+  });
+
+  it('闪光期间盖一层白，且越接近结束越淡', () => {
+    const m = makeMatch();
+    const strong = new FakeCtx();
+    m.superFlash = 12;
+    drawFrame(strong, m);
+    expect(whiteRects(strong)).toBe(1);
+
+    const weak = new FakeCtx();
+    m.superFlash = 2;
+    drawFrame(weak, m);
+    const alpha = (ctx: FakeCtx): number => {
+      const fill = ctx.rects.find((r) => r.fill.startsWith('rgba(255,255,255'))!.fill;
+      return Number.parseFloat(/([\d.]+)\)$/.exec(fill)![1]!);
+    };
+    expect(alpha(strong)).toBeGreaterThan(alpha(weak));
   });
 });

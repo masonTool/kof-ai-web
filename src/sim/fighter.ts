@@ -90,6 +90,13 @@ export class Fighter implements Entity {
   /** 命中后开出的取消表：只有这里的招式能在出招中打断当前招 */
   cancelSet: ReadonlySet<string> | null = null;
 
+  /**
+   * 这一帧刚起手的招式（每帧由 Match 消费后清空）。
+   * 用"刚起手"而不是"moveFrame === 0"判断演出的原因：`startMove()` 也可能被外部
+   * 在 step 之前调用（训练/回放/测试），那时 step 一推进 moveFrame 就不是 0 了。
+   */
+  justStartedMove: MoveDef | null = null;
+
   /** 命中停顿/受击里按下的指令先存这儿，解冻那一帧再生效（否则取消窗口里的输入会丢） */
   private pendingMove: MoveDef | null = null;
   private pendingFrames = 0;
@@ -197,6 +204,7 @@ export class Fighter implements Entity {
     this.stateFrame = 0;
     this.usedHits.clear();
     this.cancelSet = null;
+    this.justStartedMove = move;
     if (!this.airborne) this.vx = 0;
     this.state = FighterState.Attack;
     return true;
@@ -274,6 +282,7 @@ export class Fighter implements Entity {
     this.stateFrame = 0;
     this.usedHits.clear();
     this.cancelSet = null;
+    this.justStartedMove = move;
     this.travelForward = move.travelFollowInput === true && this.holdsBack() ? -1 : 1;
     if (!this.airborne) this.vx = 0;
     this.state = FighterState.Attack;

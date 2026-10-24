@@ -118,6 +118,17 @@ export const TRACKS: Record<string, TrackDef> = {
     wave: 'square',
     gain: 0.07,
   },
+  fightBoss: {
+    id: 'fightBoss',
+    bpm: 168,
+    stepsPerBeat: 4,
+    steps: 32,
+    // BOSS 战：更密的低音 + 半音上行，压迫感更强
+    lead: [69, 70, 69, 67, 69, 72, 74, 76, 79, 76, 74, 72, 70, 69, 67, 64, 69, 70, 69, 67, 69, 72, 74, 76, 81, 79, 76, 74, 72, 70, 69, 68],
+    bass: [38, 38, null, 38, 38, null, 36, null, 34, 34, null, 34, 36, null, 38, null, 38, 38, null, 38, 38, null, 36, null, 34, null, 33, null, 36, null, 38, null],
+    wave: 'sawtooth',
+    gain: 0.06,
+  },
   result: {
     id: 'result',
     bpm: 132,

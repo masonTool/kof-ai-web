@@ -164,9 +164,14 @@ function startMatch(): void {
   audio.setVolume(cfg.volume);
 }
 
+/** 这一场是不是 BOSS 战（任一方带 boss 属性） */
+function isBossFight(): boolean {
+  return match !== null && (match.p1.char.boss !== undefined || match.p2.char.boss !== undefined);
+}
+
 /** 每个屏配哪首曲子（同屏不重复设置，setTrack 内部会去重） */
 function trackFor(screen: string): string | null {
-  if (screen === 'fight' || screen === 'continue') return 'fight';
+  if (screen === 'fight' || screen === 'continue') return isBossFight() ? 'fightBoss' : 'fight';
   if (screen === 'result') return 'result';
   return 'title';
 }

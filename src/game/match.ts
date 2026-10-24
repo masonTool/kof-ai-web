@@ -40,6 +40,10 @@ export interface MatchConfig {
   swapIntroFrames: number;
 }
 
+/** 超必杀起手：闪几帧、双方定格几帧 */
+export const SUPER_FLASH_FRAMES = 12;
+export const SUPER_FREEZE_FRAMES = 10;
+
 export const DEFAULT_MATCH: MatchConfig = {
   roundsToWin: 2,
   roundSeconds: 99,
@@ -75,6 +79,13 @@ export class Match {
 
   private introLeft: number;
   private endLeft = 0;
+
+  /**
+   * 超必杀起手闪光剩余帧（渲染层读它画白闪）。
+   * 放在 Match 上而不是渲染层自己算：它和"双方定格"是同一件事的两面，
+   * 分开算迟早对不上（闪完了人还在定，或人动了闪光还在）。
+   */
+  superFlash = 0;
 
   constructor(
     c1: CharDef | readonly CharDef[],
@@ -124,6 +135,8 @@ export class Match {
 
   /** 推进一帧。`inputs` 分别是 P1/P2 的原始输入。 */
   step(inputs: readonly [InputSample, InputSample] = [NO_INPUT, NO_INPUT]): void {
+    // 闪光逐帧衰减：放在最前面，保证"起手那一帧设成满值、下一帧开始掉"
+    if (this.superFlash > 0) this.superFlash--;
     switch (this.phase) {
       case 'intro':
         this.introLeft--;
@@ -152,6 +165,7 @@ export class Match {
   private stepFight(inputs: readonly [InputSample, InputSample]): void {
     this.faceOff();
     this.world.step([inputs[0], inputs[1]]);
+    this.checkSuperFlash();
     this.lastHits = [...resolveCombat(this.world, this.fighters), ...resolveProjectiles(this.world, this.fighters)];
     this.world.sweep();
     this.applyHitEffects(this.lastHits);
@@ -165,6 +179,22 @@ export class Match {
     }
     this.timerFrames--;
     if (this.timerFrames <= 0) this.finishRound('timeover');
+  }
+
+  /**
+   * 超必杀起手演出：给双方一段定格 + 屏幕上闪一层光。
+   *
+   * 判据是"这一帧刚刚起手超必杀"（moveFrame === 0），所以只触发一次；
+   * 定格直接复用命中停顿（`addHitstop`），不需要新的冻结机制。
+   */
+  private checkSuperFlash(): void {
+    const started = this.fighters.filter((f) => f.justStartedMove !== null);
+    // 不管触没触发演出，标记都要清掉：它只表示"这一帧刚起手"
+    for (const f of this.fighters) f.justStartedMove = null;
+    if (this.superFlash > 0) return;
+    if (!started.some((f) => f.move?.kind === 'super')) return;
+    this.superFlash = SUPER_FLASH_FRAMES;
+    for (const f of this.fighters) f.addHitstop(SUPER_FREEZE_FRAMES);
   }
 
   /** 镜头与特效：（回合结束/结算里也要走，画面才不僵） */
@@ -280,6 +310,7 @@ export class Match {
 
   /** 回合开始：位置/血量/状态复位，镜头立即对齐，进入 ROUND 演出 */
   private startRound(): void {
+    this.superFlash = 0;
     const center = (STAGE_LEFT + STAGE_RIGHT) / 2;
     const half = this.config.spawnGap / 2;
     this.p1.reset({ x: center - half, facing: 1 });
@@ -369,6 +400,6 @@ export class Match {
   /** 状态指纹（确定性断言用） */
   hash(): string {
     // indexes（组队战换到第几个人）必须进哈希：否则"人换了但状态一样"会被判成同一场
-    return `${this.world.hash()}|${this.phase}|${this.round}|${this.wins.join(',')}|${this.indexes.join(',')}|${this.timerFrames}`;
+    return `${this.world.hash()}|${this.phase}|${this.round}|${this.wins.join(',')}|${this.indexes.join(',')}|${this.timerFrames}|${this.superFlash}`;
   }
 }
