@@ -2,3 +2,7 @@
 node_modules/
 dist/
 *.log
+
+# 浏览器自测产物
+.playwright-cli/
+*.png

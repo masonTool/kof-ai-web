@@ -114,6 +114,9 @@ export function resolveCombat(world: World, fighters: readonly Fighter[]): HitRe
     const comboBefore = defender.combo.hits;
 
     if (c.blocked) {
+      // 被防也能接取消（KOF 的"防御取消"），表里没写就不开
+      const onBlock = attacker.move?.cancel?.onBlock;
+      if (onBlock && onBlock.length > 0) attacker.allowCancel(onBlock);
       defender.enterBlockstun(hit.blockStun);
       defender.push(attacker.facing * hit.blockPushback);
       attacker.push(-attacker.facing * hit.blockPushback * 0.5);
@@ -136,6 +139,10 @@ export function resolveCombat(world: World, fighters: readonly Fighter[]): HitRe
 
     const raw = c.counter ? Math.round(hit.damage * COUNTER_DAMAGE_MULT) : hit.damage;
     const damage = scaledDamage(raw, comboBefore);
+
+    // 命中了才开取消窗口（没打中不能取消，这是连段成立的前提）
+    const onHit = attacker.move?.cancel?.onHit;
+    if (onHit && onHit.length > 0) attacker.allowCancel(onHit);
 
     defender.takeDamage(damage);
     addComboHit(defender.combo, damage);

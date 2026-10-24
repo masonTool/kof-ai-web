@@ -12,6 +12,8 @@
         background: #000;
         overflow: hidden;
         touch-action: none;
+        -webkit-user-select: none;
+        user-select: none;
       }
       #screen {
         display: block;
@@ -19,6 +21,100 @@
         left: 0;
         top: 0;
         image-rendering: pixelated;
+      }
+
+      /* ---------------- 屏上按键（触屏 / 鼠标） ---------------- */
+      #controls {
+        position: fixed;
+        inset: 0;
+        z-index: 10;
+        pointer-events: none;
+        font-family: system-ui, -apple-system, 'PingFang SC', sans-serif;
+      }
+      #controls .pad,
+      #controls .atk,
+      #controls .bar {
+        position: absolute;
+        pointer-events: auto;
+      }
+      #controls .btn {
+        -webkit-user-select: none;
+        user-select: none;
+        -webkit-touch-callout: none;
+        -webkit-tap-highlight-color: transparent;
+        touch-action: none;
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        border: 1px solid rgba(255, 255, 255, 0.32);
+        border-radius: 10px;
+        background: rgba(18, 22, 30, 0.42);
+        color: #e8f0ff;
+        font-size: 14px;
+        line-height: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      #controls .btn.pressed {
+        background: rgba(120, 180, 255, 0.6);
+        border-color: rgba(190, 225, 255, 0.9);
+      }
+      #controls .pad {
+        left: 12px;
+        bottom: 12px;
+        width: 126px;
+        height: 126px;
+        display: grid;
+        grid-template: repeat(3, 1fr) / repeat(3, 1fr);
+        gap: 4px;
+      }
+      #controls .pad .up {
+        grid-area: 1 / 2;
+      }
+      #controls .pad .left {
+        grid-area: 2 / 1;
+      }
+      #controls .pad .right {
+        grid-area: 2 / 3;
+      }
+      #controls .pad .dir-down {
+        grid-area: 3 / 2;
+      }
+      #controls .atk {
+        right: 12px;
+        bottom: 12px;
+        display: grid;
+        grid-template: repeat(2, 52px) / repeat(2, 52px);
+        gap: 6px;
+      }
+      #controls .atk .kA,
+      #controls .atk .kC {
+        background: rgba(70, 40, 40, 0.5);
+      }
+      #controls .bar {
+        left: 50%;
+        bottom: 10px;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 6px;
+      }
+      #controls .bar .btn {
+        border-radius: 8px;
+        padding: 0 8px;
+        height: 26px;
+        font-size: 11px;
+        background: rgba(18, 22, 30, 0.55);
+        white-space: nowrap;
+      }
+      @media (max-height: 420px) {
+        #controls .pad {
+          width: 108px;
+          height: 108px;
+        }
+        #controls .atk {
+          grid-template: repeat(2, 44px) / repeat(2, 44px);
+        }
       }
     </style>
   </head>

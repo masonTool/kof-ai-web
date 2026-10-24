@@ -9,6 +9,12 @@ function makeMatch(config: Partial<MatchConfig> = {}): Match {
   return new Match(KYO, KYO, { introFrames: 2, roundEndFrames: 3, ...config });
 }
 
+/** 把两人拉近到能打到的距离（开局间距是 96，轻拳够不着） */
+function closeIn(m: Match): void {
+  m.p1.x = 220;
+  m.p2.x = 260;
+}
+
 /** 走完开局演出，进入 fight */
 function toFight(m: Match): Match {
   let guard = 0;
@@ -19,6 +25,7 @@ function toFight(m: Match): Match {
 /** 让 P1 用轻拳打赢一回合（对手只剩 5 血）；停在回合结束那一刻，不推进到下一回合 */
 function winRoundByKo(m: Match): void {
   toFight(m);
+  closeIn(m);
   m.p2.hp = 5;
   m.p1.startMove(KYO.moves['5A']!);
   for (let i = 0; i < 20 && m.phase === 'fight'; i++) m.step();
@@ -80,6 +87,7 @@ describe('KO 判定', () => {
   it('双 KO 算平局，双方都不加胜场', () => {
     const m = makeMatch();
     toFight(m);
+    closeIn(m);
     m.p1.hp = 5;
     m.p2.hp = 5;
     m.p1.startMove(KYO.moves['5A']!);
@@ -166,6 +174,7 @@ describe('回合推进', () => {
   it('P2 也能赢：朝左的判定照常生效', () => {
     const m = makeMatch();
     toFight(m);
+    closeIn(m);
     m.p1.hp = 5;
     m.p2.startMove(KYO.moves['5A']!);
     for (let i = 0; i < 20 && m.phase === 'fight'; i++) m.step();

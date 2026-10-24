@@ -12,11 +12,11 @@ export const GROUND_SCREEN_Y = GROUND_Y;
 /** 视野最宽时的缩放（1 = 角色按原始大小画） */
 export const ZOOM_MIN = 1;
 /** 贴脸时的放大上限 */
-export const ZOOM_MAX = 1.6;
+export const ZOOM_MAX = 1.2;
 /** 距离 ≤ 这个值就是最近（拉满） */
-export const ZOOM_NEAR_DIST = 40;
+export const ZOOM_NEAR_DIST = 56;
 /** 距离 ≥ 这个值就是最远（放开） */
-export const ZOOM_FAR_DIST = 240;
+export const ZOOM_FAR_DIST = 220;
 
 /** 镜头每帧最多移动多少像素（避免瞬移感） */
 export const CAMERA_MAX_STEP = 6;

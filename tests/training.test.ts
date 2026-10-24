@@ -22,11 +22,12 @@ function makeTraining(settings = {}): { match: Match; training: TrainingSession 
 }
 
 describe('训练模式的开关', () => {
-  it('默认配置是"练基本功"的那一套', () => {
-    expect(DEFAULT_TRAINING.infiniteHp).toBe(true);
-    expect(DEFAULT_TRAINING.infiniteMeter).toBe(true);
-    expect(DEFAULT_TRAINING.autoReset).toBe(true);
-    expect(DEFAULT_TRAINING.dummy).toBe('stand');
+  it('默认配置是"能正常打完一场"', () => {
+    // 默认是"能正常打完一场"，不是"永远打不死"
+    expect(DEFAULT_TRAINING.infiniteHp).toBe(false);
+    expect(DEFAULT_TRAINING.infiniteMeter).toBe(false);
+    expect(DEFAULT_TRAINING.autoReset).toBe(false);
+    expect(DEFAULT_TRAINING.dummy).toBe('cpu'); // 单人也要有对手，不然"打完一场"没意义
     expect(DEFAULT_TRAINING.showBoxes).toBe(false);
   });
 
@@ -39,7 +40,7 @@ describe('训练模式的开关', () => {
 
   it('假人行为按固定顺序循环', () => {
     const { training } = makeTraining();
-    expect(training.settings.dummy).toBe('stand');
+    expect(training.settings.dummy).toBe('cpu');
     const seen = [training.cycleDummy()];
     for (let i = 1; i < DUMMY_ORDER.length - 1; i++) seen.push(training.cycleDummy());
     expect(seen).toEqual(DUMMY_ORDER.slice(1));
@@ -79,6 +80,8 @@ describe('训练模式的作弊项', () => {
 
   it('KO 后自动重开（训练不该结束回合）', () => {
     const { match, training } = makeTraining({ infiniteHp: false, autoReset: true });
+    match.p1.x = 220;
+    match.p2.x = 260;
     match.p2.hp = 5;
     match.p1.startMove(KYO.moves['5A']!);
     for (let i = 0; i < 20 && match.p2.hp > 0; i++) training.step([NO_INPUT, NO_INPUT]);
@@ -108,6 +111,8 @@ describe('假人行为', () => {
 
   it('假人设成防御时，真的能防住攻击', () => {
     const { match, training } = makeTraining({ dummy: 'guard', infiniteHp: false });
+    match.p1.x = 220;
+    match.p2.x = 260;
     match.p1.startMove(KYO.moves['5A']!);
     for (let i = 0; i < 8 && match.p2.state !== FighterState.Block; i++) training.step([NO_INPUT, NO_INPUT]);
 
@@ -117,6 +122,8 @@ describe('假人行为', () => {
 
   it('假人站着不动就会挨打', () => {
     const { match, training } = makeTraining({ dummy: 'stand', infiniteHp: false });
+    match.p1.x = 220;
+    match.p2.x = 260;
     match.p1.startMove(KYO.moves['5A']!);
     for (let i = 0; i < 8 && match.p2.hp === match.p2.maxHp; i++) training.step([NO_INPUT, NO_INPUT]);
     expect(match.p2.hp).toBeLessThan(match.p2.maxHp);
@@ -182,5 +189,44 @@ describe('整帧渲染（无 DOM）', () => {
     const strokeColors = boxed.lines.map((l) => l.stroke);
     expect(strokeColors).toContain('#ff4d6d');
     expect(strokeColors).toContain('#4d9dff');
+  });
+});
+
+describe('简易 CPU（单人也能打一局）', () => {
+  it('离得远会朝对手走', () => {
+    const { match, training } = makeTraining({ dummy: 'cpu', infiniteHp: false });
+    const before = match.p2.x;
+    for (let i = 0; i < 40; i++) training.step([NO_INPUT, NO_INPUT]);
+    expect(Math.abs(match.p2.x - before)).toBeGreaterThan(5);
+    expect(Math.abs(match.p2.x - match.p1.x)).toBeLessThan(Math.abs(before - match.p1.x));
+  });
+
+  it('走到近身会出招（对手会被打到）', () => {
+    const { match, training } = makeTraining({ dummy: 'cpu', infiniteHp: false });
+    let sawAttack = false;
+    for (let i = 0; i < 240 && match.p1.hp === match.p1.maxHp && match.phase === 'fight'; i++) {
+      training.step([NO_INPUT, NO_INPUT]);
+      if (match.p2.isAttacking) sawAttack = true;
+    }
+    expect(sawAttack).toBe(true);
+    expect(match.p1.hp).toBeLessThan(match.p1.maxHp);
+  });
+
+  it('回合演出期间 CPU 不动', () => {
+    const match = new Match(KYO, KYO, { introFrames: 30, roundEndFrames: 3 });
+    const training = new TrainingSession(match, { dummy: 'cpu' });
+    const before = match.p2.x;
+    for (let i = 0; i < 10; i++) training.step([NO_INPUT, NO_INPUT]);
+    expect(match.phase).toBe('intro');
+    expect(match.p2.x).toBe(before);
+  });
+
+  it('同一段流程两次跑结果一致（CPU 用固定种子）', () => {
+    const run = (): string => {
+      const { match, training } = makeTraining({ dummy: 'cpu' });
+      for (let i = 0; i < 300; i++) training.step([NO_INPUT, NO_INPUT]);
+      return match.hash();
+    };
+    expect(run()).toBe(run());
   });
 });

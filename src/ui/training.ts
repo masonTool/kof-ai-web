@@ -5,13 +5,14 @@
  * 都能在 node 里断言，而不是靠肉眼盯着画面猜。
  */
 import { Btn, NO_INPUT, type InputSample } from '../core/input';
+import { FighterState } from '../sim/state';
 import type { Match } from '../game/match';
 import { METER_MAX } from '../sim/constants';
 import type { Ctx2D } from '../render/ctx';
 
-export type DummyAction = 'stand' | 'crouch' | 'jump' | 'guard' | 'guardLow' | 'human';
+export type DummyAction = 'cpu' | 'stand' | 'crouch' | 'jump' | 'guard' | 'guardLow' | 'human';
 
-export const DUMMY_ORDER: readonly DummyAction[] = ['stand', 'guard', 'guardLow', 'crouch', 'jump', 'human'];
+export const DUMMY_ORDER: readonly DummyAction[] = ['cpu', 'stand', 'guard', 'guardLow', 'crouch', 'jump', 'human'];
 
 export interface TrainingSettings {
   /** 画判定框（红=受击、黄=判定、蓝=推挤） */
@@ -26,13 +27,17 @@ export interface TrainingSettings {
   dummy: DummyAction;
 }
 
+/**
+ * 默认是"能正常打完一场"：无限血/无限气/自动重开全关。
+ * 想练连段再按 F3/F4 打开——默认开无限血的话，人是永远打不死的，看着就像"没在打"。
+ */
 export const DEFAULT_TRAINING: TrainingSettings = {
   showBoxes: false,
-  showFrameData: true,
-  infiniteHp: true,
-  infiniteMeter: true,
-  autoReset: true,
-  dummy: 'stand',
+  showFrameData: false,
+  infiniteHp: false,
+  infiniteMeter: false,
+  autoReset: false,
+  dummy: 'cpu',
 };
 
 /** 把按住的键翻译成给人看的符号（调试面板用） */
@@ -75,6 +80,8 @@ export class TrainingSession {
   /** 假人这一帧该按什么（'human' 时用玩家 2 的输入） */
   dummyInput(p2Input: InputSample = NO_INPUT): InputSample {
     switch (this.settings.dummy) {
+      case 'cpu':
+        return this.cpuInput();
       case 'crouch':
         return { held: Btn.Down };
       case 'jump':
@@ -89,6 +96,55 @@ export class TrainingSession {
       default:
         return NO_INPUT;
     }
+  }
+
+  /** 简易 CPU 用的状态（确定性伪随机，不碰世界 rng） */
+  private cpuPlan: { held: number; frames: number } = { held: 0, frames: 0 };
+  private cpuSeed = 0x2f6e;
+
+  private rand(): number {
+    this.cpuSeed = (this.cpuSeed * 1103515245 + 12345) & 0x7fffffff;
+    return this.cpuSeed / 0x7fffffff;
+  }
+
+  /**
+   * 简易 CPU：走近 → 近身出招 → 看到对手出招就防。
+   * 这不是正式 AI（T12 会做成难度档位），只为了"单人也能打一局"。
+   */
+  private cpuInput(): InputSample {
+    const m = this.match;
+    const me = m.p2;
+    const foe = m.p1;
+    if (m.phase !== 'fight' || me.state === FighterState.Dead) return NO_INPUT;
+
+    if (this.cpuPlan.frames > 0) {
+      this.cpuPlan.frames--;
+      return { held: this.cpuPlan.held };
+    }
+
+    const dist = Math.abs(foe.x - me.x);
+    const toward = foe.x >= me.x ? Btn.Right : Btn.Left;
+    const back = me.facing === 1 ? Btn.Left : Btn.Right;
+
+    // 对手在出招且够得着 → 有一半机会防（蹲防/站防都试试）
+    if (foe.isAttacking && dist < 84 && this.rand() < 0.55) {
+      const held = back | (this.rand() < 0.35 ? Btn.Down : 0);
+      this.cpuPlan = { held, frames: 10 };
+      return { held };
+    }
+
+    // 通常技最远够到约 46px，再远打就是挥空
+    if (dist > 44) {
+      this.cpuPlan = { held: toward, frames: 8 + Math.floor(this.rand() * 8) };
+      return { held: this.cpuPlan.held };
+    }
+
+    // 近身出招：一帧按下算一次攻击，然后留出收招间隔
+    const roll = this.rand();
+    const button = roll < 0.45 ? Btn.B : roll < 0.8 ? Btn.C : Btn.A;
+    const held = button | (this.rand() < 0.25 ? Btn.Down : 0);
+    this.cpuPlan = { held: 0, frames: 10 + Math.floor(this.rand() * 12) };
+    return { held };
   }
 
   /** 推进一帧（训练模式的所有"作弊"都在这层做，模拟层保持干净） */

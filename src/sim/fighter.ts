@@ -15,12 +15,16 @@ import { DEFAULT_PUSH_WIDTH, clampStageX, integrateAir } from './physics';
 import { FighterState, canAct, type FighterState as StateName } from './state';
 import type { Entity, World } from './world';
 import type { Hasher } from '../core/hash';
+import { FighterControls, acceptsMoveInput } from './controls';
 
 export interface FighterInit {
   x?: number;
   facing?: 1 | -1;
   hp?: number;
 }
+
+/** 冻结期间缓存的指令能保留几帧（KOF 的输入缓冲约 4~8 帧） */
+const INPUT_BUFFER_FRAMES = 8;
 
 export class Fighter implements Entity {
   id = -1;
@@ -62,12 +66,26 @@ export class Fighter implements Entity {
   /** 本帧输入（给输入解析/渲染按键提示用） */
   input: InputState = { held: 0, pressed: 0, released: 0 };
 
+  /** 指令解析 + 招式选择（每帧都要喂输入，指令历史不能断） */
+  readonly controls: FighterControls;
+
+  /** 对手（投技距离判定要用；由 Match 设置，单测里可以为 null） */
+  opponent: Fighter | null = null;
+
+  /** 命中后开出的取消表：只有这里的招式能在出招中打断当前招 */
+  cancelSet: ReadonlySet<string> | null = null;
+
+  /** 命中停顿/受击里按下的指令先存这儿，解冻那一帧再生效（否则取消窗口里的输入会丢） */
+  private pendingMove: MoveDef | null = null;
+  private pendingFrames = 0;
+
   constructor(char: CharDef, init: FighterInit = {}) {
     this.char = char;
     this.x = init.x ?? 0;
     this.facing = init.facing ?? 1;
     this.maxHp = char.hp;
     this.hp = init.hp ?? char.hp;
+    this.controls = new FighterControls(this);
   }
 
   // ---------------------------------------------------------------- 查询
@@ -128,9 +146,38 @@ export class Fighter implements Entity {
     this.move = null;
     this.moveFrame = 0;
     this.usedHits.clear();
+    this.cancelSet = null;
+    this.pendingMove = null;
+    this.pendingFrames = 0;
     this.vx = 0;
     this.combo = newCombo();
     this.setState(this.airborne ? FighterState.Jump : FighterState.Idle);
+  }
+
+  /** 招式命中/被防后由 hit.ts 打开取消窗口 */
+  allowCancel(ids: readonly string[]): void {
+    this.cancelSet = ids.length > 0 ? new Set(ids) : null;
+  }
+
+  canCancelInto(id: string): boolean {
+    return this.cancelSet !== null && this.cancelSet.has(id);
+  }
+
+  /** 取消：出招中直接切到下一招（状态不变，但帧号必须归零） */
+  cancelInto(move: MoveDef): boolean {
+    if (this.hitstop > 0) return false;
+    if (!this.canCancelInto(move.id)) return false;
+    if (move.meterCost !== undefined && this.meter < move.meterCost) return false;
+    if (move.airborne === true && !this.airborne) return false;
+    if (move.meterCost !== undefined) this.meter -= move.meterCost;
+    this.move = move;
+    this.moveFrame = 0;
+    this.stateFrame = 0;
+    this.usedHits.clear();
+    this.cancelSet = null;
+    if (!this.airborne) this.vx = 0;
+    this.state = FighterState.Attack;
+    return true;
   }
 
   /** 被击退/被推开：直接改位置并夹在舞台内（推挤细化在物理条目） */
@@ -153,6 +200,9 @@ export class Fighter implements Entity {
     this.move = null;
     this.moveFrame = 0;
     this.usedHits.clear();
+    this.cancelSet = null;
+    this.pendingMove = null;
+    this.pendingFrames = 0;
     this.hitstop = 0;
     this.stunTimer = 0;
     this.landLag = 0;
@@ -171,18 +221,51 @@ export class Fighter implements Entity {
    */
   startMove(move: MoveDef): boolean {
     if (this.hitstop > 0) return false;
+    if (move.meterCost !== undefined && this.meter < move.meterCost) return false;
     if (move.airborne === true) {
       // 空中招式：只能在跳跃中出（受击/倒地/已出招都不行）
       if (!this.airborne || this.state !== FighterState.Jump) return false;
     } else {
       if (this.airborne || !canAct(this.state)) return false;
     }
+    return this.forceStart(move);
+  }
+
+  /** 不看当前状态，强行起手（取消通道与测试用；仍然检查空中/气槽） */
+  forceStart(move: MoveDef): boolean {
+    if (this.hitstop > 0) return false;
+    if (move.meterCost !== undefined && this.meter < move.meterCost) return false;
+    if (move.meterCost !== undefined) this.meter -= move.meterCost;
     this.move = move;
     this.moveFrame = 0;
+    this.stateFrame = 0;
     this.usedHits.clear();
+    this.cancelSet = null;
     if (!this.airborne) this.vx = 0;
-    this.setState(FighterState.Attack);
+    this.state = FighterState.Attack;
     return true;
+  }
+
+  /** 本帧按了键 → 挑一招出来（出招中则只认取消表里的招） */
+  private tryInputMove(): boolean {
+    if (!acceptsMoveInput(this)) return false;
+    const cancelling = this.state === FighterState.Attack;
+    const move = this.controls.pick(this.opponent, cancelling ? (m) => this.canCancelInto(m.id) : undefined);
+    if (!move) return false;
+    return cancelling ? this.cancelInto(move) : this.startMove(move);
+  }
+
+  /** 执行冻结期间缓存的指令 */
+  private tryStartPending(): boolean {
+    const move = this.pendingMove;
+    if (!move) return false;
+    const cancelling = this.state === FighterState.Attack;
+    const ok = cancelling ? this.cancelInto(move) : this.startMove(move);
+    if (ok) {
+      this.pendingMove = null;
+      this.pendingFrames = 0;
+    }
+    return ok;
   }
 
   startJump(dx: number): void {
@@ -257,14 +340,33 @@ export class Fighter implements Entity {
 
   step(_world: World, input: InputState): void {
     this.input = input;
+    // 指令历史每帧都要攒（冻结期间也不例外），否则连段里的摇杆会断
+    this.controls.feed(input);
 
-    // 命中停顿：整帧冻结（状态帧号也不动），这是格斗手感的关键
+    // 命中停顿：整帧冻结（状态帧号也不动），这是格斗手感的关键。
+    // 但按键仍然解析并存下来——命中停顿里摇出来的取消，解冻后要能生效。
     if (this.hitstop > 0) {
+      const queued = this.controls.pick(
+        this.opponent,
+        this.state === FighterState.Attack ? (m) => this.canCancelInto(m.id) : undefined,
+      );
+      if (queued) {
+        this.pendingMove = queued;
+        this.pendingFrames = INPUT_BUFFER_FRAMES;
+      }
       this.hitstop--;
       return;
     }
 
     this.stateFrame++;
+
+    if (this.pendingFrames > 0) {
+      this.pendingFrames--;
+      if (this.tryStartPending()) return;
+    }
+
+    // 按键 → 出招（出招中的取消也走这里）
+    if (this.tryInputMove()) return;
 
     switch (this.state) {
       case FighterState.Attack:

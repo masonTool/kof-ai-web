@@ -28,12 +28,12 @@
 ```
 src/
   core/      loop.ts(固定步长) rng.ts math.ts events.ts
-  sim/       world.ts fighter.ts state.ts physics.ts collision.ts hit.ts camera.ts combo.ts
+  sim/       world.ts fighter.ts controls.ts(按键→招式) state.ts physics.ts collision.ts hit.ts camera.ts combo.ts
   data/      schema.ts chars/*.ts stages/*.ts moves/(帧数据表)
   input/     keyboard.ts gamepad.ts parser.ts(指令识别) buffer.ts
   render/    renderer.ts fighter-draw.ts poses.ts stage-draw.ts hud.ts fx.ts assets.ts
   game/      match.ts(回合/胜负) select.ts(选人) flow.ts(流程)
-  ui/        screens/ training.ts
+  ui/        screens/ training.ts virtual-pad.ts touch-controls.ts
   ai/        cpu.ts
   audio/     synth.ts
 tests/       与 src 同构，*.test.ts
@@ -41,6 +41,11 @@ docs/        ARCHITECTURE.md
 ```
 
 **硬规则**：`sim/` 与 `data/` **不许 import DOM/Canvas**（否则无法 headless 测试、无法回放）。
+
+输入到招式的一条线：`input/`（键位/指令识别）→ `sim/controls.ts`（按姿态与优先级挑招式、
+贴身才成立的投技、命中才开的取消表）→ `Fighter.startMove/cancelInto`（帧数据驱动）。
+按钮只负责产出 `InputSample`：键盘、`ui/virtual-pad.ts`（触屏/鼠标）两边 OR 起来喂进去，
+模拟层不知道输入来自哪一种设备。
 
 ## 4. 模拟内核
 

@@ -12,7 +12,7 @@ import { METER_MAX, STAGE_LEFT, STAGE_RIGHT } from '../sim/constants';
 import { Fighter } from '../sim/fighter';
 import { resolveCombat, type HitResolution } from '../sim/hit';
 import { resolvePushAll } from '../sim/physics';
-import { FighterState } from '../sim/state';
+import { FighterState, canAct } from '../sim/state';
 import { TICK_RATE, World } from '../sim/world';
 import { FxSystem } from '../render/fx';
 import type { HudModel, PlayerHud } from '../render/hud';
@@ -43,7 +43,7 @@ export const DEFAULT_MATCH: MatchConfig = {
   roundSeconds: 99,
   introFrames: 48,
   roundEndFrames: 90,
-  spawnGap: 40,
+  spawnGap: 96,
 };
 
 export class Match {
@@ -77,6 +77,9 @@ export class Match {
     const half = this.config.spawnGap / 2;
     this.p1 = this.world.add(new Fighter(c1, { x: center - half, facing: 1 }));
     this.p2 = this.world.add(new Fighter(c2, { x: center + half, facing: -1 }));
+    // 互相知道对方：投技要判距离、镜头要判朝向
+    this.p1.opponent = this.p2;
+    this.p2.opponent = this.p1;
     this.fx = new FxSystem(this.world.rng);
 
     this.timerFrames = this.config.roundSeconds * TICK_RATE;
@@ -134,6 +137,7 @@ export class Match {
   }
 
   private stepFight(inputs: readonly [InputSample, InputSample]): void {
+    this.faceOff();
     this.world.step([inputs[0], inputs[1]]);
     this.lastHits = resolveCombat(this.world, this.fighters);
     this.applyHitEffects(this.lastHits);
@@ -204,6 +208,33 @@ export class Match {
     this.introLeft = this.config.introFrames;
     this.phase = 'intro';
     this.lastHits = [];
+  }
+
+  /**
+   * 两人面对面：只在中立且站在地上时自动转身。
+   * 跳过对方头顶落地后如果还背对着打，手感会很怪，KOF 是自动转的。
+   */
+  private faceOff(): void {
+    const a = this.p1;
+    const b = this.p2;
+    const canTurn = (f: Fighter): boolean => !f.airborne && !f.isAttacking && canAct(f.state);
+    if (!canTurn(a) || !canTurn(b)) return;
+    if (a.x < b.x) {
+      a.facing = 1;
+      b.facing = -1;
+    } else if (a.x > b.x) {
+      a.facing = -1;
+      b.facing = 1;
+    }
+  }
+
+  /** 整场重来（打完一场之后按 R / 点"重开"） */
+  restart(): void {
+    this.wins = [0, 0];
+    this.round = 1;
+    this.matchWinner = 0;
+    this.lastRound = null;
+    this.startRound();
   }
 
   /**
