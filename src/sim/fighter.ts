@@ -10,14 +10,8 @@ import type { InputState } from '../core/input';
 import { axisX, axisY } from '../core/input';
 import type { Box, CharDef, HitDef, MoveDef } from '../data/schema';
 import { newCombo, type ComboState } from './combo';
-import {
-  GRAVITY,
-  GROUND_Y,
-  KNOCKDOWN_FRAMES,
-  STAGE_LEFT,
-  STAGE_RIGHT,
-  WAKEUP_FRAMES,
-} from './constants';
+import { GROUND_Y, KNOCKDOWN_FRAMES, WAKEUP_FRAMES } from './constants';
+import { DEFAULT_PUSH_WIDTH, clampStageX, integrateAir } from './physics';
 import { FighterState, canAct, type FighterState as StateName } from './state';
 import type { Entity, World } from './world';
 import type { Hasher } from '../core/hash';
@@ -89,6 +83,11 @@ export class Fighter implements Entity {
 
   get isDead(): boolean {
     return this.state === FighterState.Dead;
+  }
+
+  /** 推挤盒宽度（人不能穿过人） */
+  get pushWidth(): number {
+    return this.char.push?.w ?? DEFAULT_PUSH_WIDTH;
   }
 
   /** 受击盒（相对脚底原点；蹲/站/空三套） */
@@ -311,44 +310,32 @@ export class Fighter implements Entity {
     this.moveFrame = this.stateFrame;
 
     if (this.airborne) {
-      this.x += this.vx;
-      this.y += this.vy;
-      this.vy += GRAVITY;
-      if (this.y >= GROUND_Y) {
-        this.y = GROUND_Y;
-        this.vy = 0;
+      if (integrateAir(this)) {
         this.airborne = false;
         this.beginLanding(move.landingLag ?? 4);
         return;
       }
+      this.clampX();
     }
 
     if (this.moveFrame >= move.total) this.toNeutral();
   }
 
   private stepAir(): void {
-    this.x += this.vx;
-    this.y += this.vy;
-    this.vy += GRAVITY;
+    const landed = integrateAir(this);
     this.clampX();
-    if (this.y >= GROUND_Y) {
-      this.y = GROUND_Y;
-      this.vy = 0;
-      this.vx = 0;
+    if (landed) {
       this.airborne = false;
+      this.vx = 0;
       this.setState(FighterState.Idle);
     }
   }
 
   private stepStun(): void {
     if (this.airborne) {
-      this.x += this.vx;
-      this.y += this.vy;
-      this.vy += GRAVITY;
+      const landed = integrateAir(this);
       this.clampX();
-      if (this.y >= GROUND_Y) {
-        this.y = GROUND_Y;
-        this.vy = 0;
+      if (landed) {
         this.airborne = false;
         this.enterKnockdown();
         return;
@@ -371,13 +358,7 @@ export class Fighter implements Entity {
   }
 
   private clampX(): void {
-    if (this.x < STAGE_LEFT) {
-      this.x = STAGE_LEFT;
-      this.vx = 0;
-    } else if (this.x > STAGE_RIGHT) {
-      this.x = STAGE_RIGHT;
-      this.vx = 0;
-    }
+    if (clampStageX(this)) this.vx = 0;
   }
 
   // ---------------------------------------------------------------- 哈希/调试

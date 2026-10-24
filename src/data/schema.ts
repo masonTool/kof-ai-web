@@ -145,7 +145,10 @@ export interface CharDef {
   walk: { fwd: number; back: number };
   /** 跳跃：初速（向上为负）+ 水平速度 + 滞空帧（用于动画） */
   jump: { vy: number; vx: number; frames: number };
+  /** 受击盒（站/蹲/空三套） */
   boxes: HitBoxes;
+  /** 推挤盒宽度（以角色 x 为中心）；不写就用默认 24 */
+  push?: { w: number };
   /** 招式表，key 见 docs/ARCHITECTURE.md §6 */
   moves: Record<string, MoveDef>;
 }
@@ -181,6 +184,7 @@ export function validateChar(char: CharDef): string[] {
   const problems: string[] = [];
   if (char.hp <= 0) problems.push(`${char.id}: hp 必须为正`);
   if (char.walk.fwd <= 0 || char.walk.back <= 0) problems.push(`${char.id}: 行走速度必须为正`);
+  if (char.push && char.push.w <= 0) problems.push(`${char.id}: 推挤盒宽度必须为正`);
   for (const key of Object.keys(char.moves)) {
     const move = char.moves[key]!;
     if (move.id !== key) problems.push(`${char.id}: moves["${key}"].id 与键名不一致（${move.id}）`);
