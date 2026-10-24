@@ -4,7 +4,7 @@
  * 只对**必杀/超必杀**生效——通常技砍谁都一样是白火花，否则 29 个人打起来满屏彩色，
  * 反而看不出谁是谁。招式里写了 `fx` 就以招式为准（比如大蛇的普通技也想带光，就显式写）。
  */
-import type { FxStyle, MoveDef } from './schema';
+import type { FxStyle, MoveDef, ProjectileShape } from './schema';
 
 /** 角色默认气质（没列到的 = 无属性，只有普通火花） */
 export const CHAR_FX_STYLE: Record<string, FxStyle> = {
@@ -48,4 +48,24 @@ export function styleOfMove(charId: string, move: MoveDef | null): FxStyle {
   if (move.fx !== undefined) return move.fx;
   if (move.kind !== 'special' && move.kind !== 'super') return 'none';
   return CHAR_FX_STYLE[charId] ?? 'none';
+}
+
+/**
+ * 飞行道具的形状：默认按属性推，招式里写了 `shape` 就以招式为准。
+ * 这样"火球是火柱、雷是电气波、风是风刃"不用逐个角色手写一遍，
+ * 但想特例（比如大蛇的裁判断面）也能单独指定。
+ */
+export function shapeOfProjectile(style: FxStyle, override?: ProjectileShape): ProjectileShape {
+  if (override !== undefined) return override;
+  switch (style) {
+    case 'fire':
+    case 'darkfire':
+      return 'flame';
+    case 'thunder':
+      return 'wave';
+    case 'wind':
+      return 'blade';
+    default:
+      return 'orb';
+  }
 }

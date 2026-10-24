@@ -82,8 +82,17 @@ export class FakeCtx implements Ctx2D {
     this.calls.push('closePath');
   }
 
-  arc(): void {
+  arcs: { x: number; y: number; r: number }[] = [];
+  ellipses: { x: number; y: number; rx: number; ry: number }[] = [];
+
+  arc(x = 0, y = 0, r = 0): void {
     this.calls.push('arc');
+    this.arcs.push({ x, y, r });
+  }
+
+  ellipse(x = 0, y = 0, rx = 0, ry = 0): void {
+    this.calls.push('ellipse');
+    this.ellipses.push({ x, y, rx, ry });
   }
 
   fill(): void {

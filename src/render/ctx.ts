@@ -15,7 +15,8 @@ export interface Ctx2D {
   moveTo(x: number, y: number): void;
   lineTo(x: number, y: number): void;
   closePath(): void;
-  arc(x: number, y: number, r: number, start: number, end: number): void;
+  arc(x: number, y: number, r: number, start: number, end: number, ccw?: boolean): void;
+  ellipse(x: number, y: number, rx: number, ry: number, rotation: number, start: number, end: number, ccw?: boolean): void;
   fill(): void;
   stroke(): void;
   strokeRect(x: number, y: number, w: number, h: number): void;

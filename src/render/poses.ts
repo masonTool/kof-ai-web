@@ -348,6 +348,15 @@ export const POSE_LIBRARY: Record<string, Pose> = {
       f({ head: p(-14, -60), neck: p(-15, -50), armFront: [p(-8, -50), p(-14, -54)], armBack: [p(-20, -46), p(-26, -50)] }),
     ],
   },
+  // 登场挑衅：抬手勾指，给对方一个"来吧"
+  taunt: {
+    frameDuration: 8,
+    loop: true,
+    frames: [
+      f({ head: p(3, -70), armFront: [p(9, -66), p(14, -78)], armBack: [p(-7, -56), p(-10, -48)] }),
+      f({ head: p(3, -71), armFront: [p(9, -68), p(13, -76)], armBack: [p(-7, -54), p(-10, -46)] }),
+    ],
+  },
   win: {
     frameDuration: 10,
     loop: true,

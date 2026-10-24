@@ -7,8 +7,8 @@
  * 免得"火球能不能被防""火球算不算反击"两套规则各写一遍。
  */
 import type { Hasher } from '../core/hash';
-import type { Box, FxStyle, HitDef, ProjectileDef } from '../data/schema';
-import { styleOfMove } from '../data/fx-style';
+import type { Box, FxStyle, HitDef, ProjectileDef, ProjectileShape } from '../data/schema';
+import { shapeOfProjectile, styleOfMove } from '../data/fx-style';
 import type { Fighter } from './fighter';
 import type { Entity, World } from './world';
 
@@ -25,6 +25,8 @@ export interface ProjectileInit {
   life: number;
   /** 命中特效风格（生成那一刻从主人的招式上取，之后主人收招也不影响） */
   style?: FxStyle;
+  /** 绘制形状 */
+  shape?: ProjectileShape;
 }
 
 export class Projectile implements Entity {
@@ -38,6 +40,8 @@ export class Projectile implements Entity {
   readonly anim: string;
   /** 命中特效风格：生成时定下来，不随后续动作变化 */
   readonly style: FxStyle;
+  /** 绘制形状（也是生成时定下来） */
+  readonly shape: ProjectileShape;
   life: number;
   /** 这一帧之后就该从世界里移除 */
   dead = false;
@@ -51,6 +55,7 @@ export class Projectile implements Entity {
     this.hit = init.hit;
     this.anim = init.anim;
     this.style = init.style ?? 'none';
+    this.shape = init.shape ?? shapeOfProjectile(this.style);
     this.life = init.life;
   }
 
@@ -89,6 +94,7 @@ export function spawnProjectile(world: World, owner: Fighter, def: ProjectileDef
     anim: def.anim,
     life: def.life > 0 ? def.life : DEFAULT_PROJECTILE_LIFE,
     style: styleOfMove(owner.char.id, owner.move),
+    shape: shapeOfProjectile(styleOfMove(owner.char.id, owner.move), def.shape),
   });
   return world.add(projectile);
 }

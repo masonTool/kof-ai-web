@@ -14,6 +14,11 @@ import {
 import { drawFighter, drawPose, shade } from '../src/render/fighter-draw';
 import { currentAssetProvider, hasCustomArt, setAssetProvider, spriteFor } from '../src/render/assets';
 import { FxSystem } from '../src/render/fx';
+import { drawProjectile, introAnimFor } from '../src/render/renderer';
+import { Match } from '../src/game/match';
+import { Projectile } from '../src/sim/projectile';
+import { KYO } from '../src/data/chars/kyo';
+import { IORI } from '../src/data/chars/iori';
 import { FakeCtx } from './helpers/fake-ctx';
 
 const PALETTE: Palette = {
@@ -261,5 +266,79 @@ describe('命中特效', () => {
     fx.spawnGuard(6, 6);
     expect(() => fx.draw(ctx)).not.toThrow();
     expect(ctx.count('fillRect')).toBe(15); // 9 颗命中火花 + 6 颗防御火花
+  });
+});
+
+describe('登场与收场姿势', () => {
+  const makeMatch = (): Match => new Match(KYO, IORI, { introFrames: 10, roundEndFrames: 2 }, 5);
+
+  it('开场演出期间摆挑衅姿势，开打后不覆盖', () => {
+    const m = makeMatch();
+    expect(introAnimFor(m)).toBe('taunt');
+    m.phase = 'fight';
+    expect(introAnimFor(m)).toBeNull();
+  });
+
+  it('挑衅姿势在姿势库里，且是循环的', () => {
+    expect(hasPose('taunt')).toBe(true);
+    expect(POSE_LIBRARY['taunt']!.loop).toBe(true);
+    expect(POSE_LIBRARY['taunt']!.frames.length).toBeGreaterThan(0);
+  });
+});
+
+describe('飞行道具形状', () => {
+  const shapeOf = (shape: 'orb' | 'wave' | 'flame' | 'blade'): FakeCtx => {
+    const ctx = new FakeCtx();
+    const match = new Match(KYO, IORI, { introFrames: 1, roundEndFrames: 1 }, 3);
+    const owner = match.p1;
+    const p = new Projectile(owner, {
+      x: 100,
+      y: 150,
+      vx: 2,
+      facing: 1,
+      hit: KYO.moves['236A']!.hits[0]!,
+      anim: 'x',
+      life: 30,
+      style: 'fire',
+      shape,
+    });
+    drawProjectile(ctx, p);
+    return ctx;
+  };
+
+  it('气弹（orb）用圆画：尾巴 + 外圈 + 内芯三个圆', () => {
+    const ctx = shapeOf('orb');
+    expect(ctx.arcs.length).toBe(3);
+    expect(ctx.ellipses.length).toBe(0);
+  });
+
+  it('音速波（wave）用横向椭圆画', () => {
+    const ctx = shapeOf('wave');
+    expect(ctx.ellipses.length).toBeGreaterThanOrEqual(3);
+    expect(ctx.arcs.length).toBe(0);
+    // 横向比纵向宽（波是横着的）
+    expect(ctx.ellipses[0]!.rx).toBeGreaterThan(ctx.ellipses[0]!.ry);
+  });
+
+  it('火柱（flame）叠三个圆，越往上越小', () => {
+    const ctx = shapeOf('flame');
+    expect(ctx.arcs.length).toBe(4); // 3 层火焰 + 1 个内芯
+    const body = ctx.arcs.slice(0, 3);
+    expect(body[1]!.r).toBeGreaterThan(body[2]!.r);
+  });
+
+  it('风刃（blade）用弧线描边画（月牙），不是填充圆', () => {
+    const ctx = shapeOf('blade');
+    expect(ctx.arcs.length).toBe(2); // 外弧 + 内弧
+    expect(ctx.calls.filter((c) => c === 'stroke').length).toBe(2);
+    expect(ctx.ellipses.length).toBe(0);
+  });
+
+  it('形状之间画法确实不同（不是同一个圆换了颜色）', () => {
+    const sigs = (['orb', 'wave', 'flame', 'blade'] as const).map((s) => {
+      const ctx = shapeOf(s);
+      return `${ctx.arcs.length}/${ctx.ellipses.length}`;
+    });
+    expect(new Set(sigs).size).toBe(4);
   });
 });

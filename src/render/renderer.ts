@@ -32,9 +32,16 @@ export function resultAnimFor(match: Match, side: 1 | 2): 'win' | 'lose' | null 
   return match.matchWinner === side ? 'win' : 'lose';
 }
 
+/** 开场演出期间摆挑衅姿势（"来吧"），演出结束就回到正常状态机 */
+export function introAnimFor(match: Match): 'taunt' | null {
+  return match.phase === 'intro' ? 'taunt' : null;
+}
+
 function animFor(f: Fighter, match: Match): { anim: string; elapsed: number; duration?: number } {
   const result = resultAnimFor(match, f === match.p1 ? 1 : 2);
   if (result) return { anim: result, elapsed: f.stateFrame };
+  const intro = introAnimFor(match);
+  if (intro) return { anim: intro, elapsed: f.stateFrame };
   if (f.isAttacking && f.move) {
     return { anim: f.move.anim, elapsed: f.moveFrame, duration: f.move.total };
   }
@@ -63,6 +70,96 @@ export function drawDebugBoxes(ctx: Ctx2D, match: Match): void {
   }
 }
 
+/** 道具的配色：按属性取；无属性时用主人的色板 */
+function projectileColors(p: Projectile): { core: string; inner: string } {
+  if (p.style !== 'none') {
+    const colors = STYLE_COLORS[p.style];
+    return { core: colors[1]!, inner: colors[0]! };
+  }
+  return { core: p.owner.char.palette.accent, inner: p.owner.char.palette.trim };
+}
+
+/**
+ * 按形状画道具。形状差异是"看得出这是谁的招"的关键：
+ * 全是圆球的话，火球和音速波看起来一模一样。
+ */
+export function drawProjectile(ctx: Ctx2D, p: Projectile): void {
+  const { core, inner } = projectileColors(p);
+  const dir = p.facing;
+  // 用剩余寿命做一点脉动，纯函数、回放一致（不用随机数）
+  const pulse = 1 + Math.sin(p.life * 0.6) * 0.08;
+
+  if (p.shape === 'wave') {
+    // 音速波：横向拉长的椭圆 + 两道尾迹
+    ctx.globalAlpha = 0.3;
+    ctx.fillStyle = core;
+    for (const [back, w, h] of [[18, 22, 7], [10, 20, 11]] as const) {
+      ctx.beginPath();
+      ctx.ellipse(p.x - dir * back, p.y, w, h, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+    ctx.beginPath();
+    ctx.ellipse(p.x, p.y, 16 * pulse, 12 * pulse, 0, 0, Math.PI * 2);
+    ctx.fillStyle = core;
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(p.x + dir * 2, p.y, 8, 5, 0, 0, Math.PI * 2);
+    ctx.fillStyle = inner;
+    ctx.fill();
+    return;
+  }
+
+  if (p.shape === 'flame') {
+    // 火柱：三个自下而上缩小的圆，加一点上下抖动
+    ctx.globalAlpha = 0.35;
+    for (const [dy, r] of [[6, 10], [-2, 12], [-10, 8]] as const) {
+      ctx.beginPath();
+      ctx.arc(p.x, p.y + dy, r * pulse, 0, Math.PI * 2);
+      ctx.fillStyle = core;
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 7 * pulse, 0, Math.PI * 2);
+    ctx.fillStyle = inner;
+    ctx.fill();
+    return;
+  }
+
+  if (p.shape === 'blade') {
+    // 风刃：一弯月牙（描边弧）+ 内芯
+    ctx.globalAlpha = 0.28;
+    ctx.strokeStyle = core;
+    ctx.lineWidth = 10;
+    ctx.beginPath();
+    ctx.arc(p.x - dir * 6, p.y, 12, -Math.PI / 2, Math.PI / 2, dir < 0);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+    ctx.strokeStyle = inner;
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(p.x - dir * 4, p.y, 11, -Math.PI / 2.4, Math.PI / 2.4, dir < 0);
+    ctx.stroke();
+    return;
+  }
+
+  // 默认：气弹（外圈 + 内芯 + 尾巴）
+  ctx.globalAlpha = 0.35;
+  ctx.fillStyle = core;
+  ctx.beginPath();
+  ctx.arc(p.x - dir * 10, p.y, 9, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.globalAlpha = 1;
+  ctx.beginPath();
+  ctx.arc(p.x, p.y, 7 * pulse, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = inner;
+  ctx.beginPath();
+  ctx.arc(p.x, p.y, 3.5, 0, Math.PI * 2);
+  ctx.fill();
+}
+
 export function drawFrame(ctx: Ctx2D, match: Match, opts: RenderOptions = {}): void {
   const stage = opts.stage ?? STAGES[0]!;
 
@@ -87,28 +184,10 @@ export function drawFrame(ctx: Ctx2D, match: Match, opts: RenderOptions = {}): v
       look: lookFor(f.char.id),
     });
   }
-  // 飞行道具：外圈发光 + 内芯，按朝向拖一条尾巴；颜色按属性（火/雷/气）区分
+  // 飞行道具：按形状画（球/波/火柱/风刃），颜色按属性
   for (const entity of match.world.entities) {
     if (!(entity instanceof Projectile) || entity.dead) continue;
-    const p = entity;
-    const theme = p.owner.char.palette;
-    const style = p.style;
-    const core = style === 'none' ? theme.accent : STYLE_COLORS[style][1]!;
-    const inner = style === 'none' ? theme.trim : STYLE_COLORS[style][0]!;
-    ctx.globalAlpha = 0.35;
-    ctx.fillStyle = core;
-    ctx.beginPath();
-    ctx.arc(p.x - p.facing * 10, p.y, 9, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.globalAlpha = 1;
-    ctx.fillStyle = core;
-    ctx.beginPath();
-    ctx.arc(p.x, p.y, 7, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = inner;
-    ctx.beginPath();
-    ctx.arc(p.x, p.y, 3.5, 0, Math.PI * 2);
-    ctx.fill();
+    drawProjectile(ctx, entity);
   }
 
   match.fx.draw(ctx);

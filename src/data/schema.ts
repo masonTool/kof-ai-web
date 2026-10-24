@@ -95,8 +95,13 @@ export interface CancelSpec {
   window?: [number, number];
 }
 
+/** 飞行道具的形状（只影响绘制） */
+export type ProjectileShape = 'orb' | 'wave' | 'flame' | 'blade';
+
 export interface ProjectileDef {
   anim: string;
+  /** 形状；不写就按角色属性推（火→火柱、雷→波、风→刃、气→球） */
+  shape?: ProjectileShape;
   /** 每帧水平速度（px），方向自动按朝向 */
   speed: number;
   hit: HitDef;
