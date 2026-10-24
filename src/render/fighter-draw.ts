@@ -26,6 +26,20 @@ export function shade(hex: string, k: number): string {
   return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, '0')}`;
 }
 
+/** 把颜色往白色混（`amount` = 混多少白）：闪白用，保留一点本色才认得出是谁 */
+export function lighten(hex: string, amount: number): string {
+  const m = hex.trim();
+  const full = m.length === 4 ? `#${m[1]}${m[1]}${m[2]}${m[2]}${m[3]}${m[3]}` : m;
+  const num = Number.parseInt(full.slice(1, 7), 16);
+  if (Number.isNaN(num)) return hex;
+  const k = Math.min(1, Math.max(0, amount));
+  const mix = (v: number): number => Math.round(v + (255 - v) * k);
+  const r = mix((num >> 16) & 0xff);
+  const g = mix((num >> 8) & 0xff);
+  const b = mix(num & 0xff);
+  return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, '0')}`;
+}
+
 function limb(ctx: Ctx2D, from: Point, to: Point, width: number, color: string): void {
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
@@ -57,6 +71,65 @@ function disc(ctx: Ctx2D, at: Point, radius: number, color: string, outline = fa
   }
 }
 
+/** 沿躯干轴取一个点：t=0 是胯，t=1 是颈 */
+function alongTorso(frame: PoseFrame, t: number): Point {
+  return [frame.hip[0] + (frame.neck[0] - frame.hip[0]) * t, frame.hip[1] + (frame.neck[1] - frame.hip[1]) * t];
+}
+
+/** 垂直于躯干轴的法线（宽度方向） */
+function torsoNormal(frame: PoseFrame): Point {
+  const dx = frame.neck[0] - frame.hip[0];
+  const dy = frame.neck[1] - frame.hip[1];
+  const len = Math.hypot(dx, dy) || 1;
+  return [-dy / len, dx / len];
+}
+
+/**
+ * 躯干：肩宽 > 腰宽的梯形，外面描边、里面填外套色，再叠一条腰带。
+ * 之前躯干就是 hip→neck 一根 13px 的粗线，所以整个人像"竹签插了个球"。
+ */
+function drawTorso(
+  ctx: Ctx2D,
+  frame: PoseFrame,
+  opts: { primary: string; trim: string; build: number; flash: boolean },
+): void {
+  const n = torsoNormal(frame);
+  const shoulder = alongTorso(frame, 0.96);
+  const waist = alongTorso(frame, 0.16);
+  const shoulderW = 8.2 * opts.build;
+  const waistW = 5.6 * opts.build;
+
+  const pts: Point[] = [
+    [shoulder[0] + n[0] * shoulderW, shoulder[1] + n[1] * shoulderW],
+    [shoulder[0] - n[0] * shoulderW, shoulder[1] - n[1] * shoulderW],
+    [waist[0] - n[0] * waistW, waist[1] - n[1] * waistW],
+    [waist[0] + n[0] * waistW, waist[1] + n[1] * waistW],
+  ];
+
+  const path = (): void => {
+    ctx.beginPath();
+    ctx.moveTo(pts[0]![0], pts[0]![1]);
+    for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i]![0], pts[i]![1]);
+    ctx.closePath();
+  };
+
+  path();
+  ctx.fillStyle = opts.primary;
+  ctx.fill();
+  ctx.strokeStyle = OUTLINE;
+  ctx.lineWidth = opts.flash ? 1 : 2;
+  ctx.stroke();
+
+  // 腰带：腰线偏上一点，一条横带
+  const belt = alongTorso(frame, 0.3);
+  ctx.strokeStyle = opts.trim;
+  ctx.lineWidth = 3 * opts.build;
+  ctx.beginPath();
+  ctx.moveTo(belt[0] + n[0] * waistW * 0.95, belt[1] + n[1] * waistW * 0.95);
+  ctx.lineTo(belt[0] - n[0] * waistW * 0.95, belt[1] - n[1] * waistW * 0.95);
+  ctx.stroke();
+}
+
 export interface PoseDrawOptions {
   /** 命中闪白 */
   flash?: boolean;
@@ -64,12 +137,15 @@ export interface PoseDrawOptions {
   look?: Look;
   /** 当前动画名（决定是否画挥击拖尾） */
   anim?: string;
+  /** -1~1：正 = 纵向拉长（出招冲刺感），负 = 横向压扁（受击/落地） */
+  squash?: number;
 }
 
 export function drawPose(ctx: Ctx2D, frame: PoseFrame, palette: Palette, opts: PoseDrawOptions = {}): void {
   const flash = opts.flash === true;
   const look = opts.look ?? DEFAULT_LOOK;
-  const pick = (c: string): string => (flash ? '#ffffff' : c);
+  // 闪白用"往白里混 78%"而不是纯白：纯白会把人糊成一个白影子，看不出是谁、也看不出姿势
+  const pick = (c: string): string => (flash ? lighten(c, 0.78) : c);
 
   const skin = pick(palette.skin);
   const primary = pick(palette.primary);
@@ -77,10 +153,11 @@ export function drawPose(ctx: Ctx2D, frame: PoseFrame, palette: Palette, opts: P
   const hair = pick(palette.hair);
   const trim = pick(palette.trim);
 
-  // 身高：以脚底为原点纵向缩放，脚不会离地
-  if (look.height !== 1) {
+  // 身高 + 挤压拉伸：都以脚底为原点，脚不会离地
+  const squash = Math.max(-1, Math.min(1, opts.squash ?? 0));
+  if (look.height !== 1 || squash !== 0) {
     ctx.save();
-    ctx.scale(1, look.height);
+    ctx.scale(1 + squash * -0.05, look.height * (1 + squash * 0.06));
   }
 
   // 落地影子（脚底）
@@ -95,15 +172,14 @@ export function drawPose(ctx: Ctx2D, frame: PoseFrame, palette: Palette, opts: P
 
   const b = look.build;
   // 远侧肢体先画（压暗；闪白时一并不压暗，否则闪不出来）
-  const dim = (c: string): string => (flash ? '#ffffff' : shade(c, 0.62));
+  const dim = (c: string): string => (flash ? lighten(c, 0.62) : shade(c, 0.62));
   limb(ctx, frame.hip, frame.legBack[0]!, 6 * b, dim(secondary));
   limb(ctx, frame.legBack[0]!, frame.legBack[1]!, 5 * b, dim(secondary));
   limb(ctx, frame.neck, frame.armBack[0]!, 5 * b, dim(primary));
   limb(ctx, frame.armBack[0]!, frame.armBack[1]!, 4 * b, dim(skin));
 
-  // 躯干（外套）+ 腰带
-  limb(ctx, frame.hip, frame.neck, 13 * b, primary);
-  limb(ctx, frame.hip, frame.neck, 4 * b, trim);
+  // 躯干：胸腔用梯形（有肩有腰，比一根粗线像人）+ 腰带
+  drawTorso(ctx, frame, { primary, trim, build: b, flash });
 
   // 近侧肢体
   limb(ctx, frame.hip, frame.legFront[0]!, 6 * b, secondary);
@@ -140,7 +216,7 @@ export function drawPose(ctx: Ctx2D, frame: PoseFrame, palette: Palette, opts: P
   drawHead(ctx, frame, { skin, hair, trim, flash, look });
   drawAccessory(ctx, frame, { trim, hair, look, flash });
 
-  if (look.height !== 1) ctx.restore();
+  if (look.height !== 1 || squash !== 0) ctx.restore();
 }
 
 /** 头发 + 脸 + 眼睛 */
@@ -194,6 +270,15 @@ function drawHead(
 
   // 脸
   disc(ctx, [hx + 1.5, hy + 1], r - 1, skin);
+  // 下巴：脸下半部加一点，头才不是个正圆
+  ctx.beginPath();
+  ctx.arc(hx + 1.5, hy + 1.5, r - 2.4, 0.15 * Math.PI, 0.85 * Math.PI);
+  ctx.lineTo(hx + 1.5, hy + 1.5);
+  ctx.closePath();
+  ctx.fillStyle = skin;
+  ctx.fill();
+  // 耳朵（后侧一个小圆）
+  disc(ctx, [hx - r * 0.75, hy + 0.5], 1.6, skin);
   // 眼睛
   disc(ctx, [hx + 4.5, hy - 1], 1.4, flash ? '#ffffff' : OUTLINE);
 }
@@ -269,6 +354,10 @@ export interface FighterVisual {
   charId?: string;
   /** 贴图整体缩放（美术素材像素密度与 320×224 逻辑分辨率不一致时用） */
   spriteScale?: number;
+  /** 惯性：0 = 不拖，0.25~0.4 有重量感 */
+  lag?: number;
+  /** 挤压拉伸：正 = 纵向拉长，负 = 横向压扁 */
+  squash?: number;
 }
 
 export function drawFighter(ctx: Ctx2D, v: FighterVisual): void {
@@ -294,10 +383,11 @@ export function drawFighter(ctx: Ctx2D, v: FighterVisual): void {
       ctx.fillRect(dx, dy, w, h);
     }
   } else {
-    drawPose(ctx, resolvePose(v.anim, v.elapsed, v.duration, easeForAnim(v.anim)), v.palette, {
+    drawPose(ctx, resolvePose(v.anim, v.elapsed, v.duration, easeForAnim(v.anim), v.lag ?? 0), v.palette, {
       flash: v.flash,
       look: v.look,
       anim: v.anim,
+      squash: v.squash,
     });
   }
   ctx.restore();

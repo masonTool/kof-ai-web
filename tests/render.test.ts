@@ -15,6 +15,7 @@ import { drawFighter, drawPose, shade } from '../src/render/fighter-draw';
 import { currentAssetProvider, hasCustomArt, setAssetProvider, spriteFor } from '../src/render/assets';
 import { FxSystem } from '../src/render/fx';
 import { CINEMA_BAR, drawFrame, drawProjectile, introAnimFor } from '../src/render/renderer';
+import { lighten } from '../src/render/fighter-draw';
 import { Match } from '../src/game/match';
 import { Projectile } from '../src/sim/projectile';
 import { KYO } from '../src/data/chars/kyo';
@@ -168,11 +169,26 @@ describe('角色绘制', () => {
     expect(ctx.count('fill')).toBeGreaterThanOrEqual(3);
   });
 
-  it('命中闪白时用白色填充', () => {
+  it('命中闪白：整体提亮但仍保留本色（不是糊成一个白影子）', () => {
     const ctx = new FakeCtx();
     drawPose(ctx, resolvePose('hit', 0), PALETTE, { flash: true });
-    expect(ctx.fills.every((c) => c === '#ffffff' || c.startsWith('rgba(0,0,0'))).toBe(true);
-    expect(ctx.fills).toContain('#ffffff');
+    const solid = ctx.fills.filter((c) => c.startsWith('#'));
+    expect(solid.length).toBeGreaterThan(0);
+    // 全部都被提亮：亮度接近白，但不是纯白
+    for (const c of solid) {
+      const v = Number.parseInt(c.slice(1, 3), 16);
+      expect(v).toBeGreaterThan(200);
+    }
+    // 不是"全白一片"：绝大多数填充仍是带色调的（只有眼睛等少量点缀是纯白）
+    expect(solid.filter((c) => c === '#ffffff').length).toBeLessThan(solid.length / 2);
+    // 原色（不闪）不该出现
+    expect(solid).not.toContain(PALETTE.primary);
+  });
+
+  it('lighten 把颜色往白里混，amount=0 原样返回', () => {
+    expect(lighten('#000000', 0)).toBe('#000000');
+    expect(lighten('#000000', 1)).toBe('#ffffff');
+    expect(lighten('#000000', 0.5)).toBe('#808080');
   });
 
   it('库里每个动画都能画出来（不抛异常）', () => {
@@ -474,5 +490,62 @@ describe('挥击拖尾', () => {
     const ctx = new FakeCtx();
     drawPose(ctx, POSE_LIBRARY['punchHeavy']!.frames[1]!, PALETTE, { anim: 'punchHeavy' });
     expect(ctx.globalAlpha).toBe(1); // 画完要还原
+  });
+});
+
+describe('身体体积与重量感', () => {
+  const frame = POSE_LIBRARY['idle']!.frames[0]!;
+  const draw = (opts: Parameters<typeof drawPose>[3] = {}): FakeCtx => {
+    const ctx = new FakeCtx();
+    drawPose(ctx, frame, PALETTE, opts);
+    return ctx;
+  };
+
+  it('躯干是梯形路径（有肩有腰），不是一根粗线', () => {
+    const ctx = draw();
+    // 躯干用多边形：closePath 次数里至少有一次来自躯干路径
+    expect(ctx.calls.filter((c) => c === 'closePath').length).toBeGreaterThanOrEqual(2);
+    // 躯干是一次"填外套色 + 描边"的多边形填充
+    const primaryFills = ctx.fills.filter((f) => f === PALETTE.primary).length;
+    expect(primaryFills).toBeGreaterThanOrEqual(1);
+    expect(ctx.calls.filter((c) => c === 'lineTo').length).toBeGreaterThanOrEqual(3);
+  });
+
+  it('挤压拉伸会改变整体缩放（纵向拉长 / 横向压扁）', () => {
+    const stretched = draw({ squash: 0.7 });
+    const flat = draw({ squash: -0.8 });
+    const lastScale = (ctx: FakeCtx): [number, number] =>
+      ctx.transforms.scale[ctx.transforms.scale.length - 1] ?? [1, 1];
+    expect(lastScale(stretched)[1]).toBeGreaterThan(1); // 纵向更长
+    expect(lastScale(stretched)[0]).toBeLessThan(1); // 横向更窄
+    expect(lastScale(flat)[1]).toBeLessThan(1);
+    expect(lastScale(flat)[0]).toBeGreaterThan(1);
+  });
+
+  it('挤压拉伸也是以脚底为原点（save/restore 成对）', () => {
+    const ctx = draw({ squash: 0.6 });
+    expect(ctx.calls.filter((c) => c === 'save').length).toBe(
+      ctx.calls.filter((c) => c === 'restore').length,
+    );
+  });
+
+  it('惯性会让姿势比"不拖"更靠近上一帧', () => {
+    const dur = 24;
+    const now = resolvePose('punchHeavy', 12, dur);
+    const lagged = resolvePose('punchHeavy', 12, dur, 'out', 0.4);
+    const earlier = resolvePose('punchHeavy', 10, dur);
+    const dist = (a: typeof now, b: typeof now): number => Math.hypot(a.head[0] - b.head[0], a.head[1] - b.head[1]);
+    expect(lagged).not.toEqual(now);
+    expect(dist(lagged, earlier)).toBeLessThan(dist(now, earlier));
+  });
+
+  it('lag = 0 时与不传完全一致（默认不开惯性）', () => {
+    expect(resolvePose('punchHeavy', 8, 24)).toEqual(resolvePose('punchHeavy', 8, 24, 'out', 0));
+  });
+
+  it('头部不是单纯一个圆：有下巴与耳朵的额外笔画', () => {
+    const ctx = draw();
+    // 头相关的 arc 调用：后脑 + 脸 + 下巴 + 耳朵 + 眼睛
+    expect(ctx.arcs.length).toBeGreaterThanOrEqual(4);
   });
 });

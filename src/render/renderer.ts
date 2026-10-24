@@ -76,6 +76,22 @@ export function drawDebugBoxes(ctx: Ctx2D, match: Match): void {
   }
 }
 
+/**
+ * 挤压拉伸与惯性：让动作有重量。
+ * 出招的判定帧纵向拉长（冲刺感），受击前两帧横向压扁（被顶住），落地压一下。
+ */
+export function squashFor(f: Fighter): { squash: number; lag: number } {
+  if (f.state === FighterState.Hit && f.stateFrame < 2) return { squash: -0.8, lag: 0.15 };
+  if (f.state === FighterState.Landing) return { squash: -0.5, lag: 0.1 };
+  if (f.isAttacking && f.move) {
+    const peak = f.move.hits[0]?.frames[0] ?? 0;
+    const near = Math.abs(f.moveFrame - peak) <= 2;
+    return { squash: near ? 0.7 : 0.2, lag: 0.3 };
+  }
+  if (f.state === FighterState.Jump) return { squash: 0.35, lag: 0.2 };
+  return { squash: 0, lag: 0.18 };
+}
+
 /** 道具的配色：按属性取；无属性时用主人的色板 */
 function projectileColors(p: Projectile): { core: string; inner: string } {
   if (p.style !== 'none') {
@@ -177,6 +193,7 @@ export function drawFrame(ctx: Ctx2D, match: Match, opts: RenderOptions = {}): v
   match.cam.applyTo(ctx);
   for (const f of match.fighters) {
     const { anim, elapsed, duration } = animFor(f, match);
+    const motion = squashFor(f);
     drawFighter(ctx, {
       palette: f.char.palette,
       facing: f.facing,
@@ -191,6 +208,8 @@ export function drawFrame(ctx: Ctx2D, match: Match, opts: RenderOptions = {}): v
       alpha: f.state === FighterState.Dead ? 0.8 : 1,
       look: lookFor(f.char.id),
       charId: f.char.id,
+      lag: motion.lag,
+      squash: motion.squash,
     });
   }
   // 飞行道具：按形状画（球/波/火柱/风刃），颜色按属性

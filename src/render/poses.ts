@@ -520,7 +520,8 @@ export function lerpFrame(a: PoseFrame, b: PoseFrame, t: number): PoseFrame {
  *
  * 出招用 `out` 缓动（快出慢停），待机/走路用 `inOut`（呼吸感）。
  */
-export function resolvePose(anim: string, elapsed: number, duration?: number, ease: Easing = 'out'): PoseFrame {
+/** 在某一时刻采样（不带惯性） */
+function sampleAt(anim: string, elapsed: number, duration: number | undefined, ease: Easing): PoseFrame {
   const pose = hasPose(anim) ? POSE_LIBRARY[anim]! : POSE_LIBRARY['idle']!;
   const count = pose.frames.length;
   if (count <= 1) return pose.frames[0]!;
@@ -537,6 +538,27 @@ export function resolvePose(anim: string, elapsed: number, duration?: number, ea
   const from = pose.frames[index % count]!;
   const to = pose.frames[(index + 1) % count]!;
   return lerpFrame(from, to, EASE[ease](Math.min(1, Math.max(0, frac))));
+}
+
+/**
+ * 取当前姿势。
+ *
+ * `lag` = 惯性：把"上一小段时间的姿势"和当前姿势混一下，身体会轻微拖在后面，
+ * 动作就有了重量感（真人甩拳时躯干和头是跟着走的，不是整块一起平移）。
+ * 0 = 不拖（贴图/调试用），0.25~0.4 比较自然。
+ */
+export function resolvePose(
+  anim: string,
+  elapsed: number,
+  duration?: number,
+  ease: Easing = 'out',
+  lag = 0,
+): PoseFrame {
+  const current = sampleAt(anim, elapsed, duration, ease);
+  if (lag <= 0) return current;
+  const lagFrames = duration !== undefined && duration > 0 ? Math.max(1, duration * 0.06) : 1.5;
+  const previous = sampleAt(anim, elapsed - lagFrames, duration, ease);
+  return lerpFrame(current, previous, Math.min(0.6, Math.max(0, lag)));
 }
 
 /**
