@@ -60,7 +60,9 @@ export type ButtonId = 'A' | 'B' | 'C' | 'D';
  */
 export type MotionId =
   | 'none'
-  | '236' | '214' | '623' | '41236' | '63214' | '22' | 'doubleTapF' | 'doubleTapB'
+  | '236' | '214' | '421' | '623' | '41236' | '63214'
+  | '236236' | '214214' | '22'
+  | 'doubleTapF' | 'doubleTapB'
   | 'chargeBack' | 'chargeDown'
   | '6' | '4' | '2' | '8' | '3' | '1';
 
@@ -158,8 +160,14 @@ export interface CharDef {
   moves: Record<string, MoveDef>;
 }
 
-/** 招式键名约定：5A 5B 5C 5D / 2A 2B 2C 2D / jA jB jC jD / CD / AB / 236P / 623K / 214P / 236236P */
-export const MOVE_KEY = /^(5|2|j)?[ABCD]$|^CD$|^AB$|^\d{2,6}[PK]$|^\d{2,6}(P|K)_dm$/;
+/**
+ * 招式键名约定：
+ * - 通常技：`5A 5B 5C 5D`（站）、`2A 2B 2C 2D`（蹲）、`jA jB jC jD`（空中）
+ * - 指令通常技：方向前缀 + 键，如 `6B`、`3D`
+ * - 系统技：`CD`（吹飞）、`AB`（回避）、`throw`（投技）
+ * - 必杀/超必杀：指令串 + 键，如 `236A`、`623P`、`214K`、`236236P`、`236236AC`
+ */
+export const MOVE_KEY = /^(?:j?[1-9]?[ABCD]|CD|AB|throw|\d{2,6}(?:AC|[ABCDPK])(?:_\d)?)$/;
 
 /** 校验一个招式数据是否自洽，返回问题列表（测试与启动时都能用） */
 export function validateMove(move: MoveDef): string[] {
@@ -192,6 +200,7 @@ export function validateChar(char: CharDef): string[] {
   if (char.push && char.push.w <= 0) problems.push(`${char.id}: 推挤盒宽度必须为正`);
   for (const key of Object.keys(char.moves)) {
     const move = char.moves[key]!;
+    if (!MOVE_KEY.test(key)) problems.push(`${char.id}: 招式键名 "${key}" 不符合约定（见 schema.ts 的 MOVE_KEY）`);
     if (move.id !== key) problems.push(`${char.id}: moves["${key}"].id 与键名不一致（${move.id}）`);
     problems.push(...validateMove(move).map((p) => `${char.id}/${p}`));
     for (const ref of [...(move.cancel?.onHit ?? []), ...(move.cancel?.onBlock ?? [])]) {
