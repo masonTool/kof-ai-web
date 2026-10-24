@@ -99,7 +99,13 @@ const LYING = new Set(['down']);
  * 蹲姿原图只比站姿矮一点点（AI 画不出"矮一大截"），但游戏里蹲下必须明显变矮，
  * 否则高段位的拳看起来会打在头上。这里按姿势库里 CROUCH 的头高比例（54/71）压到 64。
  */
-const HEIGHT_OVERRIDE = { crouch: 64 };
+const HEIGHT_OVERRIDE = {
+  crouch: 64,
+  // 蹲着出拳/扫腿：姿势库里同样建在 CROUCH 上，身高应该和蹲姿一致。
+  // AI 不知道"蹲下要变矮"，一律把人物画满画面高度，不压就会比站立还大一圈。
+  crouchPunch: 64,
+  crouchKick: 62,
+};
 
 /**
  * 姿势目录 → 抠好的图。

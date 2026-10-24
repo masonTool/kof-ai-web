@@ -62,11 +62,18 @@ const STYLE_LINES = {
   ink: '画风：漫画墨线风，粗黑勾线、高对比平涂、少量网点阴影，头发用成块黑色，整体像格斗游戏宣传插画。',
 };
 
-/** 构图与画法约束同样锁死 */
-const FRAME = [
-  '严格侧身朝右，全身像，脚踩在画面底边，人物占画面高度 85%，水平居中。',
-  '纯洋红色背景（#FF00FF）平涂，无地面、无阴影、无文字、无水印、无边框。',
-].join('');
+/**
+ * 构图与画法约束同样锁死。
+ *
+ * `height` 是"人物占画面高度的百分比"：AI 默认一律画满 85%，
+ * 于是蹲姿会被它画得和站姿一样高——**整个人大一圈**。蹲姿必须自己降下来。
+ */
+function frame(height = 85) {
+  return [
+    `严格侧身朝右，全身像，脚踩在画面底边，人物占画面高度 ${height}%，水平居中。`,
+    '纯洋红色背景（#FF00FF）平涂，无地面、无阴影、无文字、无水印、无边框。',
+  ].join('');
+}
 
 /** 姿势 → 动作描述（键名对应 build-kyo.mjs 里的目录名） */
 const POSES = {
@@ -84,8 +91,8 @@ const POSES = {
   hit: '被重拳打中：头猛地向后仰、上身向后折、双臂被震得向后下方甩开、嘴巴张开、胸口后缩、双脚前后分开被推得后滑',
   down: '躺在地上：仰面横躺在画面底部，头朝左、四肢摊开、衣服有褶皱',
   win: '胜利：站直、一只手高举握拳、头微微抬起、另一只手垂在身侧',
-  crouchpunch: '蹲着出拳：双膝深蹲、上身前压，一只手向正前方打出直拳、另一只手护在胸前',
-  crouchkick: '蹲着扫腿：蹲低、一只手撑地，一条腿贴着地面向正前方扫出',
+  crouchpunch: { text: '蹲着出拳：双膝深蹲、上身前压，一只手向正前方打出直拳、另一只手护在胸前', height: 65 },
+  crouchkick: { text: '蹲着扫腿：蹲低、一只手撑地，一条腿贴着地面向正前方扫出', height: 58 },
   jumpattack: '空中攻击：人在空中、双脚离开地面，一只手向下挥出拳、身体前倾',
   special: '必杀技起手：前冲一步，一只手向前打出直拳、身体向前压、另一只手向后拉开',
 };
@@ -126,7 +133,10 @@ for (const pose of targets) {
     continue;
   }
 
-  const prompt = `${CHAR}动作：${POSES[pose]}。${FRAME}${STYLE_LINES[STYLE] ?? STYLE_LINES.ink}`;
+  const spec = POSES[pose];
+  const text = typeof spec === 'string' ? spec : spec.text;
+  const height = typeof spec === 'string' ? 85 : (spec.height ?? 85);
+  const prompt = `${CHAR}动作：${text}。${frame(height)}${STYLE_LINES[STYLE] ?? STYLE_LINES.ink}`;
   console.log(`\n=== ${pose} ===`);
   const r = spawnSync(
     'npx',
