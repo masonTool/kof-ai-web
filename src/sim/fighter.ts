@@ -9,6 +9,7 @@
 import type { InputState } from '../core/input';
 import { axisX, axisY } from '../core/input';
 import type { Box, CharDef, HitDef, MoveDef } from '../data/schema';
+import { newCombo, type ComboState } from './combo';
 import {
   GRAVITY,
   GROUND_Y,
@@ -43,6 +44,8 @@ export class Fighter implements Entity {
   meter = 0;
   /** 气绝值，攒满进晕眩 */
   stunGauge = 0;
+  /** 自己正在承受的连段（连击数/累计伤害），恢复中立时清零 */
+  combo: ComboState = newCombo();
 
   state: StateName = FighterState.Idle;
   /** 当前状态已持续的帧数（进入状态那帧为 0，第一步之后为 1） */
@@ -121,13 +124,20 @@ export class Fighter implements Entity {
     this.stateFrame = 0;
   }
 
-  /** 回到中立姿（保留空中状态） */
+  /** 回到中立姿（保留空中状态）。恢复中立 = 连段结束，连击数清零 */
   toNeutral(): void {
     this.move = null;
     this.moveFrame = 0;
     this.usedHits.clear();
     this.vx = 0;
+    this.combo = newCombo();
     this.setState(this.airborne ? FighterState.Jump : FighterState.Idle);
+  }
+
+  /** 被击退/被推开：直接改位置并夹在舞台内（推挤细化在物理条目） */
+  push(dx: number): void {
+    this.x += dx;
+    this.clampX();
   }
 
   turn(): void {
@@ -163,9 +173,8 @@ export class Fighter implements Entity {
 
   // ---------------------------------------------------------------- 被命中入口（hit.ts 调用）
 
-  /** 受击硬直（空中受击会继续下落，落地转入倒地） */
+  /** 受击硬直（空中受击会继续下落，落地转入倒地）。不清 hitstop——那是命中结算设好的 */
   enterHitstun(frames: number, opts: { launch?: number; knockdown?: boolean } = {}): void {
-    this.hitstop = 0;
     this.move = null;
     this.moveFrame = 0;
     this.usedHits.clear();
@@ -376,7 +385,9 @@ export class Fighter implements Entity {
   hash(h: Hasher): void {
     h.f64(this.x).f64(this.y).f64(this.vx).f64(this.vy).i32(this.facing);
     h.i32(this.hp).i32(this.meter).i32(this.stunGauge);
+    h.i32(this.combo.hits).i32(this.combo.damage);
     h.str(this.state).i32(this.stateFrame).i32(this.moveFrame);
     h.i32(this.hitstop).i32(this.stunTimer).bool(this.airborne);
+    h.u32(this.usedHits.size);
   }
 }
