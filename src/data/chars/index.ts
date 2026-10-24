@@ -8,11 +8,16 @@ import { ATHENA } from './athena';
 import { BILLY } from './billy';
 import { CHANG } from './chang';
 import { CHIN } from './chin';
+import { CHRIS } from './chris';
 import { EIJI } from './eiji';
 import { CHOI } from './choi';
 import { KENSOU } from './kensou';
 import { KIM } from './kim';
+import { OROCHI_IORI } from './orochi-iori';
+import { OROCHI_LEONA } from './orochi-leona';
+import { SHERMIE } from './shermie';
 import { SHINGO } from './shingo';
+import { YASHIRO } from './yashiro';
 import { BENIMARU } from './benimaru';
 import { DAIMON } from './daimon';
 import { CLARK } from './clark';
@@ -49,6 +54,11 @@ export const ROSTER: readonly CharDef[] = [
   BILLY,
   EIJI,
   SHINGO,
+  YASHIRO,
+  SHERMIE,
+  CHRIS,
+  OROCHI_IORI,
+  OROCHI_LEONA,
 ];
 
 export function charById(id: string): CharDef | undefined {
@@ -78,4 +88,9 @@ export {
   BILLY,
   EIJI,
   SHINGO,
+  YASHIRO,
+  SHERMIE,
+  CHRIS,
+  OROCHI_IORI,
+  OROCHI_LEONA,
 };

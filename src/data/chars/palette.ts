@@ -195,6 +195,51 @@ export const PALETTES: Record<string, Palette> = {
     trim: '#c8342c',
     accent: '#ffd166',
   },
+  /** 七枷社：褐色大衣 */
+  yashiro: {
+    skin: '#e6b489',
+    hair: '#2a2320',
+    primary: '#6b4b2f',
+    secondary: '#232026',
+    trim: '#d9ceb8',
+    accent: '#c8a24a',
+  },
+  /** 夏尔米：红发 + 黄衣 */
+  shermie: {
+    skin: '#f2c9a0',
+    hair: '#d86a2b',
+    primary: '#e0b23c',
+    secondary: '#2b2430',
+    trim: '#f7eedb',
+    accent: '#ff6b9d',
+  },
+  /** 克里斯：白肤金发 */
+  chris: {
+    skin: '#f6d3b0',
+    hair: '#e8d27a',
+    primary: '#eef0f5',
+    secondary: '#4a3f6b',
+    trim: '#c8b06a',
+    accent: '#ffb347',
+  },
+  /** 暴走八神庵 */
+  orochiIori: {
+    skin: '#e8c6a8',
+    hair: '#c8322b',
+    primary: '#6a1f3d',
+    secondary: '#1a1420',
+    trim: '#f0e6d2',
+    accent: '#ff2e63',
+  },
+  /** 暴走莉安娜 */
+  orochiLeona: {
+    skin: '#e6c3a0',
+    hair: '#c33b3b',
+    primary: '#4a2a55',
+    secondary: '#1d1a24',
+    trim: '#ffd9d9',
+    accent: '#ff4d6d',
+  },
   /** 特瑞·博加德 */
   terry: {
     skin: '#f0c39a',

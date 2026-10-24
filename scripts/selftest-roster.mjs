@@ -19,7 +19,7 @@ async (page) => {
 
   await page.goto('http://localhost:5174/');
   await wait(1200);
-  record('花名册 22 人', await page.evaluate(() => window.__kof.flow.roster.length), 22);
+  record('花名册 27 人', await page.evaluate(() => window.__kof.flow.roster.length), 27);
 
   // 标题 → 选人，光标移到第 4 人（大门）
   await tapKey('KeyJ');
@@ -330,6 +330,21 @@ async (page) => {
   });
   record('比利在场上', billy.id, 'billy');
   record('火龍棍是飞行道具', billy.proj > 0, true);
+
+  // 暴走八神庵（派生自庵）：招式齐全、伤害更高
+  const orochi = await page.evaluate(() => {
+    const k = window.__kof;
+    const base = k.flow.roster.find((c) => c.id === 'iori');
+    const robo = k.flow.roster.find((c) => c.id === 'orochi_iori');
+    return {
+      hasBoth: !!base && !!robo,
+      stronger: robo.moves['5C'].hits[0].damage > base.moves['5C'].hits[0].damage,
+      sameMoveCount: Object.keys(robo.moves).length === Object.keys(base.moves).length,
+    };
+  });
+  record('暴走庵与庵并存', orochi.hasBoth, true);
+  record('暴走庵招式数一致', orochi.sameMoveCount, true);
+  record('暴走庵伤害更高', orochi.stronger, true);
 
   return report.join('\n') + `\n\nOVERALL: ${report.every((r) => r.startsWith('PASS')) ? 'ALL PASS' : 'HAS FAIL'}`;
 }
