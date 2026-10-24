@@ -99,13 +99,16 @@ const LYING = new Set(['down']);
  * 蹲姿原图只比站姿矮一点点（AI 画不出"矮一大截"），但游戏里蹲下必须明显变矮，
  * 否则高段位的拳看起来会打在头上。这里按姿势库里 CROUCH 的头高比例（54/71）压到 64。
  */
-const HEIGHT_OVERRIDE = {
-  crouch: 64,
-  // 蹲着出拳/扫腿：姿势库里同样建在 CROUCH 上，身高应该和蹲姿一致。
-  // AI 不知道"蹲下要变矮"，一律把人物画满画面高度，不压就会比站立还大一圈。
-  crouchPunch: 64,
-  crouchKick: 62,
-};
+const HEIGHT_OVERRIDE = {};
+
+/**
+ * 身高上限（世界单位）：算出来的高度超过它就压到它。
+ *
+ * 头发归一已经能把"画大了"的姿势缩回来，但蹲姿还有第二层问题：
+ * 蹲着出拳画得再标准，也可能比真蹲高一截（AI 画的蹲不够低），所以给个宽松的天花板兜底。
+ * 值要留足余量：压得太狠会把头也压小，反而破坏"同一张脸"的观感。
+ */
+const HEIGHT_CAP = { crouch: 66, crouchPunch: 72, crouchKick: 64 };
 
 /**
  * 姿势目录 → 抠好的图。
@@ -187,6 +190,61 @@ function quantize(img, palette) {
   return out;
 }
 
+/**
+ * 头发尺寸：与姿势无关的"绝对尺度"。
+ *
+ * 包围盒会被甩出去的手脚撑大/缩水，所以不能拿它当缩放基准——
+ * 蹲着的人被 AI 画满了画面高度，按包围盒缩放就会比站姿大一圈。
+ * 头发是同一头黑发、面积远大于 1px 描边，腐蚀掉描边后取最大的暗色连通块即可稳定量到；
+ * 用面积开根（而不是宽/高）是为了抗头部旋转。
+ */
+function hairSize(img) {
+  const y1 = Math.min(img.height, Math.floor(img.height * 0.4)); // 只看上部 40%，深色裤子一定不在
+  const w = img.width;
+  const h = y1;
+  let mask = new Uint8Array(w * h);
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const i = (y * w + x) * 4;
+      if (img.data[i + 3] < 200) continue;
+      const luma = 0.299 * img.data[i] + 0.587 * img.data[i + 1] + 0.114 * img.data[i + 2];
+      if (luma < 70) mask[y * w + x] = 1;
+    }
+  }
+  // 腐蚀 3 次，吃掉 1~2px 的描边
+  for (let t = 0; t < 3; t++) {
+    const next = new Uint8Array(mask.length);
+    for (let y = 1; y < h - 1; y++) {
+      for (let x = 1; x < w - 1; x++) {
+        const i = y * w + x;
+        if (mask[i] && mask[i - 1] && mask[i + 1] && mask[i - w] && mask[i + w]) next[i] = 1;
+      }
+    }
+    mask = next;
+  }
+  // 最大连通块
+  const seen = new Uint8Array(mask.length);
+  let bestArea = 0;
+  for (let i = 0; i < mask.length; i++) {
+    if (!mask[i] || seen[i]) continue;
+    let area = 0;
+    const stack = [i];
+    seen[i] = 1;
+    while (stack.length) {
+      const j = stack.pop();
+      area++;
+      const x = j % w;
+      const y = (j - x) / w;
+      if (x > 0 && mask[j - 1] && !seen[j - 1]) { seen[j - 1] = 1; stack.push(j - 1); }
+      if (x < w - 1 && mask[j + 1] && !seen[j + 1]) { seen[j + 1] = 1; stack.push(j + 1); }
+      if (y > 0 && mask[j - w] && !seen[j - w]) { seen[j - w] = 1; stack.push(j - w); }
+      if (y < h - 1 && mask[j + w] && !seen[j + w]) { seen[j + w] = 1; stack.push(j + w); }
+    }
+    if (area > bestArea) bestArea = area;
+  }
+  return bestArea > 0 ? Math.sqrt(bestArea) : null;
+}
+
 /** 腿部质心当水平锚点：出拳/踢腿时上身和手臂会甩出去，腿是唯一稳的参考 */
 function legAnchorX(img) {
   const yStart = Math.floor(img.height * 0.72);
@@ -211,18 +269,24 @@ for (const list of Object.values(ANIMS)) {
 const refPose = ANIMS.idle[0];
 const refH = raws.get(refPose).height;
 const scale = (CHAR_H * RES) / refH;
+/** 以 idle 的头发为 1.0，其它姿势按头发面积开根修正（头部大小一致 = 整张人一致） */
+const refHair = hairSize(raws.get(refPose)) ?? 1;
 
 const frames = {};
 for (const [anim, list] of Object.entries(ANIMS)) {
   const lying = LYING.has(anim);
   const targetH = HEIGHT_OVERRIDE[anim];
+  const cap = HEIGHT_CAP[anim];
   frames[anim] = list.map((pose) => {
     const raw = raws.get(pose);
+    // 躺姿的头发被身体挡住/转了 90°，量不准，仍按宽度归一
+    const hair = lying ? null : hairSize(raw);
+    // 头发比 idle 大说明这张图画得更大，按比例缩回来（不依赖包围盒）
+    const k = hair ? refHair / hair : 1;
+    const naturalH = Math.round(raw.height * scale * k);
     const sized = lying
       ? scaleToWidth(raw, Math.round(CHAR_H * RES * 1.05))
-      : targetH !== undefined
-        ? scaleToHeight(raw, targetH * RES)
-        : scaleToHeight(raw, Math.round(raw.height * scale));
+      : scaleToHeight(raw, targetH !== undefined ? targetH * RES : cap !== undefined ? Math.min(naturalH, cap * RES) : naturalH);
     const img = quantize(sized, framePalette(sized));
     const ox = -Math.round(lying ? img.width / 2 : legAnchorX(img));
     const rect = { w: img.width, h: img.height, ox, oy: -img.height };
