@@ -14,11 +14,12 @@ import {
 import { drawFighter, drawPose, shade } from '../src/render/fighter-draw';
 import { currentAssetProvider, hasCustomArt, setAssetProvider, spriteFor } from '../src/render/assets';
 import { FxSystem } from '../src/render/fx';
-import { drawFrame, drawProjectile, introAnimFor } from '../src/render/renderer';
+import { CINEMA_BAR, drawFrame, drawProjectile, introAnimFor } from '../src/render/renderer';
 import { Match } from '../src/game/match';
 import { Projectile } from '../src/sim/projectile';
 import { KYO } from '../src/data/chars/kyo';
 import { IORI } from '../src/data/chars/iori';
+import { VIEW_HEIGHT, VIEW_WIDTH } from '../src/sim/constants';
 import { FakeCtx } from './helpers/fake-ctx';
 
 const PALETTE: Palette = {
@@ -371,5 +372,33 @@ describe('超必杀闪光', () => {
       return Number.parseFloat(/([\d.]+)\)$/.exec(fill)![1]!);
     };
     expect(alpha(strong)).toBeGreaterThan(alpha(weak));
+  });
+});
+
+describe('超必杀运镜（上下黑边）', () => {
+  const makeMatch = (): Match => new Match(KYO, IORI, { introFrames: 1, roundEndFrames: 2 }, 13);
+
+  it('闪光期间画上下两条黑边', () => {
+    const m = makeMatch();
+    const before = new FakeCtx();
+    drawFrame(before, m);
+    const blackBefore = before.rects.filter((r) => r.fill === '#000000').length;
+
+    m.superFlash = 8;
+    const during = new FakeCtx();
+    drawFrame(during, m);
+    const blackDuring = during.rects.filter((r) => r.fill === '#000000').length;
+    expect(blackDuring - blackBefore).toBe(2);
+  });
+
+  it('黑边高度是常量，且不遮挡中间画面', () => {
+    const m = makeMatch();
+    m.superFlash = 8;
+    const ctx = new FakeCtx();
+    drawFrame(ctx, m);
+    const bars = ctx.rects.filter((r) => r.fill === '#000000' && r.w === VIEW_WIDTH);
+    const heights = bars.map((r) => r.h);
+    expect(heights).toContain(CINEMA_BAR);
+    expect(CINEMA_BAR * 2).toBeLessThan(VIEW_HEIGHT / 2);
   });
 });

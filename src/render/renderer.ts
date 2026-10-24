@@ -61,6 +61,9 @@ function strokeBox(ctx: Ctx2D, box: { x: number; y: number; w: number; h: number
   ctx.stroke();
 }
 
+/** 超必杀运镜的上下黑边高度 */
+export const CINEMA_BAR = 20;
+
 /** 判定框：红 = 受击，蓝 = 推挤，黄 = 当前生效的攻击判定 */
 export function drawDebugBoxes(ctx: Ctx2D, match: Match): void {
   for (const f of match.fighters) {
@@ -197,10 +200,15 @@ export function drawFrame(ctx: Ctx2D, match: Match, opts: RenderOptions = {}): v
 
   drawHud(ctx, match.toHudModel());
 
-  // 超必杀起手闪白：盖在最上层（含 HUD），随剩余帧衰减
+  // 超必杀起手：先闪白（盖住 HUD），再压上下黑边——
+  // 顺序反过来的话黑边也会被闪白冲淡，看着像灰条而不是电影黑边
   if (match.superFlash > 0) {
     const alpha = (match.superFlash / SUPER_FLASH_FRAMES) * 0.45;
     ctx.fillStyle = `rgba(255,255,255,${alpha.toFixed(3)})`;
     ctx.fillRect(0, 0, VIEW_WIDTH, VIEW_HEIGHT);
+
+    ctx.fillStyle = '#000000';
+    ctx.fillRect(0, 0, VIEW_WIDTH, CINEMA_BAR);
+    ctx.fillRect(0, VIEW_HEIGHT - CINEMA_BAR, VIEW_WIDTH, CINEMA_BAR);
   }
 }

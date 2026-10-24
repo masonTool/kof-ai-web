@@ -67,7 +67,7 @@ async (page) => {
 
   const normalTrack = await page.evaluate(async () => {
     const k = window.__kof;
-    k.flow.picks = [k.flow.roster[0], k.flow.roster[1]];
+    k.flow.picks = [k.flow.roster[0], k.flow.roster[4]]; // 京 vs 特瑞：都不是暗色系
     k.flow.screen = 'fight';
     k.startMatch();
     const f = () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
@@ -75,6 +75,46 @@ async (page) => {
     return k.bgm.trackId;
   });
   record('普通对战还是普通曲', normalTrack, 'fight');
+
+  // 暗色系角色（庵）→ 暗色曲
+  const darkTrack = await page.evaluate(async () => {
+    const k = window.__kof;
+    k.flow.picks = [k.flow.roster[1], k.flow.roster[0]]; // 八神庵
+    k.flow.screen = 'fight';
+    k.startMatch();
+    const f = () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+    for (let i = 0; i < 6; i++) await f();
+    return k.bgm.trackId;
+  });
+  record('庵在场切到暗色曲', darkTrack, 'fightDark');
+
+  // 运镜：闪光期间镜头拉近 + 上下黑边
+  const cinema = await page.evaluate(async () => {
+    const k = window.__kof;
+    k.flow.picks = [k.flow.roster[0], k.flow.roster[1]];
+    k.flow.screen = 'fight';
+    k.startMatch();
+    const m = k.match;
+    m.softReset();
+    m.p1.x = 240;
+    m.p2.x = 300;
+    m.p1.meter = 100;
+    const before = m.cam.zoomOverride;
+    m.p1.startMove(m.p1.char.moves['236236AC']);
+    const f = () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+    // 每个 f() 是两帧逻辑时间，闪光只有 12 帧 —— 必须边跑边记，跑完再读就已经归零了
+    const samples = [];
+    for (let i = 0; i < 10; i++) {
+      await f();
+      samples.push({ flash: m.superFlash, override: m.cam.zoomOverride, zoom: Math.round(m.cam.zoom * 100) / 100 });
+    }
+    const during = samples.find((s2) => s2.flash > 0) ?? { override: null, zoom: 0 };
+    return { before, during, after: m.cam.zoomOverride };
+  });
+  record('平时没有运镜覆盖', cinema.before, null);
+  record('闪光期间镜头拉近', cinema.during.override, 1.45);
+  record('镜头实际变焦上去了', cinema.during.zoom > 1.2, true);
+  record('闪完恢复自动镜头', cinema.after, null);
 
   return report.join('\n') + `\n\nOVERALL: ${report.every((r) => r.startsWith('PASS')) ? 'ALL PASS' : 'HAS FAIL'}`;
 }

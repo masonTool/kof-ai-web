@@ -5,7 +5,7 @@
  * 玩法逻辑一律在 `sim/` + `data/`，这里只做"把谁喂给谁"。
  */
 import { CPU_LEVEL_LABEL } from './ai/cpu';
-import { WebAudioBgm } from './audio/bgm';
+import { WebAudioBgm, fightTrackFor } from './audio/bgm';
 import { sfxForWorldEvent, WebAudioSink } from './audio/sfx';
 import { FixedStepper, startAnimationLoop } from './core/loop';
 import { ROSTER } from './data/chars';
@@ -171,7 +171,10 @@ function isBossFight(): boolean {
 
 /** 每个屏配哪首曲子（同屏不重复设置，setTrack 内部会去重） */
 function trackFor(screen: string): string | null {
-  if (screen === 'fight' || screen === 'continue') return isBossFight() ? 'fightBoss' : 'fight';
+  if (screen === 'fight' || screen === 'continue') {
+    if (!match) return 'fight';
+    return fightTrackFor(match.p1.char.id, match.p2.char.id, isBossFight());
+  }
   if (screen === 'result') return 'result';
   return 'title';
 }

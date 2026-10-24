@@ -125,4 +125,7 @@
 - [x] T103 超必杀起手演出（双方定格 + 全屏闪白，复用 hitstop）
 - [x] T104 BOSS 战专用 BGM（按 char.boss 属性切换）
 - [x] T105 演出与 BGM 的浏览器自测
+- [x] T106 超必杀运镜（Camera.zoomOverride 拉近 + 上下黑边）
+- [x] T107 按对手挑战斗曲（fightDark / fightBoss / fight）
+- [x] T108 运镜与 BGM 的浏览器自测
 

@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
+import { ROSTER } from '../src/data/chars';
 import {
   BgmPlayer,
+  DARK_FIGHTERS,
+  fightTrackFor,
   NullBgm,
   TRACKS,
   WebAudioBgm,
@@ -13,8 +16,8 @@ import {
 const FIGHT = TRACKS['fight']!;
 
 describe('曲子数据', () => {
-  it('四条曲子都在（BOSS 战单独一首），步数与音符数组长度一致', () => {
-    expect(Object.keys(TRACKS).sort()).toEqual(['fight', 'fightBoss', 'result', 'title']);
+  it('五条曲子都在（普通/BOSS/暗色/结果/标题），步数与音符数组长度一致', () => {
+    expect(Object.keys(TRACKS).sort()).toEqual(['fight', 'fightBoss', 'fightDark', 'result', 'title']);
     for (const [id, track] of Object.entries(TRACKS)) {
       expect(track.lead.length, id).toBe(track.steps);
       expect(track.bass.length, id).toBe(track.steps);
@@ -132,5 +135,27 @@ describe('BOSS 战曲子', () => {
       return notes.reduce((s, n) => s + n, 0) / Math.max(1, notes.length);
     };
     expect(avgBass(boss)).toBeLessThan(avgBass(TRACKS['fight']!));
+  });
+});
+
+describe('按对手挑战斗曲', () => {
+  it('普通对战放普通曲', () => {
+    expect(fightTrackFor('kyo', 'terry')).toBe('fight');
+  });
+
+  it('有 BOSS 就优先 BOSS 曲', () => {
+    expect(fightTrackFor('orochi', 'kyo', true)).toBe('fightBoss');
+    expect(fightTrackFor('kyo', 'goenitz', true)).toBe('fightBoss');
+  });
+
+  it('暗色系角色（庵/新面孔/大蛇系）放暗色曲', () => {
+    expect(fightTrackFor('iori', 'kyo')).toBe('fightDark');
+    expect(fightTrackFor('kyo', 'shermie')).toBe('fightDark');
+    expect(fightTrackFor('chris', 'kyo')).toBe('fightDark');
+  });
+
+  it('暗色名单里的 id 都是真角色', () => {
+    const ids = new Set(ROSTER.map((c) => c.id));
+    for (const id of DARK_FIGHTERS) expect(ids.has(id), id).toBe(true);
   });
 });

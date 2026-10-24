@@ -129,6 +129,17 @@ export const TRACKS: Record<string, TrackDef> = {
     wave: 'sawtooth',
     gain: 0.06,
   },
+  fightDark: {
+    id: 'fightDark',
+    bpm: 140,
+    stepsPerBeat: 4,
+    steps: 32,
+    // 暗色系角色：小调 + 半音下行，压得低一点
+    lead: [69, 68, 69, 71, 72, 71, 69, 68, 69, 68, 66, 68, 69, 71, 72, 74, 76, 74, 72, 71, 72, 71, 69, 68, 66, 68, 69, 71, 69, null, 68, null],
+    bass: [40, 40, null, 40, 38, null, 40, null, 36, 36, null, 36, 38, null, 40, null, 40, 40, null, 40, 38, null, 36, null, 35, null, 36, null, 38, null, 40, null],
+    wave: 'triangle',
+    gain: 0.065,
+  },
   result: {
     id: 'result',
     bpm: 132,
@@ -256,4 +267,26 @@ export class WebAudioBgm implements BgmSink {
       osc.stop(start + dur + 0.02);
     }
   }
+}
+
+/** 气质偏暗的角色：和他们的战斗配暗色曲 */
+export const DARK_FIGHTERS: ReadonlySet<string> = new Set([
+  'iori',
+  'orochi_iori',
+  'orochi_leona',
+  'shermie',
+  'chris',
+  'yashiro',
+  'goenitz',
+  'orochi',
+]);
+
+/**
+ * 这一场该放哪首战斗曲。抽成纯函数是为了能断言"谁打谁放什么"，
+ * 不用真的去听。
+ */
+export function fightTrackFor(a: string, b: string, boss = false): string {
+  if (boss) return 'fightBoss';
+  if (DARK_FIGHTERS.has(a) || DARK_FIGHTERS.has(b)) return 'fightDark';
+  return 'fight';
 }

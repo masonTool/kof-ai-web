@@ -37,6 +37,13 @@ export class Camera {
   private targetX: number;
   private targetZoom: number;
 
+  /**
+   * 临时缩放覆盖（超必杀运镜用）：设了就忽略"距离决定缩放"，改用这个值。
+   * 用覆盖而不是直接改 `zoom`，是因为镜头是平滑逼近目标的——直接改会被下一帧的
+   * `update()` 立刻拉回去。
+   */
+  zoomOverride: number | null = null;
+
   constructor(init: { x?: number; zoom?: number } = {}) {
     const cx = init.x ?? (STAGE_LEFT + STAGE_RIGHT) / 2;
     this.zoom = init.zoom ?? ZOOM_MIN;
@@ -73,7 +80,7 @@ export class Camera {
 
   private computeTargets(a: CameraBody, b: CameraBody): void {
     const mid = (a.x + b.x) / 2;
-    const zoom = Camera.zoomForDistance(b.x - a.x);
+    const zoom = this.zoomOverride ?? Camera.zoomForDistance(b.x - a.x);
     this.targetZoom = zoom;
     this.targetX = this.clampX(mid, zoom);
   }

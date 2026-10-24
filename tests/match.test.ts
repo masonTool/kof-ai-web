@@ -2,7 +2,13 @@ import { describe, expect, it } from 'vitest';
 import { Btn, makeInput } from '../src/core/input';
 import { IORI } from '../src/data/chars/iori';
 import { KYO } from '../src/data/chars/kyo';
-import { DEFAULT_MATCH, Match, SUPER_FLASH_FRAMES, type MatchConfig } from '../src/game/match';
+import {
+  DEFAULT_MATCH,
+  Match,
+  SUPER_CINEMA_ZOOM,
+  SUPER_FLASH_FRAMES,
+  type MatchConfig,
+} from '../src/game/match';
 import { GROUND_Y } from '../src/sim/constants';
 import { FighterState } from '../src/sim/state';
 
@@ -278,5 +284,30 @@ describe('超必杀起手演出', () => {
     const b = new Match(KYO, IORI, { introFrames: 1, roundEndFrames: 3 }, 11);
     b.superFlash = 5;
     expect(a.hash()).not.toBe(b.hash());
+  });
+});
+
+describe('超必杀运镜', () => {
+  it('闪光期间镜头缩放被覆盖，结束后恢复', () => {
+    const m = new Match(KYO, IORI, { introFrames: 1, roundEndFrames: 3 }, 17);
+    while (m.phase === 'intro') m.step([{ held: 0 }, { held: 0 }]);
+    m.p1.meter = 100;
+    m.p1.startMove(KYO.moves['236236AC']!);
+    m.step([{ held: 0 }, { held: 0 }]);
+    expect(m.cam.zoomOverride).toBe(SUPER_CINEMA_ZOOM);
+
+    for (let i = 0; i < SUPER_FLASH_FRAMES + 2; i++) m.step([{ held: 0 }, { held: 0 }]);
+    expect(m.cam.zoomOverride).toBeNull();
+  });
+
+  it('运镜期间镜头真的朝覆盖值靠近', () => {
+    const m = new Match(KYO, IORI, { introFrames: 1, roundEndFrames: 3 }, 17);
+    while (m.phase === 'intro') m.step([{ held: 0 }, { held: 0 }]);
+    m.p1.x = 250;
+    m.p2.x = 270; // 贴脸：正常缩放本来也接近上限，这里只断言"高于 ZOOM_MAX"
+    m.p1.meter = 100;
+    m.p1.startMove(KYO.moves['236236AC']!);
+    for (let i = 0; i < SUPER_FLASH_FRAMES; i++) m.step([{ held: 0 }, { held: 0 }]);
+    expect(m.cam.zoom).toBeGreaterThan(1.2);
   });
 });

@@ -187,3 +187,30 @@ describe('舞台绘制', () => {
     }
   });
 });
+
+describe('镜头缩放覆盖（超必杀运镜）', () => {
+  it('设了覆盖就忽略"距离决定缩放"，朝覆盖值平滑逼近', () => {
+    const cam = new Camera({ x: 200, zoom: 1 });
+    cam.zoomOverride = 1.45;
+    const a = { x: 200 };
+    const b = { x: 400 }; // 距离 200 → 正常应该接近 1
+    for (let i = 0; i < 30; i++) cam.update(a, b);
+    expect(cam.zoom).toBeCloseTo(1.45, 2);
+  });
+
+  it('清掉覆盖后回到距离决定的缩放', () => {
+    const cam = new Camera({ x: 200, zoom: 1.45 });
+    cam.zoomOverride = null;
+    for (let i = 0; i < 60; i++) cam.update({ x: 200 }, { x: 400 });
+    expect(cam.zoom).toBeLessThan(1.2);
+  });
+
+  it('覆盖值也参与左右夹取（拉近后视野更窄，位置仍在舞台内）', () => {
+    const cam = new Camera({ x: 400, zoom: 1 });
+    cam.zoomOverride = 1.6;
+    for (let i = 0; i < 40; i++) cam.update({ x: 480 }, { x: 500 });
+    const halfView = VIEW_WIDTH / cam.zoom / 2;
+    expect(cam.x - halfView).toBeGreaterThanOrEqual(STAGE_LEFT - 1);
+    expect(cam.x + halfView).toBeLessThanOrEqual(STAGE_RIGHT + 1);
+  });
+});

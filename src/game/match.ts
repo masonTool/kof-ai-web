@@ -40,9 +40,10 @@ export interface MatchConfig {
   swapIntroFrames: number;
 }
 
-/** 超必杀起手：闪几帧、双方定格几帧 */
+/** 超必杀起手：闪几帧、双方定格几帧、运镜拉近到多少 */
 export const SUPER_FLASH_FRAMES = 12;
 export const SUPER_FREEZE_FRAMES = 10;
+export const SUPER_CINEMA_ZOOM = 1.45;
 
 export const DEFAULT_MATCH: MatchConfig = {
   roundsToWin: 2,
@@ -199,6 +200,8 @@ export class Match {
 
   /** 镜头与特效：（回合结束/结算里也要走，画面才不僵） */
   private stepSpectators(): void {
+    // 超必杀起手期间镜头拉近（配上下黑边就是"运镜"）
+    this.cam.zoomOverride = this.superFlash > 0 ? SUPER_CINEMA_ZOOM : null;
     this.cam.update(this.p1, this.p2);
     this.fx.update();
   }
