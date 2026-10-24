@@ -7,7 +7,8 @@
 import type { Palette } from '../data/schema';
 import type { Ctx2D } from './ctx';
 import { DEFAULT_LOOK, type Look } from './looks';
-import { resolvePose, type Point, type PoseFrame } from './poses';
+import { spriteFor } from './assets';
+import { poseFrameIndex, resolvePose, type Point, type PoseFrame } from './poses';
 
 const OUTLINE = '#0c0a09';
 const HEAD_RADIUS = 7;
@@ -61,6 +62,10 @@ export interface PoseDrawOptions {
   flash?: boolean;
   /** 外观（身高/壮实/发型/配件） */
   look?: Look;
+  /** 角色 id：有自绘贴图时按它取图（没有就回落程序化绘制） */
+  charId?: string;
+  /** 贴图整体的缩放（美术素材像素密度和 320×224 逻辑分辨率不一致时用） */
+  spriteScale?: number;
 }
 
 export function drawPose(ctx: Ctx2D, frame: PoseFrame, palette: Palette, opts: PoseDrawOptions = {}): void {
@@ -236,6 +241,10 @@ export interface FighterVisual {
   scale?: number;
   /** 外观（身高/壮实/发型/配件）；不传就用默认外观 */
   look?: Look;
+  /** 角色 id：有自绘贴图时按它取图（没有就回落程序化绘制） */
+  charId?: string;
+  /** 贴图整体缩放（美术素材像素密度与 320×224 逻辑分辨率不一致时用） */
+  spriteScale?: number;
 }
 
 export function drawFighter(ctx: Ctx2D, v: FighterVisual): void {
@@ -244,6 +253,24 @@ export function drawFighter(ctx: Ctx2D, v: FighterVisual): void {
   ctx.globalAlpha = Math.max(0, Math.min(1, v.alpha ?? 1));
   ctx.translate(v.x, v.y);
   ctx.scale(v.facing * s, s);
-  drawPose(ctx, resolvePose(v.anim, v.elapsed, v.duration), v.palette, { flash: v.flash, look: v.look });
+
+  // 有自绘贴图就用贴图，没有就画骨架——两条路共用同一套坐标与镜像
+  const sprite = v.charId ? spriteFor(v.charId, v.anim, poseFrameIndex(v.anim, v.elapsed, v.duration)) : null;
+  if (sprite) {
+    const scale = v.spriteScale ?? 1;
+    const w = sprite.sw * scale;
+    const h = sprite.sh * scale;
+    // 默认脚下中心对齐：贴图底边落在原点，水平居中
+    const dx = sprite.offsetX ?? -w / 2;
+    const dy = sprite.offsetY ?? -h;
+    ctx.drawImage(sprite.image, sprite.sx, sprite.sy, sprite.sw, sprite.sh, dx, dy, w, h);
+    if (v.flash === true) {
+      // 贴图也要能闪白：用一张半透明白盖在贴图矩形上
+      ctx.fillStyle = 'rgba(255,255,255,0.85)';
+      ctx.fillRect(dx, dy, w, h);
+    }
+  } else {
+    drawPose(ctx, resolvePose(v.anim, v.elapsed, v.duration), v.palette, { flash: v.flash, look: v.look });
+  }
   ctx.restore();
 }

@@ -39,3 +39,67 @@ export function spriteFor(charId: string, anim: string, frame: number): SpriteFr
   if (!provider) return null;
   return provider.fighter(charId, anim, frame);
 }
+
+/**
+ * 精灵表描述：一张图上按行排所有动画帧。
+ *
+ * 约定：`anims` 里按声明顺序依次排；每行 `columns` 帧（默认 8），排满换行。
+ * 这样美术只要按"动画名 → 帧数"报个数，不用手写每个帧的坐标。
+ */
+export interface SheetSpec {
+  image: CanvasImageSource;
+  frameW: number;
+  frameH: number;
+  /** 动画名 → 帧数（顺序即排布顺序） */
+  anims: Record<string, number>;
+  columns?: number;
+  offsetX?: number;
+  offsetY?: number;
+}
+
+interface SheetLayout {
+  spec: SheetSpec;
+  /** 动画名 → 该动画第一帧在表里的序号 */
+  start: Map<string, number>;
+}
+
+function layoutOf(spec: SheetSpec): SheetLayout {
+  const start = new Map<string, number>();
+  let index = 0;
+  for (const [anim, count] of Object.entries(spec.anims)) {
+    start.set(anim, index);
+    index += count;
+  }
+  return { spec, start };
+}
+
+/** 用若干张精灵表拼一个 `AssetProvider`（角色 id → 表） */
+export function spriteSheetProvider(sheets: Record<string, SheetSpec>): AssetProvider {
+  const layouts = new Map<string, SheetLayout>();
+  for (const [charId, spec] of Object.entries(sheets)) layouts.set(charId, layoutOf(spec));
+
+  return {
+    fighter(charId: string, anim: string, frame: number): SpriteFrame | null {
+      const layout = layouts.get(charId);
+      if (!layout) return null;
+      const first = layout.start.get(anim);
+      if (first === undefined) return null;
+      const count = layout.spec.anims[anim] ?? 0;
+      if (count <= 0) return null;
+      const local = ((frame % count) + count) % count; // 越界/负数都折回范围内
+      const columns = layout.spec.columns ?? 8;
+      const index = first + local;
+      const col = index % columns;
+      const row = Math.floor(index / columns);
+      return {
+        image: layout.spec.image,
+        sx: col * layout.spec.frameW,
+        sy: row * layout.spec.frameH,
+        sw: layout.spec.frameW,
+        sh: layout.spec.frameH,
+        offsetX: layout.spec.offsetX,
+        offsetY: layout.spec.offsetY,
+      };
+    },
+  };
+}

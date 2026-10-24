@@ -22,6 +22,17 @@ export interface Ctx2D {
   strokeRect(x: number, y: number, w: number, h: number): void;
 
   fillRect(x: number, y: number, w: number, h: number): void;
+  drawImage(
+    image: CanvasImageSource,
+    sx: number,
+    sy: number,
+    sw: number,
+    sh: number,
+    dx: number,
+    dy: number,
+    dw: number,
+    dh: number,
+  ): void;
   clearRect(x: number, y: number, w: number, h: number): void;
 
   fillStyle: string;

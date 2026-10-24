@@ -13,7 +13,7 @@ import { drawFighter } from './fighter-draw';
 import { STYLE_COLORS } from './fx';
 import { lookFor } from './looks';
 import { drawHud } from './hud';
-import { STATE_ANIM } from './poses';
+import { STATE_ANIM, winPoseFor } from './poses';
 import { STAGES, drawStage, type StageDef } from './stage-draw';
 import { Projectile } from '../sim/projectile';
 
@@ -27,10 +27,12 @@ export interface RenderOptions {
  * 整场结束后的姿势：赢家摆胜利姿势、输家跪地。
  * 纯函数单独导出，方便断言"结束那一刻谁该摆什么"，而不是靠截图看。
  */
-export function resultAnimFor(match: Match, side: 1 | 2): 'win' | 'lose' | null {
+export function resultAnimFor(match: Match, side: 1 | 2): string | null {
   if (match.phase !== 'over') return null;
   if (match.matchWinner === 0) return null; // 平局：两边都不摆
-  return match.matchWinner === side ? 'win' : 'lose';
+  if (match.matchWinner !== side) return 'lose';
+  // 赢家按角色选一个胜利姿势变体
+  return winPoseFor(side === 1 ? match.p1.char.id : match.p2.char.id);
 }
 
 /** 开场演出期间摆挑衅姿势（"来吧"），演出结束就回到正常状态机 */
@@ -186,6 +188,7 @@ export function drawFrame(ctx: Ctx2D, match: Match, opts: RenderOptions = {}): v
       flash: f.hitstop > 2,
       alpha: f.state === FighterState.Dead ? 0.8 : 1,
       look: lookFor(f.char.id),
+      charId: f.char.id,
     });
   }
   // 飞行道具：按形状画（球/波/火柱/风刃），颜色按属性

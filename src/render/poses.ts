@@ -365,6 +365,24 @@ export const POSE_LIBRARY: Record<string, Pose> = {
       f({ head: p(2, -70), armFront: [p(10, -68), p(16, -78)], armBack: [p(-8, -54), p(-12, -46)] }),
     ],
   },
+  // 胜利变体 2：双臂上举
+  win2: {
+    frameDuration: 10,
+    loop: true,
+    frames: [
+      f({ head: p(0, -72), armFront: [p(9, -70), p(13, -82)], armBack: [p(-9, -70), p(-13, -82)], legFront: [p(6, -22), p(11, -1)] }),
+      f({ head: p(0, -73), armFront: [p(9, -72), p(12, -84)], armBack: [p(-9, -72), p(-12, -84)], legFront: [p(6, -22), p(11, -1)] }),
+    ],
+  },
+  // 胜利变体 3：抱臂点头
+  win3: {
+    frameDuration: 12,
+    loop: true,
+    frames: [
+      f({ head: p(2, -70), armFront: [p(7, -58), p(-2, -62)], armBack: [p(-7, -58), p(2, -60)], legBack: [p(-5, -22), p(-10, -1)] }),
+      f({ head: p(2, -71), armFront: [p(7, -59), p(-2, -63)], armBack: [p(-7, -59), p(2, -61)], legBack: [p(-5, -22), p(-10, -1)] }),
+    ],
+  },
   lose: {
     frameDuration: 10,
     loop: false,
@@ -424,10 +442,31 @@ export function validateCharPoses(char: { id: string; moves: Record<string, { an
   return problems;
 }
 
+/** 当前该显示第几帧（贴图管线要按同一个下标取图，不能各算一套） */
+export function poseFrameIndex(anim: string, elapsed: number, duration?: number): number {
+  const pose = hasPose(anim) ? POSE_LIBRARY[anim]! : POSE_LIBRARY['idle']!;
+  const span = duration !== undefined && duration > 0 ? duration / pose.frames.length : Math.max(1, pose.frameDuration);
+  const idx = Math.floor(Math.max(0, elapsed) / span);
+  return pose.loop ? idx % pose.frames.length : Math.min(idx, pose.frames.length - 1);
+}
+
 export function resolvePose(anim: string, elapsed: number, duration?: number): PoseFrame {
   const pose = hasPose(anim) ? POSE_LIBRARY[anim]! : POSE_LIBRARY['idle']!;
   const span = duration !== undefined && duration > 0 ? duration / pose.frames.length : Math.max(1, pose.frameDuration);
   const idx = Math.floor(Math.max(0, elapsed) / span);
   const frame = pose.loop ? idx % pose.frames.length : Math.min(idx, pose.frames.length - 1);
   return pose.frames[frame]!;
+}
+
+/**
+ * 每个角色用哪个胜利姿势：按 id 的字符和取模，**确定性**且不用随机的感觉。
+ * 光靠台词区分还不够——29 个人摆同一个姿势太寡淡。
+ */
+const WIN_VARIANTS = ['win', 'win2', 'win3'] as const;
+export type WinPose = (typeof WIN_VARIANTS)[number];
+
+export function winPoseFor(charId: string): WinPose {
+  let sum = 0;
+  for (let i = 0; i < charId.length; i++) sum += charId.charCodeAt(i);
+  return WIN_VARIANTS[sum % WIN_VARIANTS.length]!;
 }

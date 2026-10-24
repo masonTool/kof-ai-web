@@ -128,4 +128,7 @@
 - [x] T106 超必杀运镜（Camera.zoomOverride 拉近 + 上下黑边）
 - [x] T107 按对手挑战斗曲（fightDark / fightBoss / fight）
 - [x] T108 运镜与 BGM 的浏览器自测
+- [x] T109 自绘贴图管线（精灵表 provider + 绘制层接管 + 无图回落骨架）
+- [x] T110 胜利姿势变体（win2/win3，按角色 id 确定性分配）
+- [x] T111 管线与姿势的截图验收
 

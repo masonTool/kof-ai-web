@@ -3,6 +3,7 @@ import { ROSTER } from '../src/data/chars';
 import { IORI } from '../src/data/chars/iori';
 import { KYO } from '../src/data/chars/kyo';
 import { QUOTES, hasQuotes, winQuoteFor } from '../src/data/chars/quotes';
+import { hasPose, winPoseFor } from '../src/render/poses';
 import { Match } from '../src/game/match';
 import { drawResult, wrapText } from '../src/render/screens';
 import { resultAnimFor } from '../src/render/renderer';
@@ -59,11 +60,11 @@ describe('结束后谁摆什么姿势', () => {
     expect(resultAnimFor(m, 1)).toBeNull();
   });
 
-  it('整场结束后：赢家胜利姿势、输家跪地', () => {
+  it('整场结束后：赢家胜利姿势（三种变体之一）、输家跪地', () => {
     const m = makeMatch();
     m.phase = 'over';
     m.matchWinner = 1;
-    expect(resultAnimFor(m, 1)).toBe('win');
+    expect(['win', 'win2', 'win3']).toContain(resultAnimFor(m, 1));
     expect(resultAnimFor(m, 2)).toBe('lose');
   });
 
@@ -72,7 +73,7 @@ describe('结束后谁摆什么姿势', () => {
     m.phase = 'over';
     m.matchWinner = 2;
     expect(resultAnimFor(m, 1)).toBe('lose');
-    expect(resultAnimFor(m, 2)).toBe('win');
+    expect(['win', 'win2', 'win3']).toContain(resultAnimFor(m, 2));
   });
 
   it('平局两边都不摆姿势', () => {
@@ -115,5 +116,21 @@ describe('台词框绘制', () => {
       expect(y).toBeGreaterThanOrEqual(148);
       expect(y).toBeLessThanOrEqual(192);
     }
+  });
+});
+
+describe('胜利姿势变体', () => {
+  it('同一角色永远是同一个（确定性，回放一致）', () => {
+    expect(winPoseFor('kyo')).toBe(winPoseFor('kyo'));
+  });
+
+  it('三个变体都是真姿势，且在册角色里都用得到（不是 29 人摆同一个）', () => {
+    for (const pose of ['win', 'win2', 'win3']) expect(hasPose(pose), pose).toBe(true);
+    const used = new Set(ROSTER.map((c) => winPoseFor(c.id)));
+    expect(used.size).toBeGreaterThanOrEqual(2);
+  });
+
+  it('未知角色也能拿到一个合法变体（不崩）', () => {
+    expect(['win', 'win2', 'win3']).toContain(winPoseFor('根本没有'));
   });
 });

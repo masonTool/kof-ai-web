@@ -118,6 +118,23 @@ export class FakeCtx implements Ctx2D {
     this.rects.push({ x, y, w, h, fill: this.fillStyle });
   }
 
+  images: { sx: number; sy: number; sw: number; sh: number; dx: number; dy: number; dw: number; dh: number }[] = [];
+
+  drawImage(
+    _image: CanvasImageSource,
+    sx = 0,
+    sy = 0,
+    sw = 0,
+    sh = 0,
+    dx = 0,
+    dy = 0,
+    dw = 0,
+    dh = 0,
+  ): void {
+    this.calls.push('drawImage');
+    this.images.push({ sx, sy, sw, sh, dx, dy, dw, dh });
+  }
+
   clearRect(): void {
     this.calls.push('clearRect');
   }
