@@ -15,6 +15,13 @@ export interface SpriteFrame {
   offsetX?: number;
   offsetY?: number;
   /**
+   * 源像素 → 世界单位的换算（默认 1）。
+   *
+   * 贴图可以烘得比逻辑尺寸大：屏幕上一个逻辑像素其实占 6 个物理像素，
+   * 按 1:1 烘出来才不会糊。这时 `sw/sh` 是源像素，宽高都要乘这个系数才是世界尺寸。
+   */
+  sizeScale?: number;
+  /**
    * 这一帧本身就是纯白剪影（受击闪白专用）。
    *
    * 为什么要专门画一版：贴图是不规则形状，闪白如果直接盖 `fillRect`

@@ -100,24 +100,32 @@ describe('京的贴图产物（build-kyo.mjs 的输出）', () => {
     }
   });
 
-  it('每个动画都带同步的闪白剪影（否则挨打时会在角色周围糊出白方块）', () => {
-    expect(sheet.flash).toBeTruthy();
-    for (const [anim, list] of Object.entries(sheet.anims)) {
-      const flash = sheet.flash?.[anim];
-      expect(flash, anim).toBeTruthy();
-      expect(flash!.length, anim).toBe(list.length);
-      flash!.forEach((f, i) => {
-        expect({ ...f, x: 0, y: 0 }).toEqual({ ...list[i]!, x: 0, y: 0 }); // 几何必须完全一致
-        expect(f.y + f.h, anim).toBeLessThanOrEqual(sheet.height);
-      });
-    }
+  it('受击帧带同步的闪白剪影（否则挨打时会在角色周围糊出白方块）', () => {
+    // 只有 Hit 状态会闪白，别的帧不烘剪影——图集要留空间给分辨率
+    const list = sheet.anims.hit!;
+    const flash = sheet.flash?.hit;
+    expect(flash).toBeTruthy();
+    expect(flash!.length).toBe(list.length);
+    flash!.forEach((f, i) => {
+      expect({ ...f, x: 0, y: 0 }).toEqual({ ...list[i]!, x: 0, y: 0 }); // 几何必须完全一致
+      expect(f.y + f.h).toBeLessThanOrEqual(sheet.height);
+    });
   });
 
-  it('站姿身高对得上角色的 84 逻辑像素，蹲姿明显更矮', () => {
-    expect(sheet.anims.idle[0]!.h).toBeGreaterThanOrEqual(80);
-    expect(sheet.anims.idle[0]!.h).toBeLessThanOrEqual(90);
-    expect(sheet.anims.crouch[0]!.h).toBeLessThan(sheet.anims.idle[0]!.h - 12);
+  it('站姿烘到高分屏分辨率（一个逻辑像素 ≥4 源像素，屏幕上才不糊），蹲姿明显更矮', () => {
+    const px = 1 / sheet.scale!; // 一个逻辑像素 = 几个源像素
+    expect(px).toBeGreaterThanOrEqual(4); // 320×224 逻辑分辨率整数放大 3 倍 + Retina 2 倍 = 6
+    expect(sheet.anims.idle[0]!.h / px).toBeCloseTo(84, 0);
+    expect(sheet.anims.crouch[0]!.h).toBeLessThan(sheet.anims.idle[0]!.h - 12 * px);
     expect(sheet.anims.down[0]!.h).toBeLessThan(sheet.anims.idle[0]!.h / 2); // 躺着
+  });
+
+  it('换算回世界单位后，站姿仍是 84 高、脚底仍在原点', () => {
+    const p = providerFromSheetJson('kyo', {} as unknown as CanvasImageSource, sheet);
+    const idle = p.fighter('kyo', 'idle', 0)!;
+    const h = idle.sh * (idle.sizeScale ?? 1);
+    expect(h).toBeCloseTo(84, 0);
+    expect((idle.offsetY ?? 0) + h).toBeCloseTo(0, 5);
   });
 
   it('出拳帧比站姿伸得更远（手真的打出去了）', () => {

@@ -21,6 +21,8 @@ export interface SheetJson {
   image: string;
   width: number;
   height: number;
+  /** 一个源像素等于多少世界单位（贴图分辨率高于逻辑尺寸时 < 1） */
+  scale?: number;
   anims: Record<string, SheetFrameJson[]>;
   /** 同 layout 的纯白剪影帧（受击闪白），可以没有 */
   flash?: Record<string, SheetFrameJson[]>;
@@ -45,6 +47,7 @@ export function isSheetJson(value: unknown): value is SheetJson {
   if (typeof value !== 'object' || value === null) return false;
   const v = value as Partial<SheetJson>;
   if (typeof v.image !== 'string' || typeof v.width !== 'number' || typeof v.height !== 'number') return false;
+  if (v.scale !== undefined && (typeof v.scale !== 'number' || !(v.scale > 0))) return false;
   if (typeof v.anims !== 'object' || v.anims === null) return false;
   if (!rectsAreValid(v.anims)) return false;
   if (v.flash !== undefined && (typeof v.flash !== 'object' || v.flash === null || !rectsAreValid(v.flash))) {
@@ -53,7 +56,12 @@ export function isSheetJson(value: unknown): value is SheetJson {
   return true;
 }
 
-function toFrames(image: CanvasImageSource, sets: Record<string, SheetFrameJson[]>, silhouette = false): Record<string, SpriteFrame[]> {
+function toFrames(
+  image: CanvasImageSource,
+  sets: Record<string, SheetFrameJson[]>,
+  k: number,
+  silhouette = false,
+): Record<string, SpriteFrame[]> {
   const out: Record<string, SpriteFrame[]> = {};
   for (const [anim, list] of Object.entries(sets)) {
     out[anim] = list.map((f) => ({
@@ -62,8 +70,10 @@ function toFrames(image: CanvasImageSource, sets: Record<string, SheetFrameJson[
       sy: f.y,
       sw: f.w,
       sh: f.h,
-      offsetX: f.ox,
-      offsetY: f.oy,
+      // 偏移也存的是源像素，换回世界单位
+      offsetX: f.ox * k,
+      offsetY: f.oy * k,
+      ...(k !== 1 ? { sizeScale: k } : {}),
       ...(silhouette ? { silhouette: true } : {}),
     }));
   }
@@ -72,11 +82,12 @@ function toFrames(image: CanvasImageSource, sets: Record<string, SheetFrameJson[
 
 /** JSON + 已解码的图片 → `AssetProvider`（纯函数，方便测试） */
 export function providerFromSheetJson(charId: string, image: CanvasImageSource, json: SheetJson): AssetProvider {
+  const k = json.scale ?? 1;
   return frameListProvider({
     [charId]: {
       image,
-      frames: toFrames(image, json.anims),
-      flashFrames: toFrames(image, json.flash ?? {}, true),
+      frames: toFrames(image, json.anims, k),
+      flashFrames: toFrames(image, json.flash ?? {}, k, true),
     },
   });
 }

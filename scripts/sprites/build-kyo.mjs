@@ -23,6 +23,18 @@ const OUT_JSON = 'public/sheets/kyo.json';
 const CHAR_H = 84;
 
 /**
+ * 贴图分辨率：一个逻辑像素烘几个源像素。
+ *
+ * 游戏逻辑分辨率 320×224，在 1280 宽的窗口里整数放大 3 倍、Retina 再 ×2，
+ * 屏幕上**一个逻辑像素 = 6 个物理像素**。所以 1:1 的贴图得是 84×6=504px 高。
+ * 烘 4 倍（336px）= 放大 1.5 倍，肉眼已经看不出糊；再高只是白占显存。
+ */
+const RES = 6;
+
+/** 只有这些动画会被闪白用到（`renderer.ts` 里 Hit 状态前 3 帧），别给所有帧烘剪影，图集受不了 */
+const FLASH_ANIMS = new Set(['hit']);
+
+/**
  * 动画 → 帧序列。
  *
  * 帧数尽量对齐 `src/render/poses.ts` 里同名姿势的帧数：
@@ -97,7 +109,7 @@ function loadRaw(rel) {
  * 往往是墨绿裤子的中绿，于是白衣服上会被点出一道道绿色。帧内取色就不会——
  * 那件白衣的暗部就长在这帧自己身上，一定在色板里。
  */
-function framePalette(img, maxColors = 24) {
+function framePalette(img, maxColors = 32) {
   const buckets = new Map();
   for (let i = 0; i < img.data.length; i += 4) {
     if (img.data[i + 3] < 200) continue;
@@ -171,7 +183,7 @@ for (const list of Object.values(ANIMS)) {
 // 统一 scale：以 idle 第一帧的身高为"角色身高"
 const refRel = ANIMS.idle[0];
 const refH = raws.get(refRel).height;
-const scale = CHAR_H / refH;
+const scale = (CHAR_H * RES) / refH;
 
 const frames = {};
 for (const [anim, list] of Object.entries(ANIMS)) {
@@ -180,32 +192,35 @@ for (const [anim, list] of Object.entries(ANIMS)) {
   frames[anim] = list.map((rel) => {
     const raw = raws.get(rel);
     const sized = lying
-      ? scaleToWidth(raw, Math.round(CHAR_H * 1.05))
+      ? scaleToWidth(raw, Math.round(CHAR_H * RES * 1.05))
       : targetH !== undefined
-        ? scaleToHeight(raw, targetH)
+        ? scaleToHeight(raw, targetH * RES)
         : scaleToHeight(raw, Math.round(raw.height * scale));
     const img = quantize(sized, framePalette(sized));
     const ox = -Math.round(lying ? img.width / 2 : legAnchorX(img));
     const rect = { w: img.width, h: img.height, ox, oy: -img.height };
     // 剪影：同一形状整片刷白，受击闪白时直接贴这一帧（比盖白方块干净得多）
-    const sil = { width: img.width, height: img.height, data: new Uint8Array(img.data) };
-    for (let i = 0; i < sil.data.length; i += 4) {
-      if (sil.data[i + 3] === 0) continue;
-      sil.data[i] = 255;
-      sil.data[i + 1] = 255;
-      sil.data[i + 2] = 255;
-      sil.data[i + 3] = 255;
+    let sil = null;
+    if (FLASH_ANIMS.has(anim)) {
+      sil = { width: img.width, height: img.height, data: new Uint8Array(img.data) };
+      for (let i = 0; i < sil.data.length; i += 4) {
+        if (sil.data[i + 3] === 0) continue;
+        sil.data[i] = 255;
+        sil.data[i + 1] = 255;
+        sil.data[i + 2] = 255;
+        sil.data[i + 3] = 255;
+      }
     }
     return { img, sil, rect: { ...rect } };
   });
 }
 
 // ---------- 打包：简单货架（宽高都不大，够用） ----------
-const MAX_W = 1024;
+const MAX_W = 2048;
 const order = [];
 for (const [anim, list] of Object.entries(frames)) {
   for (const f of list) order.push({ anim, kind: 'normal', img: f.img, rect: { ...f.rect } });
-  for (const f of list) order.push({ anim, kind: 'flash', img: f.sil, rect: { ...f.rect } });
+  for (const f of list) if (f.sil) order.push({ anim, kind: 'flash', img: f.sil, rect: { ...f.rect } });
 }
 let shelfX = 0;
 let shelfY = 0;
@@ -234,13 +249,19 @@ const flashJson = {};
 const pick = (f) => ({ x: f.rect.x, y: f.rect.y, w: f.rect.w, h: f.rect.h, ox: f.rect.ox, oy: f.rect.oy });
 for (const [anim, list] of Object.entries(frames)) {
   animsJson[anim] = order.filter((o) => o.anim === anim && o.kind === 'normal').map(pick);
-  flashJson[anim] = order.filter((o) => o.anim === anim && o.kind === 'flash').map(pick);
+  const flash = order.filter((o) => o.anim === anim && o.kind === 'flash').map(pick);
+  if (flash.length > 0) flashJson[anim] = flash;
   if (animsJson[anim].length === 0) throw new Error(`动画 ${anim} 一帧都没有`);
   void list;
 }
 writeFileSync(
   OUT_JSON,
-  JSON.stringify({ image: 'kyo.png', width: atlasW, height: atlasH, anims: animsJson, flash: flashJson }, null, 1),
+  JSON.stringify(
+    // scale：一个源像素等于多少世界单位（绘制时宽高都要乘它，否则贴图会被放大 RES 倍）
+    { image: 'kyo.png', width: atlasW, height: atlasH, scale: 1 / RES, anims: animsJson, flash: flashJson },
+    null,
+    1,
+  ),
 );
 
 console.log(`缩放 ${scale.toFixed(4)} · 图集 ${atlasW}×${atlasH}`);

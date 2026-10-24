@@ -637,7 +637,7 @@ export function drawFighter(ctx: Ctx2D, v: FighterVisual): void {
     ? spriteFor(v.charId, v.anim, poseFrameIndex(v.anim, v.elapsed, v.duration), flash)
     : null;
   if (sprite) {
-    const scale = v.spriteScale ?? 1;
+    const scale = (v.spriteScale ?? 1) * (sprite.sizeScale ?? 1);
     const w = sprite.sw * scale;
     const h = sprite.sh * scale;
     // 默认脚下中心对齐：贴图底边落在原点，水平居中
