@@ -58,7 +58,10 @@ describe('八神庵：数据自洽', () => {
   });
 
   it('花名册能按 id 取到，两名角色 id 不重复', () => {
-    expect(ROSTER.map((c) => c.id)).toEqual(['kyo', 'iori', 'benimaru', 'daimon', 'terry', 'andy', 'joe']);
+    // 只断言"在册且唯一"，花名册会一直加人，别把顺序写死在这里
+    expect(ROSTER.length).toBeGreaterThanOrEqual(2);
+    expect(ROSTER.map((c) => c.id)).toContain('iori');
+    expect(new Set(ROSTER.map((c) => c.id)).size).toBe(ROSTER.length);
     expect(charById('iori')?.name).toBe('八神庵');
     expect(charById('nobody')).toBeUndefined();
   });

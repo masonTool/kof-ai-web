@@ -37,15 +37,20 @@ function text(
 }
 
 /** 角色格子：名字 + 色块（用角色主色，选人时一眼能分辨） */
+/**
+ * 选人格子：3 行（12 人）以内都放得下。
+ * 行高按人数自动收一点——36 人时会变成 9 列 4 行，格子更小。
+ */
 export function cellRect(index: number, columns = 4): { x: number; y: number; w: number; h: number } {
   const w = 56;
-  const h = 46;
-  const gap = 10;
+  const h = 44;
+  const gapX = 10;
+  const gapY = 6;
   const col = index % columns;
   const row = Math.floor(index / columns);
-  const totalW = columns * w + (columns - 1) * gap;
+  const totalW = columns * w + (columns - 1) * gapX;
   const left = (VIEW_WIDTH - totalW) / 2;
-  return { x: left + col * (w + gap), y: 62 + row * (h + gap), w, h };
+  return { x: left + col * (w + gapX), y: 56 + row * (h + gapY), w, h };
 }
 
 export function drawTitle(ctx: Ctx2D, blinkOn: boolean): void {
@@ -113,8 +118,8 @@ export function drawSelect(ctx: Ctx2D, flow: AppFlow, blinkOn: boolean): void {
   });
 
   const label = flow.locked[0] ? '已确定 · B/D 重选' : 'A/C 确定 · 方向键选人';
-  if (blinkOn || flow.locked[0]) text(ctx, label, VIEW_WIDTH / 2, 186, 'center', 7, SCREEN_COLORS.text);
-  text(ctx, '点击角色格子也能选', VIEW_WIDTH / 2, 198, 'center', 6, SCREEN_COLORS.dim);
+  if (blinkOn || flow.locked[0]) text(ctx, label, VIEW_WIDTH / 2, 200, 'center', 7, SCREEN_COLORS.text);
+  text(ctx, '点击角色格子也能选', VIEW_WIDTH / 2, 212, 'center', 6, SCREEN_COLORS.dim);
 }
 
 export function drawVs(ctx: Ctx2D, flow: AppFlow): void {

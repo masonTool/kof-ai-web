@@ -9,12 +9,26 @@ import { DAIMON } from './daimon';
 import { IORI } from './iori';
 import { JOE } from './joe';
 import { KYO } from './kyo';
+import { ROBERT } from './robert';
+import { RYO } from './ryo';
 import { TERRY } from './terry';
+import { YURI } from './yuri';
 
-export const ROSTER: readonly CharDef[] = [KYO, IORI, BENIMARU, DAIMON, TERRY, ANDY, JOE];
+export const ROSTER: readonly CharDef[] = [
+  KYO,
+  IORI,
+  BENIMARU,
+  DAIMON,
+  TERRY,
+  ANDY,
+  JOE,
+  RYO,
+  ROBERT,
+  YURI,
+];
 
 export function charById(id: string): CharDef | undefined {
   return ROSTER.find((c) => c.id === id);
 }
 
-export { KYO, IORI, BENIMARU, DAIMON, TERRY, ANDY, JOE };
+export { KYO, IORI, BENIMARU, DAIMON, TERRY, ANDY, JOE, RYO, ROBERT, YURI };

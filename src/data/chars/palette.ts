@@ -60,6 +60,33 @@ export const PALETTES: Record<string, Palette> = {
     trim: '#f3ead6',
     accent: '#ffb347',
   },
+  /** 坂崎亮：橙色道服 */
+  ryo: {
+    skin: '#eab98d',
+    hair: '#2b2018',
+    primary: '#e07a2c',
+    secondary: '#2a2a33',
+    trim: '#f5efe0',
+    accent: '#ffd166',
+  },
+  /** 罗伯特：紫红西装 */
+  robert: {
+    skin: '#f0c49c',
+    hair: '#3a2a1e',
+    primary: '#8c3a6b',
+    secondary: '#26202c',
+    trim: '#efe6d8',
+    accent: '#ff9ad5',
+  },
+  /** 坂崎百合：粉白道服 */
+  yuri: {
+    skin: '#f6cda8',
+    hair: '#c8862f',
+    primary: '#e86a8a',
+    secondary: '#31313a',
+    trim: '#fdf6ec',
+    accent: '#8fe3ff',
+  },
   /** 特瑞·博加德 */
   terry: {
     skin: '#f0c39a',
