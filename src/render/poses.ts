@@ -37,14 +37,18 @@ export interface Pose {
 const p = (x: number, y: number): Point => [x, y];
 
 /** 基本站架：双脚分开、重心居中、双手抬起 */
+/**
+ * 基本站架：侧身、重心略沉、前手抬到脸前、后手护在胸前、双脚前后分开。
+ * 之前的站架是"正面对称"，看起来像立正——格斗角色第一步就是要把站架做对。
+ */
 const BASE: PoseFrame = {
-  head: p(2, -72),
-  neck: p(1, -62),
-  hip: p(0, -40),
-  armBack: [p(-6, -54), p(-9, -46)],
-  armFront: [p(7, -54), p(12, -46)],
-  legBack: [p(-4, -22), p(-9, -1)],
-  legFront: [p(5, -22), p(10, -1)],
+  head: p(3, -71),
+  neck: p(2, -61),
+  hip: p(-1, -39),
+  armBack: [p(-4, -52), p(2, -57)],
+  armFront: [p(8, -58), p(13, -65)],
+  legBack: [p(-6, -21), p(-13, -1)],
+  legFront: [p(6, -21), p(11, -1)],
 };
 
 /** 在基本站架基础上覆盖若干关键点 */

@@ -11,7 +11,7 @@ import { spriteFor } from './assets';
 import { easeForAnim, isAttackAnim, poseFrameIndex, resolvePose, type Point, type PoseFrame } from './poses';
 
 const OUTLINE = '#0c0a09';
-const HEAD_RADIUS = 8;
+const HEAD_RADIUS = 7.2;
 
 /** 把 #rgb / #rrggbb 按系数调暗（做"远侧肢体"的阴影色） */
 export function shade(hex: string, k: number): string {
@@ -190,7 +190,7 @@ function drawTorso(
   const n = torsoNormal(frame);
   const shoulder = alongTorso(frame, 0.96);
   const waist = alongTorso(frame, 0.16);
-  const shoulderW = 9.2 * opts.build;
+  const shoulderW = 9.8 * opts.build;
   const waistW = 6.3 * opts.build;
 
   const pts: Point[] = [
@@ -444,7 +444,7 @@ function drawFineDetails(
   // ---- 脚：鞋底 + 鞋帮 + 两道鞋带 ----
   const foot = frame.legFront[1];
   block(ctx, foot[0] - 1.8, foot[1] - 0.6, 3.6, 1, dark(o.secondary, 0.55));
-  block(ctx, foot[0] - 1.4, foot[1] - 2.2, 2.8, 1, o.flash ? '#ffffff' : o.trim);
+  block(ctx, foot[0] - 1.4, foot[1] - 2.2, 2.8, 1, o.flash ? '#ffffff' : o.primary);
   block(ctx, foot[0] - 1, foot[1] - 3, 2, 1, dark(o.secondary, 0.7));
   block(ctx, foot[0] + 0.4, foot[1] - 2.6, 1, PX, ink);
 
@@ -458,9 +458,12 @@ function drawFineDetails(
   const cuff = frame.armFront[0];
   block(ctx, cuff[0] - 0.6, cuff[1] - 1.6, 1.2, 3.2, o.flash ? '#ffffff' : o.trim);
 
-  // ---- 衣领 + 胸口徽章（让"这是件外套"成立）----
+  // ---- 立领 + 胸口徽章：京的学生服是"高立领"，这条领子是他的招牌 ----
   const neck = frame.neck;
-  block(ctx, neck[0] - 2, neck[1] - 0.4, 4, 1, o.flash ? '#ffffff' : o.trim);
+  block(ctx, neck[0] - 2.2, neck[1] - 1.4, 4.4, 1, o.flash ? '#ffffff' : o.trim);
+  block(ctx, neck[0] - 2.2, neck[1] + 0.2, 4.4, 1, o.flash ? '#ffffff' : o.trim);
+  // 领口内侧的皮肤（V 字）
+  block(ctx, neck[0] + 0.4, neck[1] - 0.4, 1.4, 1.2, o.flash ? '#ffffff' : o.skin);
   block(ctx, neck[0] + 2.4, neck[1] + 2, 1.6, 1.6, o.flash ? '#ffffff' : o.accent);
 
   // ---- 头发：后层深、前层亮、几缕发丝 ----

@@ -10,9 +10,10 @@ export const PALETTES: Record<string, Palette> = {
   kyo: {
     skin: '#f2c9a0',
     hair: '#241c17',
-    primary: '#1b1b22',
-    secondary: '#33343d',
-    trim: '#f2eee2',
+    // 原版：白色学生服上衣 + 黑色立领/腰带 + 黑色裤子
+    primary: '#e8e3d6',
+    secondary: '#1d1f26',
+    trim: '#15161b',
     accent: '#ff4d3d',
   },
   /** 八神庵：红上衣 + 黑裤（后续角色波次用） */

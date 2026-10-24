@@ -580,9 +580,9 @@ describe('细节层（五官/鞋/衣褶/暗部）', () => {
     expect(eyeWhites.length).toBeGreaterThan(0);
   });
 
-  it('脚上有鞋面（腰带色出现在脚部高度）', () => {
+  it('脚上有鞋面（亮色出现在脚部高度）', () => {
     const ctx = draw();
-    const shoes = ctx.rects.filter((r) => r.fill === PALETTE.trim && r.y > -8);
+    const shoes = ctx.rects.filter((r) => (r.fill === PALETTE.primary || r.fill === PALETTE.trim) && r.y > -8);
     expect(shoes.length).toBeGreaterThan(0);
   });
 
