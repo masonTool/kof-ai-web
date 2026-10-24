@@ -6,3 +6,7 @@ dist/
 # 浏览器自测产物
 .playwright-cli/
 *.png
+# 但游戏运行时用的图集要进仓库
+!public/sheets/*.png
+# AI 出的原始候选图（55MB，本地保留即可，用 node scripts/sprites/build-kyo.mjs 重新生成图集）
+art-source/

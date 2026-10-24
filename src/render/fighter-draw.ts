@@ -632,7 +632,10 @@ export function drawFighter(ctx: Ctx2D, v: FighterVisual): void {
   ctx.scale(v.facing * s, s);
 
   // 有自绘贴图就用贴图，没有就画骨架——两条路共用同一套坐标与镜像
-  const sprite = v.charId ? spriteFor(v.charId, v.anim, poseFrameIndex(v.anim, v.elapsed, v.duration)) : null;
+  const flash = v.flash === true;
+  const sprite = v.charId
+    ? spriteFor(v.charId, v.anim, poseFrameIndex(v.anim, v.elapsed, v.duration), flash)
+    : null;
   if (sprite) {
     const scale = v.spriteScale ?? 1;
     const w = sprite.sw * scale;
@@ -641,8 +644,9 @@ export function drawFighter(ctx: Ctx2D, v: FighterVisual): void {
     const dx = sprite.offsetX ?? -w / 2;
     const dy = sprite.offsetY ?? -h;
     ctx.drawImage(sprite.image, sprite.sx, sprite.sy, sprite.sw, sprite.sh, dx, dy, w, h);
-    if (v.flash === true) {
-      // 贴图也要能闪白：用一张半透明白盖在贴图矩形上
+    if (flash && sprite.silhouette !== true) {
+      // 没有剪影帧时的兜底：盖一张半透明白在贴图矩形上（会在角色周围糊出方块，
+      // 所以素材管线会另外烘一份剪影；这条路径只服务于手绘等大格子的老精灵表）
       ctx.fillStyle = 'rgba(255,255,255,0.85)';
       ctx.fillRect(dx, dy, w, h);
     }

@@ -4,6 +4,7 @@ import { drawFighter } from '../src/render/fighter-draw';
 import {
   currentAssetProvider,
   hasCustomArt,
+  frameListProvider,
   setAssetProvider,
   spriteFor,
   spriteSheetProvider,
@@ -93,6 +94,37 @@ describe('绘制层接管', () => {
     expect(img.dy).toBe(-48);
     expect(img.dw).toBe(32);
     expect(img.dh).toBe(48);
+    setAssetProvider(null);
+  });
+
+  it('有剪影帧时，闪白直接贴剪影，不再盖白方块', () => {
+    setAssetProvider(
+      frameListProvider({
+        kyo: {
+          image: fakeImage,
+          frames: { hit: [{ image: fakeImage, sx: 0, sy: 0, sw: 40, sh: 60, offsetX: -20, offsetY: -60 }] },
+          flashFrames: {
+            hit: [{ image: fakeImage, sx: 40, sy: 0, sw: 40, sh: 60, offsetX: -20, offsetY: -60, silhouette: true }],
+          },
+        },
+      }),
+    );
+    const ctx = new FakeCtx();
+    drawFighter(ctx, { palette, facing: 1, x: 100, y: 200, anim: 'hit', elapsed: 0, charId: 'kyo', flash: true });
+    expect(ctx.images[0]!.sx).toBe(40); // 拿的是剪影那块
+    expect(ctx.rects).toHaveLength(0); // 没有白方块
+    setAssetProvider(null);
+  });
+
+  it('没有剪影帧就退回"盖白块"（老的手绘精灵表还能用）', () => {
+    setAssetProvider(
+      frameListProvider({
+        kyo: { image: fakeImage, frames: { hit: [{ image: fakeImage, sx: 0, sy: 0, sw: 40, sh: 60, offsetX: -20, offsetY: -60 }] } },
+      }),
+    );
+    const ctx = new FakeCtx();
+    drawFighter(ctx, { palette, facing: 1, x: 100, y: 200, anim: 'hit', elapsed: 0, charId: 'kyo', flash: true });
+    expect(ctx.rects).toHaveLength(1);
     setAssetProvider(null);
   });
 

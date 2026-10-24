@@ -19,7 +19,9 @@ import { drawPose, setPixelSize } from './render/fighter-draw';
 import { downloadCanvas, renderSheet, type SheetSpec } from './render/sheet-export';
 import { POSE_LIBRARY } from './render/poses';
 import { lookFor } from './render/looks';
+import { setAssetProvider } from './render/assets';
 import { drawFrame } from './render/renderer';
+import { loadCharSheet } from './render/sprite-loader';
 import { applyViewport, computeViewport, shouldRotate, type SafeInsets } from './render/scale';
 import {
   drawContinue,
@@ -97,6 +99,18 @@ function browserStorage(): StorageLike | null {
 {
   const raw = new URLSearchParams(window.location.search).get('px');
   if (raw !== null) setPixelSize(Number.parseFloat(raw));
+}
+
+/**
+ * 自绘贴图：有就用，没有就用程序化骨架（同一套坐标，随时可切）。
+ *
+ * `?art=proc` 强制走程序化绘制，方便跟贴图版左右对比。
+ * 只有京有素材；其它角色 `fighter()` 返回 null，自然回落到骨架。
+ */
+if (new URLSearchParams(window.location.search).get('art') !== 'proc') {
+  void loadCharSheet('kyo', `${import.meta.env.BASE_URL}sheets/kyo.json`).then((provider) => {
+    if (provider) setAssetProvider(provider);
+  });
 }
 
 const audio = new WebAudioSink();

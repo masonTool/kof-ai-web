@@ -14,11 +14,21 @@ export interface SpriteFrame {
   /** 贴图相对角色原点的偏移（脚底中心）；不写就按帧尺寸居中底部对齐 */
   offsetX?: number;
   offsetY?: number;
+  /**
+   * 这一帧本身就是纯白剪影（受击闪白专用）。
+   *
+   * 为什么要专门画一版：贴图是不规则形状，闪白如果直接盖 `fillRect`
+   * 会在角色周围糊出一个白方块。剪影由素材管线一起烘进图集，画的时候直接贴。
+   */
+  silhouette?: boolean;
 }
 
 export interface AssetProvider {
-  /** 取某个角色某个动画某一帧的贴图；没有就返回 null（回落程序化绘制） */
-  fighter(charId: string, anim: string, frame: number): SpriteFrame | null;
+  /**
+   * 取某个角色某个动画某一帧的贴图；没有就返回 null（回落程序化绘制）。
+   * `flash` 为 true 时优先返回纯白剪影帧（没有剪影就返回普通帧）。
+   */
+  fighter(charId: string, anim: string, frame: number, flash?: boolean): SpriteFrame | null;
 }
 
 let provider: AssetProvider | null = null;
@@ -35,9 +45,9 @@ export function hasCustomArt(): boolean {
   return provider !== null;
 }
 
-export function spriteFor(charId: string, anim: string, frame: number): SpriteFrame | null {
+export function spriteFor(charId: string, anim: string, frame: number, flash = false): SpriteFrame | null {
   if (!provider) return null;
-  return provider.fighter(charId, anim, frame);
+  return provider.fighter(charId, anim, frame, flash);
 }
 
 /**
@@ -71,6 +81,44 @@ function layoutOf(spec: SheetSpec): SheetLayout {
     index += count;
   }
   return { spec, start };
+}
+
+/**
+ * 逐帧矩形版：每一帧自带在图集里的位置和偏移。
+ *
+ * 为什么还要这一套（`SheetSpec` 已经能用了）：`SheetSpec` 要求所有帧一样大、
+ * 统一偏移，那是"人画的、格子对齐的"精灵表的假设。AI 出的帧每张包围盒都不一样
+ * （出拳那帧宽一倍、蹲下那帧矮一截），硬塞进等大格子里会白占一大片透明区，
+ * 而且闪白时 `fillRect` 会画出一个大白框。逐帧矩形是这类素材的正确模型。
+ */
+export interface FrameListSheet {
+  image: CanvasImageSource;
+  /** 动画名 → 帧列表（顺序就是播放顺序） */
+  frames: Record<string, SpriteFrame[]>;
+  /** 动画名 → 纯白剪影帧（可选，闪白用） */
+  flashFrames?: Record<string, SpriteFrame[]>;
+}
+
+/** 用逐帧矩形拼一个 `AssetProvider`（角色 id → 表） */
+export function frameListProvider(sheets: Record<string, FrameListSheet>): AssetProvider {
+  const byChar = new Map<string, { normal: Map<string, SpriteFrame[]>; flash: Map<string, SpriteFrame[]> }>();
+  for (const [charId, sheet] of Object.entries(sheets)) {
+    byChar.set(charId, {
+      normal: new Map(Object.entries(sheet.frames)),
+      flash: new Map(Object.entries(sheet.flashFrames ?? {})),
+    });
+  }
+
+  return {
+    fighter(charId: string, anim: string, frame: number, flash = false): SpriteFrame | null {
+      const anims = byChar.get(charId);
+      if (!anims) return null;
+      const list = (flash ? anims.flash.get(anim) : undefined) ?? anims.normal.get(anim);
+      if (!list || list.length === 0) return null;
+      const local = ((Math.round(frame) % list.length) + list.length) % list.length;
+      return list[local] ?? null;
+    },
+  };
 }
 
 /** 用若干张精灵表拼一个 `AssetProvider`（角色 id → 表） */
