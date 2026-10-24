@@ -552,3 +552,33 @@
 **遗留**：无 `[阻塞]`。逐键重绑键盘记为 T85；还欠回放、移动端适配、美术提升。
 
 
+## 批次 20261025-0010 · 2026-10-25 · 会话 59bce766
+
+**这批的目标**：补回放（只录输入、靠确定性重演）与移动端适配（DPR/安全区/竖屏提示）。
+
+**条目**（原文照搬，状态保持原样；每条下方的完成说明一起搬）：
+
+- [x] [T86] 回放录制与重演（每帧输入 + 种子 + 队伍，重演后哈希逐步一致）：`src/game/replay.ts` `src/game/match.ts` → `tests/replay.test.ts` 断言录制/序列化往返、重演 300 帧哈希逐步相同、截断输入不崩、脏数据被拒绝
+  - 做了什么：`game/replay.ts`——`ReplayRecorder`（每帧记 `[p1held, p2held]`）、`Replay`（版本/种子/**完整 MatchConfig**/队伍/输入）、`ReplayPlayer`（游标，录完给空输入不抛错）、`parseReplay`（外部 JSON 逐项消毒）、`matchFromReplay`（按种子与角色 id 重建对局）；`Match.hash()` 补上组队战的 `indexes`；`World` 暴露 `seed`
+  - 为什么：只录输入不录画面，靠的是"同种子 + 同输入 = 同一场"；这也是一条免费的回归测试——回放对不上就说明确定性被破坏了。`config` 必须整份存：演出帧数不同，帧对齐就不同（第一版只存了局数/时间，重演直接偏）
+  - 验证：`tests/replay.test.ts` 9 条——录制帧数与位掩码、finish 返回副本、**重演 300 帧每 50 帧哈希逐步相同**、截断到 60 帧仍一致、录完再 next 给空输入、reset 重播、JSON 往返、8 种脏数据返回 null、局数/时间夹取、未知角色抛错
+  - 批次：20261025-0010
+- [x] [T87] 移动端适配（DPR 上限、安全区、竖屏提示）：`src/render/scale.ts` → `tests/camera.test.ts` 断言 DPR 夹取、安全区扣减、竖屏判定阈值
+  - 做了什么：`render/scale.ts` 加 `MAX_DPR=2` + `effectiveDpr()`、`SafeInsets` + `NO_INSETS`、`shouldRotate()`，`computeViewport` 支持第 4 个参数（安全区）并把 DPR 夹在 [1,2]
+  - 为什么：手机上 3x 屏按 3x 渲染是纯浪费（像素画 2x 足够），DPR 不夹会明显掉帧；刘海/圆角不扣安全区会切掉血条；竖屏时画面只有拇指大，不如直接提示横屏
+  - 验证：`tests/smoke.test.ts` 加 4 条——DPR 夹取（3→2、0.5→1、NaN→1）、安全区扣减后偏移不小于 inset、可用区域变小缩放跟着变小、竖屏判定（390×844 真、844×390 假、800×800 假）
+  - 批次：20261025-0010
+- [x] [T88] 接线（回放入口 + 竖屏提示层 + 安全区探针）：`src/main.ts` `index.html` → `npm run check` 全绿
+  - 做了什么：`index.html` 加 `#safe-probe`（用 `env(safe-area-inset-*)` 做 padding，JS 读 computedStyle）与 `#rotate-hint` 覆盖层；`main.ts` 的 `resize()` 读安全区 + 切竖屏提示、`orientationchange` 延迟重排；录制挂在 `TrainingSession.lastInputs` 上（**录的是真正喂进模拟层的输入**，含 CPU 的）；F9 回放上一场（播完冻结画面）
+  - 为什么：安全区必须真的读出来用掉，否则就是"写了没人读"（这个项目已经踩过一次 `invuln` 的坑）；录制若只录键盘输入，街机模式里 CPU 不在场，重演必偏——实测哈希差 5 帧就是这么来的
+  - 验证：`npm run check` 584 条全绿；`npm run build` 通过
+  - 批次：20261025-0010
+- [x] [T89] 浏览器自测（录一段→回放一致；模拟手机竖屏出现提示）：`scripts/selftest-replay.mjs` → 跑通并贴结果
+  - 做了什么：新增 `scripts/selftest-replay.mjs`（10 项）；加 `tests/training.test.ts` 两条锁住"lastInputs 记的是假人输入"
+  - 为什么：回放的正确性只能端到端验——单测里录的是自己喂的输入，浏览器里才是"键盘 + CPU + 特效随机数"全都在跑的同一场
+  - 验证：10/10 PASS（录制 114 帧、真人输入进录像、重演后**对局哈希与原局逐位相同**、竖屏提示出现/横屏消失）；`selftest-menu`、`selftest-audio-pause` 重跑通过
+  - 批次：20261025-0010
+
+**遗留**：无 `[阻塞]`。还欠：逐键重绑（T85）、美术提升、暂停里加"选项"入口。
+
+
