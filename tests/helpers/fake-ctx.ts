@@ -1,0 +1,116 @@
+import type { Ctx2D } from '../../src/render/ctx';
+
+export interface Rect {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  fill: string;
+}
+
+export interface Line {
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+  stroke: string;
+}
+
+/** 记账用的假 canvas context：只记调用，不画图 */
+export class FakeCtx implements Ctx2D {
+  calls: string[] = [];
+  transforms: { translate: [number, number][]; scale: [number, number][] } = { translate: [], scale: [] };
+  fills: string[] = [];
+  lineWidths: number[] = [];
+  rects: Rect[] = [];
+  lines: Line[] = [];
+  texts: { text: string; x: number; y: number }[] = [];
+  fillStyle = '#000';
+  strokeStyle = '#000';
+  lineWidth = 1;
+  lineCap: 'butt' | 'round' | 'square' = 'butt';
+  lineJoin: 'miter' | 'round' | 'bevel' = 'miter';
+  globalAlpha = 1;
+  font = '';
+  textAlign: 'left' | 'center' | 'right' = 'left';
+  textBaseline: 'top' | 'middle' | 'bottom' | 'alphabetic' = 'alphabetic';
+  depth = 0;
+  maxDepth = 0;
+
+  private pathStart: [number, number] = [0, 0];
+  private lastPoint: [number, number] = [0, 0];
+
+  save(): void {
+    this.calls.push('save');
+    this.depth++;
+    this.maxDepth = Math.max(this.maxDepth, this.depth);
+  }
+
+  restore(): void {
+    this.calls.push('restore');
+    this.depth--;
+  }
+
+  translate(x: number, y: number): void {
+    this.calls.push('translate');
+    this.transforms.translate.push([x, y]);
+  }
+
+  scale(x: number, y: number): void {
+    this.calls.push('scale');
+    this.transforms.scale.push([x, y]);
+  }
+
+  beginPath(): void {
+    this.calls.push('beginPath');
+  }
+
+  moveTo(x: number, y: number): void {
+    this.calls.push('moveTo');
+    this.pathStart = [x, y];
+    this.lastPoint = [x, y];
+  }
+
+  lineTo(x: number, y: number): void {
+    this.calls.push('lineTo');
+    this.lastPoint = [x, y];
+  }
+
+  closePath(): void {
+    this.calls.push('closePath');
+  }
+
+  arc(): void {
+    this.calls.push('arc');
+  }
+
+  fill(): void {
+    this.calls.push('fill');
+    this.fills.push(this.fillStyle);
+  }
+
+  stroke(): void {
+    this.calls.push('stroke');
+    this.lineWidths.push(this.lineWidth);
+    this.lines.push({ x1: this.pathStart[0], y1: this.pathStart[1], x2: this.lastPoint[0], y2: this.lastPoint[1], stroke: this.strokeStyle });
+  }
+
+  fillRect(x: number, y: number, w: number, h: number): void {
+    this.calls.push('fillRect');
+    this.fills.push(this.fillStyle);
+    this.rects.push({ x, y, w, h, fill: this.fillStyle });
+  }
+
+  clearRect(): void {
+    this.calls.push('clearRect');
+  }
+
+  fillText(text: string, x: number, y: number): void {
+    this.calls.push('fillText');
+    this.texts.push({ text, x, y });
+  }
+
+  count(name: string): number {
+    return this.calls.filter((c) => c === name).length;
+  }
+}

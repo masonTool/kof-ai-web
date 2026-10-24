@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import { Rng } from '../src/core/rng';
 import type { Palette } from '../src/data/schema';
 import { FighterState } from '../src/sim/state';
-import type { Ctx2D } from '../src/render/ctx';
 import {
   POSE_LIBRARY,
   STATE_ANIM,
@@ -15,6 +14,7 @@ import {
 import { drawFighter, drawPose, shade } from '../src/render/fighter-draw';
 import { currentAssetProvider, hasCustomArt, setAssetProvider, spriteFor } from '../src/render/assets';
 import { FxSystem } from '../src/render/fx';
+import { FakeCtx } from './helpers/fake-ctx';
 
 const PALETTE: Palette = {
   skin: '#e8b48a',
@@ -25,78 +25,6 @@ const PALETTE: Palette = {
   accent: '#e23b3b',
 };
 
-/** 记账用的假 canvas context：只记调用，不画图 */
-class FakeCtx implements Ctx2D {
-  calls: string[] = [];
-  transforms: { translate: [number, number][]; scale: [number, number][] } = { translate: [], scale: [] };
-  fills: string[] = [];
-  lineWidths: number[] = [];
-  fillStyle = '#000';
-  strokeStyle = '#000';
-  lineWidth = 1;
-  lineCap: 'butt' | 'round' | 'square' = 'butt';
-  lineJoin: 'miter' | 'round' | 'bevel' = 'miter';
-  globalAlpha = 1;
-  font = '';
-  textAlign: 'left' | 'center' | 'right' = 'left';
-  textBaseline: 'top' | 'middle' | 'bottom' | 'alphabetic' = 'alphabetic';
-  depth = 0;
-  maxDepth = 0;
-
-  save(): void {
-    this.calls.push('save');
-    this.depth++;
-    this.maxDepth = Math.max(this.maxDepth, this.depth);
-  }
-  restore(): void {
-    this.calls.push('restore');
-    this.depth--;
-  }
-  translate(x: number, y: number): void {
-    this.calls.push('translate');
-    this.transforms.translate.push([x, y]);
-  }
-  scale(x: number, y: number): void {
-    this.calls.push('scale');
-    this.transforms.scale.push([x, y]);
-  }
-  beginPath(): void {
-    this.calls.push('beginPath');
-  }
-  moveTo(): void {
-    this.calls.push('moveTo');
-  }
-  lineTo(): void {
-    this.calls.push('lineTo');
-  }
-  closePath(): void {
-    this.calls.push('closePath');
-  }
-  arc(): void {
-    this.calls.push('arc');
-  }
-  fill(): void {
-    this.calls.push('fill');
-    this.fills.push(this.fillStyle);
-  }
-  stroke(): void {
-    this.calls.push('stroke');
-    this.lineWidths.push(this.lineWidth);
-  }
-  fillRect(): void {
-    this.calls.push('fillRect');
-    this.fills.push(this.fillStyle);
-  }
-  clearRect(): void {
-    this.calls.push('clearRect');
-  }
-  fillText(): void {
-    this.calls.push('fillText');
-  }
-  count(name: string): number {
-    return this.calls.filter((c) => c === name).length;
-  }
-}
 
 function allJoints(frame: PoseFrame): number[] {
   const nums: number[] = [];

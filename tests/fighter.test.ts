@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Btn, makeInput } from '../src/core/input';
-import { GROUND_Y } from '../src/sim/constants';
+import { GROUND_Y, STAGE_RIGHT } from '../src/sim/constants';
 import { FighterState } from '../src/sim/state';
 import { Fighter } from '../src/sim/fighter';
 import { World } from '../src/sim/world';
@@ -128,9 +128,9 @@ describe('地面移动', () => {
 
   it('撞到舞台边界会夹住', () => {
     const { world, fighter } = setup();
-    fighter.x = 310;
+    fighter.x = STAGE_RIGHT - 2;
     hold(world, Btn.Right, 10);
-    expect(fighter.x).toBe(312);
+    expect(fighter.x).toBe(STAGE_RIGHT);
   });
 });
 

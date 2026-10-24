@@ -3,8 +3,11 @@
  * 规则：优先整数倍缩放（像素才锐利），窗口装不下 1 倍时才用小数缩放。
  * 纯函数部分（computeViewport）不碰 DOM，可在 node 里测。
  */
-export const LOGICAL_WIDTH = 320;
-export const LOGICAL_HEIGHT = 224;
+import { VIEW_HEIGHT, VIEW_WIDTH } from '../sim/constants';
+
+/** 逻辑分辨率（唯一来源在 sim/constants.ts） */
+export const LOGICAL_WIDTH = VIEW_WIDTH;
+export const LOGICAL_HEIGHT = VIEW_HEIGHT;
 
 export interface Viewport {
   /** 逻辑像素 → CSS 像素 */
