@@ -282,3 +282,20 @@
 - 适用面：`render/screens.ts` 的台词框/说明文字；任何"折行后逐行定位"的绘制。
 - 批次：20261025-0245
 
+## 角色绘制与特效
+
+### 表现层的"特殊姿势"用相位判断，别塞进状态机
+
+- 决定：登场挑衅没有加 `FighterState.Taunt`，而是渲染层 `introAnimFor(match)` 判 `phase === 'intro'`；胜负姿势同理（`resultAnimFor`）。
+- 为什么：状态机每加一个状态，`canAct/isBusy/受击能否打断` 全都要跟着想一遍；而这些姿势**不可操作、不会被攻击**，本质是演出。放渲染层就只有一行判断。
+- 边界：一旦某个姿势需要参与判定（比如挑衅能被打断），才该升级成状态。
+- 适用面：`render/renderer.ts` 的 `animFor`；以后再加"胜利动作/入场台词/超必杀演出"照此办理。
+- 批次：20261025-0320
+
+### 给 Ctx2D 加接口要同步假 ctx
+
+- 症状：`drawProjectile` 用了 `ctx.ellipse()`，类型检查直接报"Ctx2D 上没有 ellipse"——因为 `render/ctx.ts` 是本项目自己声明的最小 2D 接口（为了在 node 里用假 ctx 断言）。
+- 处置：加接口 → 补 `FakeCtx` 的同名方法并**记账参数**（`arcs`/`ellipses`），否则测试只能断言"调用过 arc"，分不清画的是圆还是月牙。
+- 适用面：`render/ctx.ts` + `tests/helpers/fake-ctx.ts`；以后用 `roundRect`/`bezierCurveTo` 同理。
+- 批次：20261025-0320
+
