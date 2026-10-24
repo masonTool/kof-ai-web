@@ -19,7 +19,7 @@ async (page) => {
 
   await page.goto('http://localhost:5174/');
   await wait(1200);
-  record('花名册 19 人', await page.evaluate(() => window.__kof.flow.roster.length), 19);
+  record('花名册 22 人', await page.evaluate(() => window.__kof.flow.roster.length), 22);
 
   // 标题 → 选人，光标移到第 4 人（大门）
   await tapKey('KeyJ');
@@ -295,6 +295,41 @@ async (page) => {
   });
   record('陈国汉在场上', chang.id, 'chang');
   record('鉄球大回転打到人', chang.hp2 < 1000, true);
+
+  // 比利：火龍棍是飞行道具
+  await page.evaluate(() => {
+    const k = window.__kof;
+    k.flow.picks = [k.flow.roster[19], k.flow.roster[0]];
+    k.flow.screen = 'fight';
+    k.startMatch();
+  });
+  await wait(1200);
+  await page.evaluate(async () => {
+    const m = window.__kof.match;
+    m.softReset();
+    m.p1.x = 220;
+    m.p2.x = 430;
+    window.__kof.training.settings.dummy = 'stand';
+    const key = (t, c) => window.dispatchEvent(new KeyboardEvent(t, { code: c, bubbles: true }));
+    const f = () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+    key('keydown', 'ArrowDown');
+    await f();
+    key('keydown', 'ArrowLeft');
+    await f();
+    key('keyup', 'ArrowDown');
+    await f();
+    key('keydown', 'KeyJ');
+    await f();
+    key('keyup', 'KeyJ');
+    key('keyup', 'ArrowLeft');
+  });
+  await wait(280);
+  const billy = await page.evaluate(() => {
+    const m = window.__kof.match;
+    return { id: m.p1.char.id, proj: m.world.entities.filter((e) => e.constructor.name === 'Projectile').length };
+  });
+  record('比利在场上', billy.id, 'billy');
+  record('火龍棍是飞行道具', billy.proj > 0, true);
 
   return report.join('\n') + `\n\nOVERALL: ${report.every((r) => r.startsWith('PASS')) ? 'ALL PASS' : 'HAS FAIL'}`;
 }

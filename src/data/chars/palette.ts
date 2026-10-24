@@ -168,6 +168,33 @@ export const PALETTES: Record<string, Palette> = {
     trim: '#e9e4d8',
     accent: '#9fe0ff',
   },
+  /** 比利·凯恩：红马甲 + 头巾 */
+  billy: {
+    skin: '#e8bb8e',
+    hair: '#d8c07a',
+    primary: '#c8342c',
+    secondary: '#2a2e36',
+    trim: '#f0e6d2',
+    accent: '#ffb347',
+  },
+  /** 如月影二：深紫忍者装 */
+  eiji: {
+    skin: '#eab98d',
+    hair: '#26202c',
+    primary: '#4b3f7a',
+    secondary: '#221f2b',
+    trim: '#d8d4e8',
+    accent: '#9fe0ff',
+  },
+  /** 矢吹真吾：白 T + 蓝裤 */
+  shingo: {
+    skin: '#f2c9a0',
+    hair: '#2b2118',
+    primary: '#e8e4d8',
+    secondary: '#33506e',
+    trim: '#c8342c',
+    accent: '#ffd166',
+  },
   /** 特瑞·博加德 */
   terry: {
     skin: '#f0c39a',
