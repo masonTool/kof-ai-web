@@ -57,8 +57,8 @@ function arena(char: CharDef, gap = 40): { world: World; p1: Fighter; p2: Fighte
 }
 
 describe('花名册', () => {
-  it('四个人都在，id 唯一，按 id 能取到', () => {
-    expect(ROSTER.map((c) => c.id)).toEqual(['kyo', 'iori', 'benimaru', 'daimon']);
+  it('七个人都在，id 唯一，按 id 能取到', () => {
+    expect(ROSTER.map((c) => c.id)).toEqual(['kyo', 'iori', 'benimaru', 'daimon', 'terry', 'andy', 'joe']);
     expect(new Set(ROSTER.map((c) => c.id)).size).toBe(ROSTER.length);
     expect(charById('benimaru')?.name).toBe('二阶堂红丸');
     expect(charById('daimon')?.name).toBe('大门五郎');

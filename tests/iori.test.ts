@@ -58,7 +58,7 @@ describe('八神庵：数据自洽', () => {
   });
 
   it('花名册能按 id 取到，两名角色 id 不重复', () => {
-    expect(ROSTER.map((c) => c.id)).toEqual(['kyo', 'iori', 'benimaru', 'daimon']);
+    expect(ROSTER.map((c) => c.id)).toEqual(['kyo', 'iori', 'benimaru', 'daimon', 'terry', 'andy', 'joe']);
     expect(charById('iori')?.name).toBe('八神庵');
     expect(charById('nobody')).toBeUndefined();
   });

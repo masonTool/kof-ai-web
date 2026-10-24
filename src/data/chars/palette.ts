@@ -42,6 +42,24 @@ export const PALETTES: Record<string, Palette> = {
     trim: '#d9d3c2',
     accent: '#c8e06a',
   },
+  /** 安迪·博加德：白道服 + 金发 */
+  andy: {
+    skin: '#f0c39a',
+    hair: '#e8cf6a',
+    primary: '#e9e4d4',
+    secondary: '#2b2b33',
+    trim: '#3b6ea8',
+    accent: '#7ee0ff',
+  },
+  /** 东丈：红头巾 + 黑裤 */
+  joe: {
+    skin: '#e8b98d',
+    hair: '#2a2118',
+    primary: '#c8342c',
+    secondary: '#23262d',
+    trim: '#f3ead6',
+    accent: '#ffb347',
+  },
   /** 特瑞·博加德 */
   terry: {
     skin: '#f0c39a',
