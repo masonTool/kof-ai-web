@@ -8,7 +8,20 @@
  * 这样"打中该响什么"不依赖浏览器，也能在 node 里断言。
  */
 
-export type SfxName = 'hitLight' | 'hitHeavy' | 'guard' | 'ko' | 'whiff' | 'menu' | 'confirm' | 'start';
+export type SfxName =
+  | 'hitLight'
+  | 'hitHeavy'
+  | 'hitCounter'
+  | 'guard'
+  | 'guardCrush'
+  | 'clash'
+  | 'ko'
+  | 'whiff'
+  | 'superStart'
+  | 'proj'
+  | 'menu'
+  | 'confirm'
+  | 'start';
 
 export interface SfxSpec {
   wave: OscillatorType;
@@ -20,18 +33,36 @@ export interface SfxSpec {
   ms: number;
   /** 峰值音量 0~1 */
   gain: number;
-  /** 噪声混合比例 0~1（打击感靠它） */
+  /** 噪声混合比例 0~1 */
   noise?: number;
+  /** 低频撞击层（0~1）：80~180Hz 的正弦短促下滑，负责"沉"的那一半 */
+  thump?: number;
 }
 
+/**
+ * 音效表。
+ *
+ * 打击感的配方：**低频撞击（body）+ 高频噪声（crack）**。只有一个下滑音的话，
+ * 听起来像电子音而不是"打到了东西"。所以每条打击音都给了 `thump`（低频下滑）
+ * 和 `noise`（宽频噪声）两个量，`play()` 里分两层叠。
+ */
 export const SFX: Record<SfxName, SfxSpec> = {
-  hitLight: { wave: 'square', from: 620, to: 240, ms: 70, gain: 0.22, noise: 0.35 },
-  hitHeavy: { wave: 'sawtooth', from: 320, to: 90, ms: 130, gain: 0.3, noise: 0.5 },
-  guard: { wave: 'triangle', from: 900, to: 700, ms: 60, gain: 0.16, noise: 0.2 },
-  ko: { wave: 'sawtooth', from: 220, to: 60, ms: 420, gain: 0.32, noise: 0.15 },
-  whiff: { wave: 'sine', from: 420, to: 300, ms: 50, gain: 0.08 },
-  menu: { wave: 'square', from: 520, to: 520, ms: 40, gain: 0.12 },
-  confirm: { wave: 'square', from: 660, to: 990, ms: 90, gain: 0.16 },
+  hitLight: { wave: 'square', from: 640, to: 220, ms: 65, gain: 0.22, noise: 0.4, thump: 0.5 },
+  hitHeavy: { wave: 'sawtooth', from: 340, to: 80, ms: 140, gain: 0.3, noise: 0.55, thump: 0.9 },
+  // 反击：比普通命中更"脆"更响，玩家要能凭听觉分出反击
+  hitCounter: { wave: 'square', from: 900, to: 260, ms: 110, gain: 0.3, noise: 0.7, thump: 0.7 },
+  guard: { wave: 'triangle', from: 940, to: 720, ms: 55, gain: 0.14, noise: 0.18 },
+  // 破防：金属被砸裂的钝响
+  guardCrush: { wave: 'sawtooth', from: 520, to: 120, ms: 220, gain: 0.28, noise: 0.5, thump: 0.6 },
+  clash: { wave: 'triangle', from: 1500, to: 700, ms: 120, gain: 0.22, noise: 0.35 },
+  ko: { wave: 'sawtooth', from: 220, to: 50, ms: 460, gain: 0.34, noise: 0.2, thump: 1 },
+  whiff: { wave: 'sine', from: 460, to: 260, ms: 55, gain: 0.07, noise: 0.25 },
+  // 超必杀起手：上滑 + 强噪声，像气在聚
+  superStart: { wave: 'sawtooth', from: 180, to: 1200, ms: 420, gain: 0.26, noise: 0.45, thump: 0.35 },
+  // 放飞行道具：短促的"呼"
+  proj: { wave: 'sine', from: 300, to: 900, ms: 130, gain: 0.16, noise: 0.4 },
+  menu: { wave: 'square', from: 520, to: 520, ms: 40, gain: 0.1 },
+  confirm: { wave: 'square', from: 660, to: 990, ms: 90, gain: 0.15 },
   start: { wave: 'square', from: 440, to: 880, ms: 180, gain: 0.2 },
 };
 
@@ -54,12 +85,20 @@ export class NullSink implements SfxSink {
 export function sfxForWorldEvent(type: string, data?: Readonly<Record<string, number | string | boolean>>): SfxName | null {
   switch (type) {
     case 'hit': {
+      if (data?.['counter'] === true || data?.['counter'] === 1) return 'hitCounter';
       const damage = Number(data?.['damage'] ?? 0);
       return damage >= 60 ? 'hitHeavy' : 'hitLight';
     }
     case 'guard':
-    case 'guardcrush':
       return 'guard';
+    case 'guardcrush':
+      return 'guardCrush';
+    case 'clash':
+      return 'clash';
+    case 'superstart':
+      return 'superStart';
+    case 'proj':
+      return 'proj';
     case 'ko':
     case 'dizzy':
       return 'ko';
@@ -149,6 +188,22 @@ export class WebAudioSink implements SfxSink {
     osc.connect(env);
     osc.start(now);
     osc.stop(now + dur + 0.02);
+
+    if (spec.thump && spec.thump > 0) {
+      // 低频撞击：一条 120→45Hz 的正弦在 120ms 内衰减，这才是"咚"的来源
+      const thumpOsc = ctx.createOscillator();
+      thumpOsc.type = 'sine';
+      const thumpGain = ctx.createGain();
+      const thumpDur = Math.min(0.22, dur + 0.06);
+      thumpGain.gain.setValueAtTime(spec.gain * spec.thump * 1.4, now);
+      thumpGain.gain.exponentialRampToValueAtTime(0.0001, now + thumpDur);
+      thumpOsc.frequency.setValueAtTime(120, now);
+      thumpOsc.frequency.exponentialRampToValueAtTime(45, now + thumpDur);
+      thumpOsc.connect(thumpGain);
+      thumpGain.connect(this.master);
+      thumpOsc.start(now);
+      thumpOsc.stop(now + thumpDur + 0.02);
+    }
 
     if (spec.noise && spec.noise > 0) {
       const src = ctx.createBufferSource();

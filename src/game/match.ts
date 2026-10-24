@@ -197,6 +197,10 @@ export class Match {
     this.superFlash = SUPER_FLASH_FRAMES;
     this.cam.shake(SUPER_FLASH_FRAMES, 3.5);
     for (const f of this.fighters) f.addHitstop(SUPER_FREEZE_FRAMES);
+    // 起手那一帧在角色身上炸一圈冲击（特效层是确定性的，回放一致）
+    const caster = started.find((f) => f.move?.kind === 'super');
+    if (caster) this.fx.spawnImpact(caster.x, caster.y - 40, { heavy: true, dir: caster.facing });
+    this.world.emit('superstart', {});
   }
 
   /** 镜头与特效：（回合结束/结算里也要走，画面才不僵） */
@@ -209,12 +213,17 @@ export class Match {
 
   private applyHitEffects(hits: readonly HitResolution[]): void {
     for (const h of hits) {
+      // 冲击方向：从攻击方指向被打方（火花朝被打的方向甩，看起来才是"被打了"）
+      const dir: 1 | -1 = h.defender.x >= h.attacker.x ? 1 : -1;
       if (h.kind === 'block') {
         this.fx.spawnGuard(h.x, h.y, h.style);
+        // 防御也有冲击帧，但要明显比打中弱（否则分不清挡住了还是被打中）
+        this.fx.spawnImpact(h.x, h.y, { style: h.style, dir });
         this.cam.shake(3, 1); // 防御也要"顶一下"，否则看不出挡住了
       } else {
         const heavy = h.hit.damage >= 60;
         this.fx.spawnHit(h.x, h.y, { heavy, counter: h.counter, style: h.style });
+        this.fx.spawnImpact(h.x, h.y, { heavy, counter: h.counter, style: h.style, dir });
         // 震屏：重击更狠，反击再加一点
         this.cam.shake(heavy ? 8 : 5, (heavy ? 3 : 1.6) + (h.counter ? 0.8 : 0));
       }

@@ -166,3 +166,56 @@ describe('气弹类角色', () => {
     expect(styleOfMove('leona', { ...fakeMove({ kind: 'super' }) })).toBe('wind');
   });
 });
+
+describe('冲击帧（命中当帧的爆闪）', () => {
+  const make = (): FxSystem => new FxSystem(new Rng(7));
+
+  it('打中会生成冲击帧，重击比轻击活得久', () => {
+    const fx = make();
+    fx.spawnImpact(100, 120, { heavy: false });
+    fx.spawnImpact(100, 120, { heavy: true });
+    expect(fx.impacts).toHaveLength(2);
+    expect(fx.impacts[0]!.maxLife).toBeLessThan(fx.impacts[1]!.maxLife);
+  });
+
+  it('反击/属性都会带到冲击帧上（配色和大小跟着变）', () => {
+    const fx = make();
+    fx.spawnImpact(0, 0, { counter: true, style: 'fire', dir: -1 });
+    const im = fx.impacts[0]!;
+    expect(im.counter).toBe(true);
+    expect(im.style).toBe('fire');
+    expect(im.dir).toBe(-1);
+  });
+
+  it('到寿命就自己消失，clear() 也清得掉', () => {
+    const fx = make();
+    fx.spawnImpact(10, 10, { heavy: false });
+    for (let i = 0; i < 10; i++) fx.update();
+    expect(fx.impacts).toHaveLength(0);
+
+    fx.spawnImpact(10, 10, {});
+    fx.clear();
+    expect(fx.impacts).toHaveLength(0);
+  });
+
+  it('画出来是"圆环 + 尖刺 + 白团"，不是只有粒子', () => {
+    const fx = make();
+    fx.spawnImpact(50, 60, { heavy: true, style: 'thunder' });
+    // 推进两帧：第一帧只有白团，尖刺是"长出来"的
+    fx.update();
+    fx.update();
+    const ctx = new FakeCtx();
+    fx.draw(ctx);
+    expect(ctx.calls.filter((c) => c === 'arc').length).toBeGreaterThanOrEqual(2); // 圆环 + 白团
+    expect(ctx.calls.filter((c) => c === 'fill').length).toBeGreaterThanOrEqual(6); // 白团 + 内芯 + 四根尖刺
+    expect(ctx.globalAlpha).toBe(1); // 画完必须还原，否则后面整屏半透明
+  });
+
+  it('不含随机数：同样的输入两次生成完全一样（回放不会漂）', () => {
+    const a = make();
+    const b = make();
+    a.spawnImpact(1, 2, { heavy: true, counter: true, style: 'ki', dir: 1 });
+    b.spawnImpact(1, 2, { heavy: true, counter: true, style: 'ki', dir: 1 });
+    expect(a.impacts[0]).toEqual(b.impacts[0]);
+  });
+});

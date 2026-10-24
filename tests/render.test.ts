@@ -333,30 +333,41 @@ describe('飞行道具形状', () => {
 
   it('气弹（orb）用圆画：尾巴 + 外圈 + 内芯三个圆', () => {
     const ctx = shapeOf('orb');
-    expect(ctx.arcs.length).toBe(3);
-    expect(ctx.ellipses.length).toBe(0);
+    // 4 个拖尾圆 + 尾巴/外圈/内芯
+    expect(ctx.arcs.length).toBe(7);
+    // 地面辉光用椭圆
+    expect(ctx.ellipses.length).toBe(1);
+  });
+
+  it('所有道具都有拖尾：尾部圆比头部小（速度感靠它）', () => {
+    const ctx = shapeOf('orb');
+    const tail = ctx.arcs.slice(0, 4);
+    const body = ctx.arcs[5]!;
+    expect(tail[0]!.r).toBeGreaterThan(tail[3]!.r); // 越远越小
+    expect(body.r).toBeGreaterThan(tail[3]!.r);
   });
 
   it('音速波（wave）用横向椭圆画', () => {
     const ctx = shapeOf('wave');
-    expect(ctx.ellipses.length).toBeGreaterThanOrEqual(3);
-    expect(ctx.arcs.length).toBe(0);
+    expect(ctx.ellipses.length).toBeGreaterThanOrEqual(4);
+    expect(ctx.arcs.length).toBe(4); // 只有拖尾是圆
     // 横向比纵向宽（波是横着的）
     expect(ctx.ellipses[0]!.rx).toBeGreaterThan(ctx.ellipses[0]!.ry);
   });
 
   it('火柱（flame）叠三个圆，越往上越小', () => {
     const ctx = shapeOf('flame');
-    expect(ctx.arcs.length).toBe(4); // 3 层火焰 + 1 个内芯
-    const body = ctx.arcs.slice(0, 3);
+    expect(ctx.arcs.length).toBe(8); // 4 拖尾 + 3 层火焰 + 1 个内芯
+    const body = ctx.arcs.slice(4, 7);
     expect(body[1]!.r).toBeGreaterThan(body[2]!.r);
   });
 
   it('风刃（blade）用弧线描边画（月牙），不是填充圆', () => {
     const ctx = shapeOf('blade');
-    expect(ctx.arcs.length).toBe(2); // 外弧 + 内弧
+    // 4 拖尾圆 + 外弧 + 内弧（只有两条是描边）
+    expect(ctx.arcs.length).toBe(6);
     expect(ctx.calls.filter((c) => c === 'stroke').length).toBe(2);
-    expect(ctx.ellipses.length).toBe(0);
+    expect(ctx.ellipses.length).toBe(1);
   });
 
   it('形状之间画法确实不同（不是同一个圆换了颜色）', () => {

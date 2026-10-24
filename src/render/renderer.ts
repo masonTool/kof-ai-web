@@ -111,6 +111,22 @@ export function drawProjectile(ctx: Ctx2D, p: Projectile): void {
   // 用剩余寿命做一点脉动，纯函数、回放一致（不用随机数）
   const pulse = 1 + Math.sin(p.life * 0.6) * 0.08;
 
+  // 拖尾：越远的越小越淡（速度感主要靠它；没有拖尾的球看起来像贴纸）
+  ctx.globalAlpha = 0.18;
+  ctx.fillStyle = core;
+  for (let i = 1; i <= 4; i++) {
+    ctx.globalAlpha = 0.2 - i * 0.04;
+    ctx.beginPath();
+    ctx.arc(p.x - dir * i * 9, p.y + Math.sin((p.life - i * 2) * 0.5) * 1.5, 7 - i * 1.2, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  // 贴地辉光：让道具"压在地上"，不然像浮在半空
+  ctx.globalAlpha = 0.22;
+  ctx.beginPath();
+  ctx.ellipse(p.x, p.owner.y - 1, 14, 4, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.globalAlpha = 1;
+
   if (p.shape === 'wave') {
     // 音速波：横向拉长的椭圆 + 两道尾迹
     ctx.globalAlpha = 0.3;
@@ -204,7 +220,10 @@ export function drawFrame(ctx: Ctx2D, match: Match, opts: RenderOptions = {}): v
       duration,
       // 只在"挨打的那一方"刚被打中的 3 帧闪白：
       // 攻击方也闪的话，两个人一起变成白影子，反而看不出谁打了谁
-      flash: f.state === FighterState.Hit && f.stateFrame < 3,
+      flash:
+        (f.state === FighterState.Hit && f.stateFrame < 3) ||
+        // 超必杀起手前 2 帧：施术者整个人亮成剪影，配合闪白和集中线
+        (match.superFlash > 0 && f.move?.kind === 'super' && f.stateFrame < 2),
       alpha: f.state === FighterState.Dead ? 0.8 : 1,
       look: lookFor(f.char.id),
       charId: f.char.id,
@@ -227,9 +246,29 @@ export function drawFrame(ctx: Ctx2D, match: Match, opts: RenderOptions = {}): v
   // 超必杀起手：先闪白（盖住 HUD），再压上下黑边——
   // 顺序反过来的话黑边也会被闪白冲淡，看着像灰条而不是电影黑边
   if (match.superFlash > 0) {
-    const alpha = (match.superFlash / SUPER_FLASH_FRAMES) * 0.45;
+    const k = match.superFlash / SUPER_FLASH_FRAMES; // 1 → 0
+    const alpha = k * 0.45;
     ctx.fillStyle = `rgba(255,255,255,${alpha.toFixed(3)})`;
     ctx.fillRect(0, 0, VIEW_WIDTH, VIEW_HEIGHT);
+
+    // 集中线：从四周射向画面中心的细三角，撑住"定格"那几帧的气势
+    const cx = VIEW_WIDTH / 2;
+    const cy = VIEW_HEIGHT / 2;
+    ctx.globalAlpha = 0.5 * k;
+    ctx.fillStyle = '#ffffff';
+    for (let i = 0; i < 24; i++) {
+      const ang = (i / 24) * Math.PI * 2 + (1 - k) * 0.5;
+      const outer = 240 - (1 - k) * 40;
+      const len = 34 + (i % 3) * 16;
+      const wide = 0.012 + (i % 2) * 0.008;
+      ctx.beginPath();
+      ctx.moveTo(cx + Math.cos(ang) * outer, cy + Math.sin(ang) * outer);
+      ctx.lineTo(cx + Math.cos(ang - wide) * (outer - len), cy + Math.sin(ang - wide) * (outer - len));
+      ctx.lineTo(cx + Math.cos(ang + wide) * (outer - len), cy + Math.sin(ang + wide) * (outer - len));
+      ctx.closePath();
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
 
     ctx.fillStyle = '#000000';
     ctx.fillRect(0, 0, VIEW_WIDTH, CINEMA_BAR);

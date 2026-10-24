@@ -10,6 +10,28 @@ import type { Ctx2D } from './ctx';
 
 export type FxKind = 'spark' | 'guard' | 'dust';
 
+/**
+ * 冲击帧：命中那一瞬间的"十字爆闪 + 扩散圆环"。
+ *
+ * 光靠粒子（小方块四散）是不够的——粒子要飞几帧才看得见，而打击感的核心是
+ * **命中当帧就有一块很亮的东西糊在接触点**。所以单独做一层：
+ * 前 2 帧白光团 + 十字尖刺，之后只剩扩散圆环收尾。
+ *
+ * 完全确定性（不含随机数），回放时不会漂。
+ */
+export interface Impact {
+  x: number;
+  y: number;
+  /** 剩余帧 */
+  life: number;
+  maxLife: number;
+  heavy: boolean;
+  counter: boolean;
+  style: FxStyle;
+  /** 冲击朝向（+1 向右），尖刺沿这个方向更长 */
+  dir: 1 | -1;
+}
+
 export interface Particle {
   x: number;
   y: number;
@@ -56,6 +78,13 @@ export function guardColorsFor(style: FxStyle): string[] {
   return style === 'none' ? [...GUARD_COLORS] : [...GUARD_COLORS, STYLE_COLORS[style][1]!];
 }
 
+export interface ImpactOptions {
+  heavy?: boolean;
+  counter?: boolean;
+  style?: FxStyle;
+  dir?: 1 | -1;
+}
+
 export interface SpawnOptions {
   /** 判定等级，决定火花数量（重击更炸） */
   heavy?: boolean;
@@ -66,6 +95,8 @@ export interface SpawnOptions {
 
 export class FxSystem {
   readonly particles: Particle[] = [];
+  /** 冲击帧（画在粒子下面，粒子是溅出来的火星） */
+  readonly impacts: Impact[] = [];
 
   constructor(
     private readonly rng: Rng,
@@ -103,6 +134,25 @@ export class FxSystem {
         style,
       });
     }
+  }
+
+  /**
+   * 冲击帧。`heavy` 决定大小，`counter` 再放大一圈（反击要看得出来）。
+   */
+  spawnImpact(x: number, y: number, opts: ImpactOptions = {}): void {
+    const heavy = opts.heavy === true;
+    const maxLife = heavy ? 9 : 6;
+    this.impacts.push({
+      x,
+      y,
+      life: maxLife,
+      maxLife,
+      heavy,
+      counter: opts.counter === true,
+      style: opts.style ?? 'none',
+      dir: opts.dir ?? 1,
+    });
+    if (this.impacts.length > 24) this.impacts.splice(0, this.impacts.length - 24);
   }
 
   spawnHit(x: number, y: number, opts: SpawnOptions = {}): void {
@@ -153,6 +203,11 @@ export class FxSystem {
 
   /** 每逻辑帧调一次 */
   update(): void {
+    for (let i = this.impacts.length - 1; i >= 0; i--) {
+      const im = this.impacts[i]!;
+      im.life--;
+      if (im.life <= 0) this.impacts.splice(i, 1);
+    }
     for (let i = this.particles.length - 1; i >= 0; i--) {
       const p = this.particles[i]!;
       p.x += p.vx;
@@ -164,7 +219,79 @@ export class FxSystem {
     }
   }
 
+  /** 冲击帧：白团 → 十字尖刺 → 扩散圆环 */
+  private drawImpacts(ctx: Ctx2D): void {
+    for (const im of this.impacts) {
+      const t = 1 - im.life / im.maxLife; // 0 → 1
+      const scale = (im.heavy ? 1.45 : 1) * (im.counter ? 1.25 : 1);
+      const colors = STYLE_COLORS[im.style];
+      const bright = colors[0]!;
+      const mid = colors[1]!;
+      const dark = colors[2]!;
+
+      // 冲击波圆环：只给重击和反击画。轻击也画的话，接触点会变成一个"靶心"，
+      // 反而看不清是一记快拳
+      const ringR = (6 + 24 * (1 - (1 - t) * (1 - t))) * (im.heavy ? scale : 1);
+      if (im.heavy || im.counter) {
+        ctx.globalAlpha = Math.max(0, 0.75 * (1 - t) * (1 - t));
+        ctx.strokeStyle = mid;
+        ctx.lineWidth = Math.max(1, 4.5 * (1 - t)) * scale;
+        ctx.beginPath();
+        ctx.arc(im.x, im.y, ringR, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+
+      // 十字尖刺：前 40% 长出来，之后收回。
+      // 底边必须**垂直于**尖刺方向，否则三角形退化成一条线（很容易写错）
+      const grow = t < 0.4 ? t / 0.4 : 1 - (t - 0.4) / 0.6;
+      if (grow > 0) {
+        const len = (im.heavy ? 34 : 24) * scale * grow;
+        const thick = Math.max(1.8, (im.heavy ? 10 : 7) * scale * grow);
+        ctx.globalAlpha = Math.min(1, grow * 1.3);
+        ctx.fillStyle = bright;
+        const spikes: { dx: number; dy: number; k: number }[] = [
+          { dx: im.dir, dy: 0, k: 1 }, // 顺着冲击方向最长
+          { dx: -im.dir, dy: 0, k: 0.6 },
+          { dx: 0, dy: -1, k: 0.8 },
+          { dx: 0, dy: 1, k: 0.8 },
+        ];
+        for (const sp of spikes) {
+          const tipX = im.x + sp.dx * len * sp.k;
+          const tipY = im.y + sp.dy * len * sp.k;
+          // 底边垂直于尖刺
+          const bx = sp.dx === 0 ? thick / 2 : 0;
+          const by = sp.dy === 0 ? thick / 2 : 0;
+          ctx.beginPath();
+          ctx.moveTo(tipX, tipY);
+          ctx.lineTo(im.x + bx, im.y + by);
+          ctx.lineTo(im.x - bx, im.y - by);
+          ctx.closePath();
+          ctx.fill();
+        }
+      }
+
+      // 命中当帧的白团（只活前 3 帧）
+      if (t < 0.5) {
+        const r = (8 - 8 * t) * scale;
+        if (r > 0.5) {
+          ctx.globalAlpha = Math.min(1, 1 - t / 0.45);
+          ctx.fillStyle = bright;
+          ctx.beginPath();
+          ctx.arc(im.x, im.y, r, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.globalAlpha *= 0.7;
+          ctx.fillStyle = dark;
+          ctx.beginPath();
+          ctx.arc(im.x, im.y, r * 0.55, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+    }
+    ctx.globalAlpha = 1;
+  }
+
   draw(ctx: Ctx2D): void {
+    this.drawImpacts(ctx);
     for (const p of this.particles) {
       const t = Math.max(0, p.life) / p.maxLife;
       const s = p.size * (0.5 + t);
@@ -186,6 +313,7 @@ export class FxSystem {
 
   clear(): void {
     this.particles.length = 0;
+    this.impacts.length = 0;
   }
 
   get count(): number {

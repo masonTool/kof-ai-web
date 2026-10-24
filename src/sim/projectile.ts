@@ -96,5 +96,7 @@ export function spawnProjectile(world: World, owner: Fighter, def: ProjectileDef
     style: styleOfMove(owner.char.id, owner.move),
     shape: shapeOfProjectile(styleOfMove(owner.char.id, owner.move), def.shape),
   });
+  // 出声用；事件不参与判定/hash，回放照样一致
+  world.emit('proj', { x: spawnX, y: spawnY });
   return world.add(projectile);
 }

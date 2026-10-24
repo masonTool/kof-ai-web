@@ -30,7 +30,7 @@ describe('事件 → 音效', () => {
 
   it('防御 / 崩防 / KO / 气绝都有声音', () => {
     expect(sfxForWorldEvent('guard')).toBe('guard');
-    expect(sfxForWorldEvent('guardcrush')).toBe('guard');
+    expect(sfxForWorldEvent('guardcrush')).toBe('guardCrush');
     expect(sfxForWorldEvent('ko')).toBe('ko');
     expect(sfxForWorldEvent('dizzy')).toBe('ko');
   });
