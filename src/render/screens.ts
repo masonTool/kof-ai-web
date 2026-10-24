@@ -8,6 +8,7 @@ import { MODE_ITEMS, gridColumns, type AppFlow } from '../ui/flow';
 import { PAUSE_ITEMS } from '../ui/pause';
 import type { Ctx2D } from './ctx';
 import { drawFighter } from './fighter-draw';
+import { lookFor } from './looks';
 
 export const SCREEN_COLORS = {
   bg: '#0a0e1a',
@@ -133,6 +134,7 @@ export function drawSelect(ctx: Ctx2D, flow: AppFlow, blinkOn: boolean): void {
       y: 0,
       anim: 'idle',
       elapsed: 0,
+      look: lookFor(char.id),
     });
     ctx.restore();
 

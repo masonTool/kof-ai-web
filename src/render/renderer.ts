@@ -9,6 +9,7 @@ import type { Fighter } from '../sim/fighter';
 import { FighterState } from '../sim/state';
 import type { Ctx2D } from './ctx';
 import { drawFighter } from './fighter-draw';
+import { lookFor } from './looks';
 import { drawHud } from './hud';
 import { STATE_ANIM } from './poses';
 import { STAGES, drawStage, type StageDef } from './stage-draw';
@@ -70,6 +71,7 @@ export function drawFrame(ctx: Ctx2D, match: Match, opts: RenderOptions = {}): v
       duration,
       flash: f.hitstop > 2,
       alpha: f.state === FighterState.Dead ? 0.8 : 1,
+      look: lookFor(f.char.id),
     });
   }
   // 飞行道具：外圈发光 + 内芯，按朝向拖一条尾巴
