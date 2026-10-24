@@ -150,10 +150,36 @@ describe('选项屏', () => {
     tap(Btn.A);
     for (let i = 0; i < MODE_ITEMS.length - 1; i++) tap(Btn.Down);
     tap(Btn.A);
-    const rows = flow.options.length;
-    expect(rows).toBe(7);
-    for (let i = 0; i < rows; i++) tap(Btn.Down);
+    // 7 项设置 + 1 条"按键设置 →"
+    expect(flow.options.length).toBe(7);
+    expect(flow.optionCount).toBe(8);
+    for (let i = 0; i < flow.optionCount; i++) tap(Btn.Down);
     expect(flow.optionCursor).toBe(0); // 转一圈回到第一行
+  });
+});
+
+describe('按键设置入口', () => {
+  it('选项屏最后一行能进按键设置，B 再退回来', () => {
+    const { flow, tap } = makeFlow();
+    tap(Btn.A); // 标题 → 模式
+    for (let i = 0; i < MODE_ITEMS.length - 1; i++) tap(Btn.Down);
+    tap(Btn.A); // 进选项
+    for (let i = 0; i < flow.options.length; i++) tap(Btn.Down); // 到"按键设置"
+    expect(flow.onKeybindRow).toBe(true);
+    tap(Btn.A);
+    expect(flow.screen).toBe('keybind');
+    tap(Btn.B);
+    expect(flow.screen).toBe('options');
+  });
+
+  it('从暂停进来的选项，返回时回到对战（而不是模式选择）', () => {
+    const { flow, tap } = makeFlow();
+    flow.optionsFrom = 'fight';
+    tap(Btn.A);
+    for (let i = 0; i < MODE_ITEMS.length - 1; i++) tap(Btn.Down);
+    tap(Btn.A);
+    tap(Btn.B);
+    expect(flow.screen).toBe('fight');
   });
 });
 

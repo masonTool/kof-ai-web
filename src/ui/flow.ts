@@ -13,7 +13,8 @@ import { Btn, type InputSample } from '../core/input';
 import type { CharDef } from '../data/schema';
 import { SettingsStore, optionRows, type OptionKey } from './settings';
 
-export type ScreenId = 'title' | 'mode' | 'select' | 'vs' | 'fight' | 'result' | 'continue' | 'options';
+export type ScreenId =
+  | 'title' | 'mode' | 'select' | 'vs' | 'fight' | 'result' | 'continue' | 'options' | 'keybind';
 
 export type GameMode = 'arcade' | 'versus' | 'training';
 
@@ -63,6 +64,8 @@ export class AppFlow {
   modeCursor = 0;
   /** 选项屏光标 */
   optionCursor = 0;
+  /** 选项屏是从哪儿进来的（决定返回去哪一屏） */
+  optionsFrom: 'mode' | 'fight' = 'mode';
   /** 光标（0 = P1，1 = P2/CPU） */
   cursor: [number, number] = [0, 1];
   /** 是否已经确定 */
@@ -100,6 +103,16 @@ export class AppFlow {
   /** 选项屏当前可显示的项（给绘制层） */
   get options() {
     return optionRows(this.settings.settings);
+  }
+
+  /** 选项屏的行数（末尾额外一条"按键设置 →"） */
+  get optionCount(): number {
+    return this.options.length + 1;
+  }
+
+  /** 光标是否停在"按键设置"那一行 */
+  get onKeybindRow(): boolean {
+    return this.optionCursor >= this.options.length;
   }
 
   /** 电脑的选择（确定性伪随机，测试里可复现） */
@@ -143,21 +156,33 @@ export class AppFlow {
       }
 
       case 'options': {
-        const rows = this.options;
-        if ((pressed & Btn.Up) !== 0) this.optionCursor = this.wrap(this.optionCursor, -1, rows.length);
-        if ((pressed & Btn.Down) !== 0) this.optionCursor = this.wrap(this.optionCursor, 1, rows.length);
-        const row = rows[this.optionCursor];
+        const count = this.optionCount;
+        if ((pressed & Btn.Up) !== 0) this.optionCursor = this.wrap(this.optionCursor, -1, count);
+        if ((pressed & Btn.Down) !== 0) this.optionCursor = this.wrap(this.optionCursor, 1, count);
+        const row = this.options[this.optionCursor];
         if (row) {
           const dir: 1 | -1 | 0 = (pressed & Btn.Right) !== 0 ? 1 : (pressed & Btn.Left) !== 0 ? -1 : 0;
           if (dir !== 0) this.settings.cycle(row.key as OptionKey, dir);
           if ((pressed & (Btn.A | Btn.C)) !== 0) this.settings.cycle(row.key as OptionKey, 1);
+        } else if ((pressed & (Btn.A | Btn.C | Btn.Right)) !== 0) {
+          // 最后一行是"按键设置 →"
+          this.screen = 'keybind';
+          this.timer = 0;
         }
         if ((pressed & (Btn.B | Btn.D)) !== 0) {
-          this.screen = 'mode';
+          this.screen = this.optionsFrom;
           this.timer = 0;
         }
         break;
       }
+
+      case 'keybind':
+        // 具体按键由外层（main）递给 KeyBindMenu，这里只处理"返回"
+        if ((pressed & (Btn.B | Btn.D)) !== 0) {
+          this.screen = 'options';
+          this.timer = 0;
+        }
+        break;
 
       case 'select': {
         // P1：方向移动光标、A/C 确定、B/D 取消

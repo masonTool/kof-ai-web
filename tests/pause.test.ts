@@ -18,8 +18,8 @@ describe('暂停菜单', () => {
     expect(menu.toggle()).toBe(false);
   });
 
-  it('三项：继续 / 重开 / 回标题', () => {
-    expect(PAUSE_ITEMS.map((i) => i.id)).toEqual(['resume', 'restart', 'title']);
+  it('四项：继续 / 重开 / 选项 / 回标题', () => {
+    expect(PAUSE_ITEMS.map((i) => i.id)).toEqual(['resume', 'restart', 'options', 'title']);
     expect(PAUSE_ITEMS.every((i) => i.label.length > 0)).toBe(true);
   });
 
@@ -30,9 +30,10 @@ describe('暂停菜单', () => {
     expect(menu.cursor).toBe(1);
     menu.move(1);
     menu.move(1);
+    menu.move(1);
     expect(menu.cursor).toBe(0); // 环绕
     menu.move(-1);
-    expect(menu.cursor).toBe(2);
+    expect(menu.cursor).toBe(3);
   });
 
   it('确认返回当前项并收起菜单', () => {
@@ -46,8 +47,11 @@ describe('暂停菜单', () => {
     expect(menu.confirm()).toBe('restart');
 
     menu.show();
-    menu.move(2);
+    menu.move(3);
     expect(menu.confirm()).toBe('title');
+    menu.show();
+    menu.move(2);
+    expect(menu.confirm()).toBe('options');
   });
 
   it('重新打开会回到第一项（不会记住上次的选择）', () => {

@@ -6,6 +6,8 @@ import type { CharDef } from '../data/schema';
 import { VIEW_HEIGHT, VIEW_WIDTH } from '../sim/constants';
 import { MODE_ITEMS, gridColumns, type AppFlow } from '../ui/flow';
 import { PAUSE_ITEMS } from '../ui/pause';
+import type { KeyBindMenu } from '../ui/keybind';
+import { KEY_ACTIONS, keyLabelFor, type GameSettings } from '../ui/settings';
 import type { Ctx2D } from './ctx';
 import { drawFighter } from './fighter-draw';
 import { lookFor } from './looks';
@@ -195,18 +197,29 @@ export function drawOptions(ctx: Ctx2D, flow: AppFlow): void {
   ctx.fillRect(0, 0, VIEW_WIDTH, VIEW_HEIGHT);
   text(ctx, 'OPTIONS', VIEW_WIDTH / 2, 20, 'center', 13, SCREEN_COLORS.gold);
 
-  flow.options.forEach((row, i) => {
-    const y = 56 + i * 22;
+  const rows = flow.options;
+  rows.forEach((row, i) => {
+    const y = 52 + i * 19;
     const active = flow.optionCursor === i;
     if (active) {
       ctx.fillStyle = 'rgba(255,91,61,0.22)';
-      ctx.fillRect(24, y - 4, VIEW_WIDTH - 48, 18);
+      ctx.fillRect(24, y - 4, VIEW_WIDTH - 48, 16);
     }
-    text(ctx, row.label, 32, y, 'left', 8, active ? SCREEN_COLORS.text : SCREEN_COLORS.dim);
-    text(ctx, `${active ? '◀ ' : ''}${row.value}${active ? ' ▶' : ''}`, VIEW_WIDTH - 32, y, 'right', 8, active ? SCREEN_COLORS.accent : SCREEN_COLORS.text);
+    text(ctx, row.label, 32, y, 'left', 7, active ? SCREEN_COLORS.text : SCREEN_COLORS.dim);
+    text(ctx, `${active ? '◀ ' : ''}${row.value}${active ? ' ▶' : ''}`, VIEW_WIDTH - 32, y, 'right', 7, active ? SCREEN_COLORS.accent : SCREEN_COLORS.text);
   });
 
-  text(ctx, '←→ 或 A 修改 · B 返回', VIEW_WIDTH / 2, 200, 'center', 7, SCREEN_COLORS.dim);
+  // 最后一行：进"按键设置"
+  const y = 52 + rows.length * 19;
+  const active = flow.optionCursor >= rows.length;
+  if (active) {
+    ctx.fillStyle = 'rgba(255,91,61,0.22)';
+    ctx.fillRect(24, y - 4, VIEW_WIDTH - 48, 16);
+  }
+  text(ctx, '按键设置', 32, y, 'left', 7, active ? SCREEN_COLORS.text : SCREEN_COLORS.dim);
+  text(ctx, '进入 ▶', VIEW_WIDTH - 32, y, 'right', 7, active ? SCREEN_COLORS.accent : SCREEN_COLORS.text);
+
+  text(ctx, '←→ 或 A 修改 · B 返回', VIEW_WIDTH / 2, 210, 'center', 6, SCREEN_COLORS.dim);
 }
 
 export function drawContinue(ctx: Ctx2D, flow: AppFlow, blinkOn: boolean): void {
@@ -218,6 +231,29 @@ export function drawContinue(ctx: Ctx2D, flow: AppFlow, blinkOn: boolean): void 
   text(ctx, `${seconds}`, VIEW_WIDTH / 2, 96, 'center', 30, SCREEN_COLORS.gold);
   text(ctx, `已续关 ${flow.continues} 次`, VIEW_WIDTH / 2, 138, 'center', 7, SCREEN_COLORS.dim);
   if (blinkOn) text(ctx, '按 A 继续挑战', VIEW_WIDTH / 2, 162, 'center', 9, SCREEN_COLORS.text);
+}
+
+export function drawKeyBind(ctx: Ctx2D, menu: KeyBindMenu, settings: GameSettings, blinkOn: boolean): void {
+  ctx.fillStyle = SCREEN_COLORS.bg;
+  ctx.fillRect(0, 0, VIEW_WIDTH, VIEW_HEIGHT);
+  text(ctx, 'KEY CONFIG', VIEW_WIDTH / 2, 14, 'center', 12, SCREEN_COLORS.gold);
+  text(ctx, menu.side === 1 ? 'P1' : 'P2', VIEW_WIDTH / 2, 32, 'center', 9, menu.side === 1 ? SCREEN_COLORS.accent : '#5aa9ff');
+
+  KEY_ACTIONS.forEach((action, i) => {
+    const y = 52 + i * 16;
+    const active = menu.row === i;
+    if (active) {
+      ctx.fillStyle = 'rgba(255,91,61,0.22)';
+      ctx.fillRect(18, y - 3, VIEW_WIDTH - 36, 14);
+    }
+    text(ctx, action.label, 26, y - 1, 'left', 7, active ? SCREEN_COLORS.text : SCREEN_COLORS.dim);
+    const label = menu.capturing && active ? '按一个键…' : keyLabelFor(settings, menu.side, action.id);
+    text(ctx, label, VIEW_WIDTH - 26, y - 1, 'right', 7, active ? SCREEN_COLORS.accent : SCREEN_COLORS.text);
+  });
+
+  const hint = menu.capturing ? '按任意键绑定 · Esc 取消' : '↑↓ 选择 · A 改键 · B 返回';
+  if (blinkOn || menu.capturing) text(ctx, hint, VIEW_WIDTH / 2, 200, 'center', 6, SCREEN_COLORS.dim);
+  text(ctx, '左/右 切换 P1/P2 · C 恢复预设', VIEW_WIDTH / 2, 210, 'center', 6, SCREEN_COLORS.dim);
 }
 
 export function drawPause(ctx: Ctx2D, cursor: number, blinkOn: boolean): void {

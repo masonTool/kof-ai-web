@@ -61,6 +61,7 @@ describe('消毒（读盘必过）', () => {
       showFrameData: true,
       showBoxes: false,
       keyPreset: 0,
+      customKeys: { p1: {}, p2: {} },
     });
   });
 });

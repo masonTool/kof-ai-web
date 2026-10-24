@@ -18,6 +18,7 @@ import { drawFrame } from './render/renderer';
 import { applyViewport, computeViewport, shouldRotate, type SafeInsets } from './render/scale';
 import {
   drawContinue,
+  drawKeyBind,
   drawMode,
   drawPause,
   drawOptions,
@@ -30,8 +31,9 @@ import {
 import { VIEW_HEIGHT, VIEW_WIDTH } from './sim/constants';
 import { Btn } from './core/input';
 import { AppFlow } from './ui/flow';
+import { KeyBindMenu } from './ui/keybind';
 import { PauseMenu } from './ui/pause';
-import { SettingsStore, type StorageLike } from './ui/settings';
+import { SettingsStore, keymapFor, type StorageLike } from './ui/settings';
 import { TrainingSession, drawTrainingOverlay } from './ui/training';
 import { mountTouchControls } from './ui/touch-controls';
 import { VirtualPad } from './ui/virtual-pad';
@@ -84,6 +86,7 @@ function browserStorage(): StorageLike | null {
 const audio = new WebAudioSink();
 const bgm = new WebAudioBgm();
 const pause = new PauseMenu();
+const keybind = new KeyBindMenu();
 const settings = new SettingsStore(browserStorage());
 audio.setVolume(settings.settings.volume);
 bgm.setVolume(settings.settings.volume);
@@ -105,15 +108,16 @@ const p2keys = new KeyboardSource(preset.p2);
 p1keys.attach(window);
 p2keys.attach(window);
 
-/** 设置里的键位预设变了就换映射表（不用重建监听） */
-let appliedPreset = settings.settings.keyPreset;
-function syncPreset(): void {
-  const next = settings.settings.keyPreset;
-  if (next === appliedPreset) return;
-  appliedPreset = next;
-  const p = keyPresetAt(next);
-  p1keys.setMap(p.p1);
-  p2keys.setMap(p.p2);
+/** 键位变了（换预设或逐键重绑）就重建映射表；不重建监听，按住中的键也不受影响 */
+/** 按键菜单正在吃输入时，别让 flow 也吃（见 step 里的注释） */
+let muteFlow = false;
+let appliedKeys = '';
+function syncKeys(): void {
+  const sig = JSON.stringify([settings.settings.keyPreset, settings.settings.customKeys]);
+  if (sig === appliedKeys) return;
+  appliedKeys = sig;
+  p1keys.setMap(keymapFor(settings.settings, 1));
+  p2keys.setMap(keymapFor(settings.settings, 2));
 }
 window.addEventListener('blur', () => {
   p1keys.clear();
@@ -208,6 +212,47 @@ const controls = mountTouchControls(pad, [
 ]);
 
 window.addEventListener('keydown', (e) => {
+  // 按键设置屏要拿原始 event.code，自己处理完就不再往下传
+  if (flow.screen === 'keybind') {
+    e.preventDefault();
+    muteFlow = true;
+    if (keybind.capturing) {
+      keybind.apply(e.code, (side, action, code) => {
+        settings.setKey(side, action, code);
+        audio.play('confirm');
+      });
+      return;
+    }
+    switch (e.code) {
+      case 'ArrowUp':
+        keybind.move(-1);
+        break;
+      case 'ArrowDown':
+        keybind.move(1);
+        break;
+      case 'ArrowLeft':
+      case 'ArrowRight':
+        keybind.toggleSide();
+        break;
+      case 'KeyJ':
+      case 'Enter':
+        keybind.beginCapture();
+        break;
+      case 'KeyU':
+        settings.clearKeys(keybind.side);
+        audio.play('menu');
+        break;
+      case 'KeyK':
+      case 'Escape':
+        flow.screen = 'options';
+        muteFlow = true;
+        break;
+      default:
+        break;
+    }
+    return;
+  }
+
   switch (e.code) {
     case 'F1':
       e.preventDefault();
@@ -299,7 +344,7 @@ let uiTick = 0;
 startAnimationLoop(
   {
     step: () => {
-      syncPreset();
+      syncKeys();
       bgm.setVolume(settings.settings.volume);
       bgm.update(performance.now());
 
@@ -316,6 +361,11 @@ startAnimationLoop(
           const action = pause.confirm();
           bgm.setDucked(false);
           if (action === 'restart') match?.restart();
+          if (action === 'options') {
+            flow.screen = 'options';
+            flow.optionsFrom = 'fight';
+            flow.optionCursor = 0;
+          }
           if (action === 'title') {
             flow.reset();
             match = null;
@@ -326,8 +376,17 @@ startAnimationLoop(
       }
       prevPauseHeld = p1In.held;
       const matchOver = match !== null && match.phase === 'over';
-      const action = flow.step([p1In, p2In], { matchOver, matchWinner: match?.matchWinner ?? 0 });
+      // 按键设置屏由 raw keydown 独占输入：再喂给 flow 会"一套按键两处消费"
+      // （实测按 B 从按键屏返回时，flow 在同一帧又把 B 当成"退出选项屏"）。
+      // 关掉 mute 的时机是"所有键都松开"，否则那个按键的按住状态还会被当成新的一次边沿。
+      if (muteFlow && p1In.held === 0 && p2In.held === 0) muteFlow = false;
+      const flowInputs = muteFlow || flow.screen === 'keybind' ? [{ held: 0 }, { held: 0 }] : [p1In, p2In];
+      const action = flow.step(flowInputs as [{ held: number }, { held: number }], {
+        matchOver,
+        matchWinner: match?.matchWinner ?? 0,
+      });
       bgm.setTrack(trackFor(flow.screen));
+      if (flow.screen === 'keybind' && flow.timer === 1) keybind.show(1);
 
       if (action === 'start-match') {
         audio.resume();
@@ -402,6 +461,9 @@ startAnimationLoop(
         case 'options':
           drawOptions(ctx, flow);
           break;
+        case 'keybind':
+          drawKeyBind(ctx, keybind, settings.settings, blink);
+          break;
         case 'continue':
           if (match) drawFrame(ctx, match);
           drawContinue(ctx, flow, blink);
@@ -450,6 +512,7 @@ function playReplay(replay: Replay): boolean {
   audio,
   bgm,
   pause,
+  keybind,
   pad,
   startMatch,
   stopRecording,
