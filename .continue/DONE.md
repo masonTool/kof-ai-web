@@ -41,6 +41,31 @@
 
 <!-- 实际归档放下面，最新的放最上面 -->
 
+## 批次 20261025-0610 · 2026-10-25 · 会话 59bce766
+
+**这批的目标**：给训练模式一个"练习闭环"（挑战目标），并加观战模式（CPU 对 CPU）。
+
+**条目**（原文照搬，状态保持原样；每条下方的完成说明一起搬）：
+
+- [x] [T112] 训练挑战（连段/命中/防御/超必杀四类目标，纯逻辑面板）：`src/ui/challenges.ts` `src/render/screens.ts` `src/main.ts` → `tests/challenges.test.ts` 断言连段取历史最大、命中累加、防御与超必杀各认各的、完成后不再越界、面板推进所有条目、刚完成时返回提示
+  - 做了什么：`CHALLENGES` 五条（连段 3 段 / 连段 5 段 / 命中 20 次 / 防住 5 次 / 超必杀命中 2 次）+ `ChallengeRun`（四类推进规则）+ `ChallengeBoard`（前后切换、全部条目一起推进、`doneCount`、`observeHit` 返回"这一下是否刚好完成"）；`main.ts` 每帧把 `match.lastHits` 喂进去（只算 P1 打出的，防御算 P1 防住的）；`drawChallengePanel()` 画在左上（进度 + 提示 + x/5）
+  - 为什么：训练模式以前只能"自己数"，没有目标就没有练习闭环；做成纯逻辑是因为"连段 3 段算不算完成"这类规则必须能断言，不能靠人盯数字
+  - 验证：`tests/challenges.test.ts` 16 条——四类推进规则、连段不回退、完成后不越界、进度文本、reset、面板前后环绕、命中推进所有条目、刚好完成返回 true、doneCount、越界 select
+  - 批次：20261025-0610
+- [x] [T113] 观战模式（CPU 对 CPU）：`src/ui/training.ts` `src/ui/flow.ts` `src/main.ts` → `tests/training.test.ts` 断言开了 cpuP1 后 P1 自己会动、关掉则只吃键盘、录到的输入是 CPU 真实打出的
+  - 做了什么：`TrainingSettings.cpuP1` + 独立的 `CpuBrain` 实例（P1/P2 各一个，避免共用大脑互相踩状态）；`GameMode` 加 `watch` 与模式菜单项；开观战时两边都是 CPU，键盘不参与
+  - 为什么：观战是最省事的"看 AI 表演"入口，也顺便验证了"CPU 大脑是按 fighter 实例走的"（共用实例会串输入）
+  - 验证：`tests/training.test.ts` 加 3 条；浏览器自测里两边都真的动起来
+  - 批次：20261025-0610
+- [x] [T114] 训练/观战的浏览器自测：`scripts/selftest-training-watch.mjs` → 7 项全 PASS
+  - 做了什么：验挑战面板、命中推进进度、切换/重置、观战两边自动行动
+  - 为什么：挑战是"打一下才推进"的东西，只有真出招才能确认接线没漏
+  - 验证：7/7 PASS；`npm run check` 699 条全绿；截图确认面板排版；`npm run build` 通过
+  - 批次：20261025-0610
+
+**遗留**：无 `[阻塞]`。还欠：挑战结果持久化、连段示范演示、更多挑战种类。
+
+
 ## 批次 20261025-0530 · 2026-10-25 · 会话 59bce766
 
 **这批的目标**：把 `assets.ts` 那个从第一批留到现在的"自绘贴图"口子真正打通，并让 29 人的胜利姿势不再千篇一律。
@@ -259,35 +284,5 @@
   - 批次：20261025-0010
 
 **遗留**：无 `[阻塞]`。还欠：逐键重绑（T85）、美术提升、暂停里加"选项"入口。
-
-
-## 批次 20261024-2330 · 2026-10-24 · 会话 59bce766
-
-**这批的目标**：补声音（BGM）、补暂停、补键位选择——把"能玩"往"像个成品"再推一步。
-
-**条目**（原文照搬，状态保持原样；每条下方的完成说明一起搬）：
-
-- [x] [T81] BGM（音序器 + 三条曲子，跟随音量/暂停降音）：`src/audio/bgm.ts` → `tests/bgm.test.ts` 断言步长换算、循环回绕、区间取音符不重复不遗漏、静音不出声
-  - 做了什么：`audio/bgm.ts`——`TrackDef`（bpm/每拍步数/循环步数/主旋律/贝斯/波形）+ `midiToHz` + `stepDurationMs`/`stepIndexAt` + `BgmPlayer`（游标式音序器，`advance(toMs)` 返回这段时间该奏的音）+ `TRACKS` 三条曲子（标题/战斗/结果）+ `WebAudioBgm`（每音一个振荡器、主音量节点、`setDucked` 暂停降音）
-  - 为什么：音序器做成纯逻辑，才能在 node 里断言"150bpm 每拍 4 步 = 每步 100ms""循环一圈后音高与第一圈相同"，而不是靠耳朵；`advance` 用游标而不是每帧重算，重算会漏边界音或同一音触发两次
-  - 验证：`tests/bgm.test.ts` 12 条——三条曲子的音符数组长度一致、A4=440、步长换算与循环回绕、分段推进与一次推进一致、时间不走不重复发音、循环一圈音高相同、reset 回到开头、账本 sink、无 AudioContext 不抛错、未知曲目当静音、休止符不会被当成 0 号音
-  - 批次：20261024-2330
-- [x] [T82] 暂停菜单（继续/重开/回标题，战斗冻结）：`src/ui/pause.ts` → `tests/pause.test.ts` 断言开关、上下环绕、确认返回动作
-  - 做了什么：`ui/pause.ts` 的 `PauseMenu`（继续/重开本场/回到标题，上下环绕、确认返回动作并收起）；`render/screens.ts` 的 `drawPause`；`main.ts` 里 Esc 开关暂停、暂停时**世界完全不推进**（`world.tick` 不动）、BGM 降音、确认后分别执行继续/`match.restart()`/回标题
-  - 为什么：暂停做成"外层冻结"而不是给模拟层加 `paused` 字段——模拟层不该知道 UI 状态；菜单状态机保持纯逻辑，node 里能直接断言环绕与动作
-  - 验证：`tests/pause.test.ts` 6 条 + 浏览器 10 项（Esc 打开、`world.tick` 在 400ms 内不变、光标移动、确认后收起、重开把回合与胜场清零）
-  - 批次：20261024-2330
-- [x] [T83] 键位预设（默认 / WASD+GHJK，写进设置并即时生效）：`src/input/keyboard.ts` `src/ui/settings.ts` → `tests/settings.test.ts` 断言预设切换与键位表
-  - 做了什么：`input/keyboard.ts` 加 `WASD_KEYMAP_P1`/`ARROWS_KEYMAP_P2`/`KEY_PRESETS`/`keyPresetAt()`，`KeyboardSource.setMap()` 支持运行时换表；`settings.ts` 加 `keyPreset`（第 7 行选项）；`main.ts` 每帧 `syncPreset()`，值变了就换映射（不重建监听）
-  - 为什么：KOF 是街机，本来没有键位设置；网页版必须让左手党能用 WASD。预设而不是逐键重绑，是因为两套覆盖了绝大多数习惯，而逐键重绑的 UI 复杂度远高于收益（已记进 TASKS 后续）
-  - 验证：`tests/settings.test.ts` 加"键盘预设显示与切换"；浏览器里切到预设 1 后按 D 能往右走、切回预设 0 后方向键能走
-  - 批次：20261024-2330
-- [x] [T84] 浏览器自测（BGM 起播、暂停冻结、换键位能走能打）：`scripts/selftest-menu.mjs` → 跑通并贴结果
-  - 做了什么：新增 `scripts/selftest-audio-pause.mjs`（10 项）；顺带修了脚本里的一个真实陷阱——**设置是持久化的**，上个脚本把键位改成 WASD 后，下个脚本按方向键就会失效
-  - 为什么：声音听不见，只能断言"该响的曲子被选中了"；暂停/键位这类改动只有真在浏览器里按一遍才敢说没坏
-  - 验证：10/10 PASS；`selftest-menu.mjs`、`selftest-flow.mjs` 重跑通过；`npm run check` 568 条全绿；`npm run build` 通过
-  - 批次：20261024-2330
-
-**遗留**：无 `[阻塞]`。逐键重绑键盘记为 T85；还欠回放、移动端适配、美术提升。
 
 
