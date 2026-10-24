@@ -105,3 +105,54 @@
   - 批次：20261024-1659
 
 **遗留**：无 `[阻塞]`。视觉（纸片人美术）、选人界面、音效仍缺，归后续批次。
+## 批次 20261024-1720 · 2026-10-24 · 会话 59bce766
+
+**这批的目标**：把 KOF97 的系统机制补齐——跳跃体系、紧急回避、受身、削防、气绝、MAX 模式、防御取消。
+
+**条目**（原文照搬，状态保持原样；每条下方的完成说明一起搬）：
+
+- [x] [T11] 跳跃体系：小跳/大跳/前跳/后跳：`src/data/schema.ts` `src/sim/fighter.ts` → `tests/systems.test.ts` 断言轻按↑是小跳（滞空更短）、按住↑是大跳、前跳/后跳的水平位移方向正确
+  - 做了什么：`startJump` 先按大跳起跳，`stepAir(input)` 发现起跳后 6 帧内松开↑就把上升速度切到 `smallVy`（默认大跳的 62%），一次跳跃只切一次；`CharDef.jump` 新增可选 `smallVy/smallVx`；前跳/后跳靠方向决定水平初速
+  - 为什么：KOF 的"轻点↑=小跳、按住↑=大跳"在起跳那一帧分不出来，只能先起来再切高度；换成"按下时间决定"会引入延迟，手感更差
+  - 验证：`tests/systems.test.ts` 断言大跳最高点比小跳低 10px 以上、小跳滞空更短、前跳往右后跳往左垂直跳不动
+  - 批次：20261024-1720
+- [x] [T11] 紧急回避 AB（前后滚翻 + 无敌帧 + 位移）：`src/sim/controls.ts` `src/sim/fighter.ts` `src/data/chars/kyo.ts` → `tests/systems.test.ts` 断言 AB 出回避、带位移、无敌期间打不到、结束回中立
+  - 做了什么：`MoveDef` 新增 `travel/travelFrames/travelFollowInput`；`Fighter.stepAttack` 把位移均摊到帧上，`forceStart` 按"是否按住后"决定前后转；`kyo.ts` 加 `AB` 招式（26 帧、1~20 帧全身无敌、位移 88px）；`controls.ts` 把 A+B 同帧识别成系统技，并把系统技优先级提到指令技之前
+  - 为什么：位移写进帧数据而不是写死在状态机里，将来任何"突进/后跳/翻滚"都能复用；优先级不调整的话"按住前 + A+B"会出 6B（指令技），实测就是这样翻车的
+  - 验证：`tests/systems.test.ts` 断言 AB 出招并产生 40px 以上位移、按住后往左/按住前往右、回避途中挨打不掉血、对照组（普通重拳）会掉血
+  - 批次：20261024-1720
+- [x] [T11] 受身（倒地时 AB 快速起身）：`src/sim/fighter.ts` → `tests/systems.test.ts` 断言倒地按 AB 会缩短倒地时间并带起身无敌
+  - 做了什么：`Fighter` 加 `abBuffer`（A+B 按下后缓冲 8 帧，冻结/受击里按也不丢）；`Down` 状态里第 4 帧起只要缓冲里还有 AB 就转 `Wakeup`（起身阶段本身无敌）
+  - 为什么：倒地那一下有 9 帧命中停顿，玩家几乎一定在停顿里按受身——直接读"当帧按下"必然读不到（实测就是这样，快慢两条路径都是 33 帧）
+  - 验证：`tests/systems.test.ts` 断言按 AB 的倒地帧数明显少于不按
+  - 批次：20261024-1720
+- [x] [T11] 削防（连续防御累积 → 防御崩溃）：`src/sim/hit.ts` `src/sim/fighter.ts` → `tests/systems.test.ts` 断言连续防多段后崩防、崩防后进受击硬直、不防御时不会累积
+  - 做了什么：`Fighter.guardGauge`（防御时累积、站着自然衰减 0.3/帧、非中立 0.12/帧）；`hit.ts` 被防时按伤害累积（`max(6, damage*0.5)`），满 100 直接 `enterHitstun(GUARD_CRUSH_STUN=38)` 并额外推开、发 `guardcrush` 事件
+  - 为什么：崩防必须是"连续防"才会发生——所以衰减分两档，站着不动降得快、僵直里降得慢；崩防硬直给 38 帧（够打一套），不然防守方没有代价
+  - 验证：`tests/systems.test.ts` 断言连续防 12 轮内会崩防进受击硬直、完全不防时削防值恒为 0
+  - 批次：20261024-1720
+- [x] [T11] 气绝（晕眩值累积 → 晕眩 → 摇醒）：`src/sim/hit.ts` `src/sim/fighter.ts` → `tests/systems.test.ts` 断言吃够伤害会晕、晕眩中挨打不继续累积、时间到或按键能提前醒
+  - 做了什么：`hit.ts` 命中按 `damage*0.45` 累积 `stunGauge`，满 100 进 `dizzy`（96 帧）并清零；晕眩中挨打不再累积；`stepStun` 里晕眩时每有一次按键边沿就多减 1 帧硬直
+  - 为什么：晕眩中继续累积会导致"永远醒不过来"；摇醒用按键边沿而不是按住，这样连打才有效
+  - 验证：`tests/systems.test.ts` 断言攒满会晕、晕眩值清零、连按比干等醒得快
+  - 批次：20261024-1720
+- [x] [T11] MAX 模式（ABC 同按启动，攻击力提升，限时）：`src/sim/fighter.ts` `src/sim/hit.ts` `src/render/hud.ts` → `tests/systems.test.ts` 断言气不够启动不了、启动后扣气、伤害提高、到时有结束
+  - 做了什么：`Fighter.maxMode`（剩余帧）+ `tryActivateMax()`（ABC 同帧、中立、气满 100 才成立），启动扣 100 气、持续 900 帧；`hit.ts` 里 MAX 期间伤害 ×1.25；`HUD` 的气槽标签改成 `MAX MODE` 并高亮；`Match.toHudModel()` 透传
+  - 为什么：ABC 要在"按键 → 出招"之前拦下来，否则会先被识别成 A+B 回避或通常技；伤害倍率放在结算层而不是招式数据里，这样所有招都吃到加成
+  - 验证：`tests/systems.test.ts` 断言气满能启动并扣气、气不够启动不了、同招伤害正好是 1.25 倍、会到期；浏览器里 HUD 显示 MAX MODE
+  - 批次：20261024-1720
+- [x] [T11] 防御取消 CD（防御硬直中 CD 反击）：`src/sim/fighter.ts` → `tests/systems.test.ts` 断言防御中按 CD 能打断防御出吹飞、非防御中按 CD 是普通吹飞
+  - 做了什么：`step()` 顶部（命中停顿之前）判"Block 状态 + CD 同帧"就直接 `forceStart('CD')`；`forceStart` 去掉 `hitstop > 0` 的限制（防御取消本来就发生在命中停顿里）
+  - 为什么：防御后的 6 帧命中停顿里状态机不推进，检查写在 switch 里就永远轮不到；而 `forceStart` 的 hitstop 检查会让它静默失败
+  - 验证：`tests/systems.test.ts` 断言防御硬直中按 CD 出 CD 且进攻击状态、非防御时 CD 是普通吹飞
+  - 批次：20261024-1720
+- [x] [T11] 系统机制可视化与自测：`src/render/hud.ts` `src/ui/training.ts` `scripts/selftest.mjs` → `npm run check` 全绿 + 浏览器自测覆盖 小跳/回避/受身/MAX
+  - 做了什么：训练面板加一行系统键位提示（A+B 回避 / C+D 吹飞 / ABC MAX）；写 `scripts/selftest-systems.mjs` 在真实浏览器里验小跳/大跳/回避/MAX/削防；顺带把之前漏掉的**招式无敌帧**补进 `hit.ts`（`isInvulnerable`：full/low/air）
+  - 为什么：无敌帧数据从 T7 就写在招式里，但结算层一直没读——所以鬼焼和回避"看起来有，其实没用"；这种"数据有、消费方漏了"的坑只能靠端到端测试暴露
+  - 验证：浏览器自测 7 项全 PASS；`npm run check` 264 条全绿（新增 systems 20 条）
+  - 批次：20261024-1720
+
+**遗留**：无 `[阻塞]`。三项额外修正在这批顺手做了：招式无敌帧（`invuln`）此前从未被结算层读取；
+系统技优先级提到指令技之前（否则"按住前 + A+B"会出 6B）；训练面板补系统键位提示。
+
+
