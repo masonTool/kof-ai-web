@@ -15,7 +15,10 @@ import { Match } from './game/match';
 import { ReplayPlayer, ReplayRecorder, matchFromReplay, type Replay } from './game/replay';
 import { KeyboardSource, keyPresetAt } from './input/keyboard';
 import type { Ctx2D } from './render/ctx';
-import { setPixelSize } from './render/fighter-draw';
+import { drawPose, setPixelSize } from './render/fighter-draw';
+import { downloadCanvas, renderSheet, type SheetSpec } from './render/sheet-export';
+import { POSE_LIBRARY } from './render/poses';
+import { lookFor } from './render/looks';
 import { drawFrame } from './render/renderer';
 import { applyViewport, computeViewport, shouldRotate, type SafeInsets } from './render/scale';
 import {
@@ -302,6 +305,43 @@ window.addEventListener('keydown', (e) => {
       e.preventDefault();
       training?.cycleCpuLevel();
       break;
+    case 'F10': {
+      // 导出当前 P1 的素材模板（每个格子 = 一个动画的一帧，和 spriteSheetProvider 的切图规则一致）
+      e.preventDefault();
+      const char = flow.picks?.[0] ?? ROSTER[0];
+      if (!char) break;
+      const spec: SheetSpec = {
+        anims: {
+          idle: 2,
+          walkF: 4,
+          walkB: 4,
+          punchLight: 3,
+          punchHeavy: 3,
+          kickLight: 3,
+          kickHeavy: 3,
+          guard: 2,
+          hit: 3,
+          down: 2,
+          win: 2,
+          lose: 1,
+        },
+        columns: 8,
+        frameW: 48,
+        frameH: 96,
+      };
+      const canvas = renderSheet(spec, (ctx2, box, anim, index) => {
+        const pose = POSE_LIBRARY[anim];
+        const frame = pose?.frames[Math.min(index, pose.frames.length - 1)];
+        if (!frame) return;
+        ctx2.save();
+        ctx2.translate(box.x + box.w / 2, box.y + box.h - 6);
+        // 原生 2D context 满足 Ctx2D 的调用子集，这里只是类型上要显式转一下
+        drawPose(ctx2 as unknown as Ctx2D, frame, char.palette, { look: lookFor(char.id), anim });
+        ctx2.restore();
+      });
+      downloadCanvas(canvas, `${char.id}-sheet.png`);
+      break;
+    }
     case 'F7':
       e.preventDefault();
       challenges.next();

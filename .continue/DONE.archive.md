@@ -697,3 +697,28 @@
 **遗留**：无 `[阻塞]`。还欠：手绘贴图层、超必杀专属演出（镜头/闪白）、BGM 按队伍区分。
 
 
+## 批次 20261025-0400 · 2026-10-25 · 会话 59bce766
+
+**这批的目标**：超必杀起手的"全场一静 + 一闪"，以及 BOSS 战专用 BGM。
+
+**条目**（原文照搬，状态保持原样；每条下方的完成说明一起搬）：
+
+- [x] [T103] 超必杀起手演出（双方定格 + 全屏闪白）：`src/sim/fighter.ts` `src/game/match.ts` `src/render/renderer.ts` → `tests/match.test.ts` `tests/render.test.ts` 断言起手点亮闪光、双方被定格、普通招不触发、逐帧衰减、进哈希、闪白层越接近结束越淡
+  - 做了什么：`Fighter.justStartedMove`（"这一帧刚起手"，由 Match 消费后清空，解决"外部调 `startMove()` 时 `moveFrame` 已不是 0"）；`Match.superFlash` + `SUPER_FLASH_FRAMES=12` / `SUPER_FREEZE_FRAMES=10`，起手超必杀时给双方 `addHitstop`（复用命中停顿，不新增冻结机制）并设满闪光；`superFlash` 进 `hash()`；`drawFrame` 末尾按剩余帧画一层递减的白
+  - 为什么：KOF 的超必杀起手是"全场一静 + 一闪"，这个停顿是节奏的一部分（也给了对方反应的心理压力）。用 hitstop 而不是新状态，是因为冻结逻辑已有且被验证过；闪光放 Match 而不是渲染层自己计时，是因为它必须和定格严格同步——分开算迟早出现"闪完了人还在定"
+  - 验证：`tests/match.test.ts` 4 条（起手点亮 + 双方定格、普通必杀不触发、衰减到 0、闪光进哈希）+ `tests/render.test.ts` 2 条（无闪光不画、越接近结束越淡）
+  - 批次：20261025-0400
+- [x] [T104] BOSS 战专用 BGM：`src/audio/bgm.ts` `src/main.ts` → `tests/bgm.test.ts` 断言曲子存在、更快更低
+  - 做了什么：新增 `fightBoss` 曲子（168bpm sawtooth、低音更密、半音上行的旋律）；`main.ts` 的 `trackFor()` 在任一角色带 `boss` 属性时切过去（含续关屏）
+  - 为什么：BOSS 战和普通对战同一个 BGM，气势上就输了；判定条件用现有的 `char.boss` 属性，不新增字段
+  - 验证：`tests/bgm.test.ts` 加 1 条（bpm 更高、低音更沉）；浏览器里大蛇在场 → `bgm.trackId === 'fightBoss'`、普通对战回到 `fight`
+  - 批次：20261025-0400
+- [x] [T105] 演出验收 + 浏览器自测：`scripts/selftest-superflash.mjs` → 8 项全 PASS
+  - 做了什么：新增自测脚本；截图确认白闪覆盖整屏
+  - 为什么：闪光/定格这类"看得见但不改判定"的东西，只有真出一次超必杀才能确认整条链没断
+  - 验证：8/8 PASS；`npm run check` 660 条全绿；`npm run build` 通过
+  - 批次：20261025-0400
+
+**遗留**：无 `[阻塞]`。还欠：手绘贴图层、超必杀专属运镜（镜头拉近/黑边）、按队伍区分 BGM。
+
+
