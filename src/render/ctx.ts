@@ -18,6 +18,7 @@ export interface Ctx2D {
   arc(x: number, y: number, r: number, start: number, end: number): void;
   fill(): void;
   stroke(): void;
+  strokeRect(x: number, y: number, w: number, h: number): void;
 
   fillRect(x: number, y: number, w: number, h: number): void;
   clearRect(x: number, y: number, w: number, h: number): void;

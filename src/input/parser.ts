@@ -45,6 +45,7 @@ const SEQUENCES: Partial<Record<MotionId, number[]>> = {
   '63214': [6, 3, 2, 1, 4],
   '22': [2, 5, 2],
   '236236': [2, 3, 6, 2, 3, 6],
+  '2363214': [2, 3, 6, 3, 2, 1, 4],
   '214214': [2, 1, 4, 2, 1, 4],
 };
 
@@ -57,6 +58,17 @@ const EXACT_DIRECTIONS: Partial<Record<MotionId, number>> = {
   '3': 3,
   '1': 1,
 };
+
+/** 指令有多长（判断"谁更具体"用：63214 应该压过 214） */
+export function motionLength(motion: MotionId): number {
+  if (motion === 'none') return 0;
+  const seq = SEQUENCES[motion];
+  if (seq) return seq.length;
+  if (EXACT_DIRECTIONS[motion] !== undefined) return 1;
+  if (motion === 'doubleTapF' || motion === 'doubleTapB') return 2;
+  if (motion === 'chargeBack' || motion === 'chargeDown') return 2;
+  return 0;
+}
 
 export class ChargeTracker {
   back = 0;

@@ -61,7 +61,7 @@ export type ButtonId = 'A' | 'B' | 'C' | 'D';
 export type MotionId =
   | 'none'
   | '236' | '214' | '421' | '623' | '41236' | '63214'
-  | '236236' | '214214' | '22'
+  | '236236' | '214214' | '2363214' | '22'
   | 'doubleTapF' | 'doubleTapB'
   | 'chargeBack' | 'chargeDown'
   | '6' | '4' | '2' | '8' | '3' | '1';
@@ -176,7 +176,7 @@ export interface CharDef {
  * - 系统技：`CD`（吹飞）、`AB`（回避）、`throw`（投技）
  * - 必杀/超必杀：指令串 + 键，如 `236A`、`623P`、`214K`、`236236P`、`236236AC`
  */
-export const MOVE_KEY = /^(?:j?[1-9]?[ABCD]|CD|AB|throw|\d{2,6}(?:AC|[ABCDPK])(?:_\d)?)$/;
+export const MOVE_KEY = /^(?:j?[1-9]?[ABCD]|CD|AB|throw|\d{2,8}(?:AC|[ABCDPK])(?:_\d)?)$/;
 
 /** 校验一个招式数据是否自洽，返回问题列表（测试与启动时都能用） */
 export function validateMove(move: MoveDef): string[] {

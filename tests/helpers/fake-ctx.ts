@@ -24,6 +24,8 @@ export class FakeCtx implements Ctx2D {
   lineWidths: number[] = [];
   rects: Rect[] = [];
   lines: Line[] = [];
+  strokeRects: { x: number; y: number; w: number; h: number; stroke: string }[] = [];
+  strokeColors: string[] = [];
   texts: { text: string; x: number; y: number; align: string; font: string; color: string }[] = [];
   fillStyle = '#000';
   strokeStyle = '#000';
@@ -93,6 +95,12 @@ export class FakeCtx implements Ctx2D {
     this.calls.push('stroke');
     this.lineWidths.push(this.lineWidth);
     this.lines.push({ x1: this.pathStart[0], y1: this.pathStart[1], x2: this.lastPoint[0], y2: this.lastPoint[1], stroke: this.strokeStyle });
+  }
+
+  strokeRect(x: number, y: number, w: number, h: number): void {
+    this.calls.push('strokeRect');
+    this.strokeColors.push(this.strokeStyle);
+    this.strokeRects.push({ x, y, w, h, stroke: this.strokeStyle });
   }
 
   fillRect(x: number, y: number, w: number, h: number): void {

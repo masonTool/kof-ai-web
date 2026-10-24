@@ -5,40 +5,12 @@
  * 招式种类、指令、取消关系、判定等级按 KOF97 还原；帧数/伤害取公开资料的近似值。
  * 要校准手感就只改这个文件——引擎不认识"京"，只认帧数据。
  */
-import type { CharDef, HitDef, MoveDef } from '../schema';
+import type { CharDef } from '../schema';
+import { hit, mv } from './helpers';
 import { PALETTES } from './palette';
 
 /** 通常技命中后可以取消进的招式（KOF 的"必杀取消"） */
 const SPECIAL_CANCELS = ['236A', '236C', '623P', '214K', '421K', '236236P', '236236AC'];
-
-function hit(id: string, over: Partial<HitDef> = {}): HitDef {
-  return {
-    id,
-    box: { x: 12, y: -62, w: 26, h: 12 },
-    frames: [3, 5],
-    damage: 25,
-    hitStun: 13,
-    blockStun: 8,
-    hitstop: 5,
-    guard: 'high',
-    level: 'mid',
-    pushback: 3,
-    blockPushback: 2,
-    ...over,
-  };
-}
-
-function mv(
-  key: string,
-  name: string,
-  anim: string,
-  total: number,
-  kind: MoveDef['kind'],
-  hits: HitDef[],
-  over: Partial<MoveDef> = {},
-): MoveDef {
-  return { id: key, name, anim, total, kind, hits, ...over };
-}
 
 export const KYO: CharDef = {
   id: 'kyo',

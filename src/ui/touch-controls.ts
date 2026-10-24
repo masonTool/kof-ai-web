@@ -15,6 +15,8 @@ export interface TouchAction {
 
 export interface TouchControlsHandle {
   refresh(): void;
+  /** 底部功能条只在能用到的时候显示（菜单里藏起来） */
+  setBarVisible(visible: boolean): void;
   dispose(): void;
 }
 
@@ -103,6 +105,9 @@ export function mountTouchControls(pad: VirtualPad, actions: readonly TouchActio
         const button = labels.get(action.id);
         if (button) button.textContent = action.label();
       }
+    },
+    setBarVisible(visible: boolean): void {
+      bar.style.display = visible ? 'flex' : 'none';
     },
     dispose(): void {
       pad.releaseAll();

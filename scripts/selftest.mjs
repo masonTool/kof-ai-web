@@ -62,6 +62,14 @@ async (page) => {
 
   await page.goto('http://localhost:5174/');
   await wait(1500);
+  // 流程已经变成"标题→选人→VS→对战"，自测直接跳到对战
+  await page.evaluate(() => {
+    const k = window.__kof;
+    k.flow.picks = [k.flow.roster[0], k.flow.roster[1]];
+    k.flow.screen = 'fight';
+    k.startMatch();
+  });
+  await wait(1200);
   record('开局进入对局', (await snap()).phase, 'fight');
 
   // 断言用：先把假人固定成木桩，避免它在断言中间插一手

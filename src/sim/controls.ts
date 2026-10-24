@@ -8,7 +8,7 @@
  */
 import { Btn, axisY, type InputState } from '../core/input';
 import type { MoveDef } from '../data/schema';
-import { CommandParser } from '../input/parser';
+import { CommandParser, motionLength } from '../input/parser';
 import type { Fighter } from './fighter';
 import { FighterState, canAct } from './state';
 
@@ -105,7 +105,10 @@ export class FighterControls {
     if (normal) candidates.push(normal);
 
     const buttonCount = (m: MoveDef): number => m.input?.buttons?.length ?? 0;
-    candidates.sort((a, b) => KIND_ORDER[a.kind] - KIND_ORDER[b.kind] || buttonCount(b) - buttonCount(a));
+    // 先比"指令有多具体"：63214 压过 214、236 压过 6（否则爪的屑風会被葵花吃掉、
+    // 上段必杀会被普通投吃掉）；无指令的招（CD/AB/通常技）按 1 算，同级再比类别。
+    const spec = (m: MoveDef): number => (m.input ? Math.max(1, motionLength(m.input.motion)) : 1);
+    candidates.sort((a, b) => spec(b) - spec(a) || KIND_ORDER[a.kind] - KIND_ORDER[b.kind] || buttonCount(b) - buttonCount(a));
 
     for (const move of candidates) {
       if (allow && !allow(move)) continue;

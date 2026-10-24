@@ -31,6 +31,13 @@ async (page) => {
   await wait(1400);
   await page.evaluate(() => {
     const k = window.__kof;
+    k.flow.picks = [k.flow.roster[0], k.flow.roster[1]];
+    k.flow.screen = 'fight';
+    k.startMatch();
+  });
+  await wait(1200);
+  await page.evaluate(() => {
+    const k = window.__kof;
     k.training.settings.dummy = 'stand';
     k.training.settings.showFrameData = false;
   });
