@@ -139,6 +139,29 @@ export class Fighter implements Entity {
     this.clampX();
   }
 
+  /** 回合重置：血量、位置、状态、连段、硬直全部归零（气槽默认也清） */
+  reset(opts: { x: number; facing: 1 | -1; keepMeter?: boolean }): void {
+    this.x = opts.x;
+    this.y = GROUND_Y;
+    this.vx = 0;
+    this.vy = 0;
+    this.facing = opts.facing;
+    this.hp = this.maxHp;
+    if (opts.keepMeter !== true) this.meter = 0;
+    this.state = FighterState.Idle;
+    this.stateFrame = 0;
+    this.move = null;
+    this.moveFrame = 0;
+    this.usedHits.clear();
+    this.hitstop = 0;
+    this.stunTimer = 0;
+    this.landLag = 0;
+    this.airborne = false;
+    this.stunGauge = 0;
+    this.combo = newCombo();
+    this.input = { held: 0, pressed: 0, released: 0 };
+  }
+
   turn(): void {
     this.facing = this.facing === 1 ? -1 : 1;
   }

@@ -19,6 +19,8 @@ export const STAGE_RIGHT = 504;
 
 /** 对战血量默认值（角色数据可覆盖） */
 export const DEFAULT_HP = 1000;
+/** 气槽上限（KOF97 是 MAX 槽；超必杀按 50 / 100 扣） */
+export const METER_MAX = 100;
 /** 起身无敌帧 */
 export const WAKEUP_FRAMES = 12;
 /** 倒地到起身的帧数 */
