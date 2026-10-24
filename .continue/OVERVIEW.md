@@ -36,7 +36,7 @@
 - 视口缩放：逻辑 320×224、整数倍缩放 + 居中黑边（`render/scale.ts`）· `T1` · 批次 20261024-1614
 - 角色外观参数（身高/壮实度/头大小/五种发型/四种配件），表在 `render/looks.ts` 不塞进 `CharDef` · `T90` · 批次 20261025-0105
 - 招式属性（火/暗火/雷/风/气）：气质表在 `data/fx-style.ts`，`MoveDef.fx?` 可覆盖；道具在生成时记住风格 · `T95` `T96` · 批次 20261025-0210
-- 胜负演出：`data/chars/quotes.ts` 台词表（按胜场轮换，不用随机数）+ `resultAnimFor()` 让赢家 win / 输家 lose · `T98` · 批次 20261025-0245
+- 胜负演出：台词表 + `resultAnimFor()`（赢家按 `winPoseFor()` 选 win/win2/win3 变体、输家 lose）· `T98` `T110` · 批次 20261025-0245 / 20261025-0530
 - 登场挑衅（`introAnimFor()` → `taunt` 姿势）与飞行道具四种形状（`shapeOfProjectile()` 按属性推）· `T100` `T101` · 批次 20261025-0320
 - 超必杀起手演出：`Fighter.justStartedMove` + `Match.superFlash`（双方定格 10 帧 + 全屏闪白 12 帧，进 hash）· `T103` · 批次 20261025-0400
 - BGM 五条曲：标题/战斗/暗色/ BOSS 战/结果；`fightTrackFor()` 按对手选（BOSS 优先，其次暗色系）· `T104` `T107` · 批次 20261025-0400 / 20261025-0450

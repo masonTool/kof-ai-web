@@ -41,6 +41,31 @@
 
 <!-- 实际归档放下面，最新的放最上面 -->
 
+## 批次 20261025-0530 · 2026-10-25 · 会话 59bce766
+
+**这批的目标**：把 `assets.ts` 那个从第一批留到现在的"自绘贴图"口子真正打通，并让 29 人的胜利姿势不再千篇一律。
+
+**条目**（原文照搬，状态保持原样；每条下方的完成说明一起搬）：
+
+- [x] [T109] 自绘贴图管线打通（精灵表 provider + 绘制层接管 + 回落）：`src/render/assets.ts` `src/render/fighter-draw.ts` `src/render/ctx.ts` → `tests/assets-pipeline.test.ts` 断言按声明顺序算行列、越界折回、未声明回落、贴图底部居中、闪白仍生效、贴图帧与骨架帧对齐
+  - 做了什么：`spriteSheetProvider()`（一张图按"动画名→帧数"排布，`columns` 换行，自动算 sx/sy）；`drawFighter` 先问 `spriteFor()`，有图就 `drawImage` + 半透明白闪，没图就照常画骨架；`charId`/`spriteScale` 进 `FighterVisual`；`Ctx2D` 补 `drawImage`、`FakeCtx` 记账；`poseFrameIndex()` 抽出来让贴图与骨架**用同一个帧下标**
+  - 为什么：这是 `assets.ts` 从第一批留到现在的空口子——把管线打通后，将来只给某几个角色贴图也能直接跑（没图的自动画骨架），玩法与数据层一行都不用改
+  - 验证：`tests/assets-pipeline.test.ts` 9 条——行列换算、越界/负数折回、未声明动画与角色返回 null、装/卸 provider 后绘制路径切换、贴图默认底部居中、贴图角色命中仍闪白、贴图取帧与 `resolvePose` 对齐
+  - 批次：20261025-0530
+- [x] [T110] 胜利姿势变体（29 人不再摆同一个姿势）：`src/render/poses.ts` `src/render/renderer.ts` → `tests/quotes.test.ts` 断言三变体都是真姿势、按 id 确定性分配、在册角色至少用上两种
+  - 做了什么：新增 `win2`（双臂上举）与 `win3`（抱臂点头）两套姿势；`winPoseFor(charId)` 按 id 字符和取模选变体（确定性，回放一致）；`resultAnimFor()` 对赢家返回对应变体
+  - 为什么：台词区分了，姿势还是同一个就显得偷懒；用 id 哈希而不是随机，是为了回放/录屏里同一角色永远摆同一个姿势
+  - 验证：`tests/quotes.test.ts` 加 3 条；截图确认八神庵用 win2 的举手姿势 + 台词
+  - 批次：20261025-0530
+- [x] [T111] 管线与姿势验收：截图 + `npm run build`
+  - 做了什么：截 victory 画面确认姿势/台词/HUD 横幅同时正确
+  - 为什么：贴图管线在没美术素材时只能靠单测验路径，胜利姿势则是"看得见"的，需要肉眼确认
+  - 验证：`npm run check` 683 条全绿；`npm run build` 通过
+  - 批次：20261025-0530
+
+**遗留**：无 `[阻塞]`。贴图管线通了但**还没有美术素材**（要么用户提供 PNG，要么继续程序化）；此外训练模式的任务/挑战、观战模式仍未做。
+
+
 ## 批次 20261025-0450 · 2026-10-25 · 会话 59bce766
 
 **这批的目标**：给超必杀加"运镜"（拉近 + 黑边），并让战斗曲按对手变化。
@@ -264,35 +289,5 @@
   - 批次：20261024-2330
 
 **遗留**：无 `[阻塞]`。逐键重绑键盘记为 T85；还欠回放、移动端适配、美术提升。
-
-
-## 批次 20261024-2250 · 2026-10-24 · 会话 59bce766
-
-**这批的目标**：从"一条直线的主流程"补成"有模式、有选项、输掉能续关"的完整街机外壳。
-
-**条目**（原文照搬，状态保持原样；每条下方的完成说明一起搬）：
-
-- [x] [T77] 选项与存档（局数/时间/难度/音量/调试开关，localStorage 持久化）：`src/ui/settings.ts` → `tests/settings.test.ts` 断言默认值、非法输入回落默认、循环切换、存盘读盘往返、没有 localStorage 时不崩
-  - 做了什么：`ui/settings.ts`——`GameSettings`（回合数/时间/难度/音量/帧数面板/判定框）、`sanitize()` 逐项消毒夹取、`SettingsStore`（注入 `StorageLike`，load/save/cycle/resetDefaults）、`optionRows()` 供界面渲染；存的是数值本身而不是下标
-  - 为什么：localStorage 是用户能随便改的，读盘不消毒就是"改一下就崩"；存数值不存下标，以后选项顺序变了老存档不会错位；storage 做成注入，node 里用假 storage 就能测，隐私模式下传 null 也不会崩
-  - 验证：`tests/settings.test.ts` 14 条——默认值、空对象/乱码回落、越界夹取、类型不对回落、合法值原样保留、切换自动存盘且新实例能读回、坏 JSON 不抛错、null storage 可用、左右循环与转一圈回落、难度顺序、开关取反、重置默认、六行选项文案
-  - 批次：20261024-2250
-- [x] [T78] 模式选择 + 选项屏 + 续关流程：`src/ui/flow.ts` → `tests/flow.test.ts` 断言 标题→模式→（街机/双人/训练/选项）、训练模式跳过 VS、输掉进续关倒计时、续关重开同一角色、超时回标题
-  - 做了什么：`AppFlow` 加 `mode`（arcade/versus/training）与三块新逻辑——`mode` 屏（四项菜单）、`options` 屏（上下选行、左右/A 改值、B 返回）、`continue` 屏（倒计时 `continueFrames`=600 帧，按 A 续关沿用同一组 picks）；训练模式选完人**跳过 VS 直接开打**；双人对战 P2 用第二个输入源自己选人；街机模式输给 CPU 才进续关
-  - 为什么：三种模式共用同一条主干，只在两处分叉（训练跳 VS、双人换 P2 输入源），分支越少越不容易写出"某模式专属 bug"；续关沿用 picks 而不是重新选人，才是 KOF 街机的体验
-  - 验证：`tests/flow.test.ts` 扩到 26 条——标题→模式、四项菜单与环绕、街机进选人、双人等 P2 自己确定、训练跳过 VS、选项屏左右改值并写回设置、B 返回、六行都能选到、双方确定进 VS、结果屏锁 30 帧、输给 CPU 进续关、倒计时递减、按 A 续关沿用角色且计数 +1、超时回标题、双人输掉不进续关、reset 清 mode/continues
-  - 批次：20261024-2250
-- [x] [T79] 新屏绘制与接线（音量/局数/时间真的生效）：`src/render/screens.ts` `src/main.ts` `src/audio/sfx.ts` → `npm run check` 全绿 + 设置改动后 Match 参数跟着变
-  - 做了什么：`render/screens.ts` 加 `drawMode`（高亮光标）/`drawOptions`（左右箭头提示）/`drawContinue`（大号倒计时）；`main.ts` 用 `SettingsStore(browserStorage())` 建 flow，开局把 回合数/时间/难度/音量/调试开关 灌进 `Match` 与 `TrainingSession`，音量走 `WebAudioSink.setVolume()`（静音不重建 AudioContext）；模式决定假人（训练=木桩、双人=人操、街机=CPU）
-  - 为什么：设置必须"改了立刻生效且不用重启"；音量要能在运行时改，所以给音频 sink 加 `setVolume` 而不是重建实例（重建会丢 AudioContext 的解锁状态）
-  - 验证：`npm run check` 548 条全绿；`npm run build` 通过
-  - 批次：20261024-2250
-- [x] [T80] 浏览器自测（走一遍 选项→街机→打完→续关）：`scripts/selftest-flow.mjs` → 跑通并贴结果
-  - 做了什么：新增 `scripts/selftest-menu.mjs`（13 项）；改造既有三份自测适配"标题后多一屏模式选择"；修掉 `selftest-flow.mjs` 里"3v3 只打死一个人不算整场结束"的旧假设
-  - 为什么：流程一改，之前所有"从标题一路按到对战"的脚本都会受影响——这类改动的回归只能靠真的从头按一遍
-  - 验证：`selftest-menu.mjs` 13/13 PASS（含 localStorage 落盘、倒计时递减、续关沿用同一组角色）；`selftest-flow.mjs`、`selftest-roster.mjs`、`selftest-systems.mjs` 全部重跑通过
-  - 批次：20261024-2250
-
-**遗留**：无 `[阻塞]`。还欠：BGM、暂停菜单、按键自定义、回放、移动端适配、美术。
 
 
