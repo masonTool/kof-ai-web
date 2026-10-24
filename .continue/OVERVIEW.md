@@ -38,6 +38,8 @@
 - 招式属性（火/暗火/雷/风/气）：气质表在 `data/fx-style.ts`，`MoveDef.fx?` 可覆盖；道具在生成时记住风格 · `T95` `T96` · 批次 20261025-0210
 - 胜负演出：`data/chars/quotes.ts` 台词表（按胜场轮换，不用随机数）+ `resultAnimFor()` 让赢家 win / 输家 lose · `T98` · 批次 20261025-0245
 - 登场挑衅（`introAnimFor()` → `taunt` 姿势）与飞行道具四种形状（`shapeOfProjectile()` 按属性推）· `T100` `T101` · 批次 20261025-0320
+- 超必杀起手演出：`Fighter.justStartedMove` + `Match.superFlash`（双方定格 10 帧 + 全屏闪白 12 帧，进 hash）· `T103` · 批次 20261025-0400
+- BGM 四条曲：标题/战斗/BOSS 战/结果，BOSS 按 `char.boss` 属性切换 · `T104` · 批次 20261025-0400
 - 移动端：DPR 夹在 [1,2]、安全区扣减、竖屏提示层 · `T87` · 批次 20261025-0010
 
 ### 模拟内核
