@@ -75,26 +75,38 @@ function stride(dy: number, lean: number, phase: number): PoseFrame {
   return { ...base, legBack, legFront };
 }
 
-/** 出拳：起手 → 伸拳 → 收拳 */
+/**
+ * 出拳：蓄力后拉 → 打满（重心压前、后腿蹬直、肩送出去）→ 收拳回中。
+ *
+ * 三帧之间由 `resolvePose` 插值，所以这里的极端姿势就是"动作的峰值"：
+ * 峰值越夸张，插值出来的中间帧越有力量感。
+ */
 function punch(reach: number, dy: number, torsoLean: number): PoseFrame[] {
   return [
+    // 蓄力：拳头收在胸前、肩往后
     f({
-      head: p(2 - 2, -72 + dy),
-      neck: p(1 - 1, -62 + dy),
-      armFront: [p(2, -56 + dy), p(4, -50 + dy)],
-      armBack: [p(-8, -52 + dy), p(-12, -48 + dy)],
+      head: p(2 - 3, -72 + dy),
+      neck: p(1 - 2, -62 + dy),
+      hip: p(-1, -40 + dy),
+      armFront: [p(0, -57 + dy), p(1, -52 + dy)],
+      armBack: [p(-9, -53 + dy), p(-13, -49 + dy)],
+      legFront: [p(5, -22), p(9, -1)],
     }),
+    // 打满：拳到最远、身体前压、后腿蹬直
     f({
-      head: p(2 + torsoLean, -72 + dy),
-      neck: p(1 + torsoLean, -62 + dy),
-      hip: p(torsoLean * 0.5, -40 + dy),
-      armFront: [p(6 + reach * 0.4, -58 + dy), p(8 + reach, -56 + dy)],
-      armBack: [p(-8, -54 + dy), p(-14, -52 + dy)],
+      head: p(2 + torsoLean * 1.4, -72 + dy),
+      neck: p(1 + torsoLean * 1.2, -62 + dy),
+      hip: p(torsoLean * 0.7, -40 + dy),
+      armFront: [p(7 + reach * 0.7, -58 + dy), p(9 + reach * 1.55, -57 + dy)],
+      armBack: [p(-9, -55 + dy), p(-16, -53 + dy)],
+      legBack: [p(-6, -21), p(-14, -1)],
+      legFront: [p(6, -22), p(11, -1)],
     }),
+    // 收拳：手回到胸前，肩膀松下来
     f({
-      head: p(2 + torsoLean, -72 + dy),
-      neck: p(1 + torsoLean, -62 + dy),
-      armFront: [p(4 + reach * 0.4, -58 + dy), p(6 + reach, -56 + dy)],
+      head: p(2 + torsoLean * 0.5, -72 + dy),
+      neck: p(1 + torsoLean * 0.4, -62 + dy),
+      armFront: [p(4 + reach * 0.4, -58 + dy), p(5 + reach * 0.8, -56 + dy)],
       armBack: [p(-8, -54 + dy), p(-13, -50 + dy)],
     }),
   ];
@@ -110,12 +122,13 @@ function kick(reach: number, height: number, dy: number): PoseFrame[] {
       legFront: [p(6, -26), p(8, -2)],
     }),
     f({
-      hip: p(-3, -38 + dy),
-      head: p(-3, -68 + dy),
-      neck: p(-4, -58 + dy),
-      legFront: [p(10, -28 - height * 0.5), p(6 + reach, -30 - height)],
-      legBack: [p(-4, -20), p(-10, -1)],
-      armBack: [p(-10, -52), p(-16, -48)],
+      hip: p(-4, -38 + dy),
+      head: p(-5, -68 + dy),
+      neck: p(-6, -58 + dy),
+      legFront: [p(11, -30 - height * 0.55), p(6 + reach * 1.4, -32 - height)],
+      legBack: [p(-4, -18), p(-12, -1)],
+      armBack: [p(-11, -52), p(-18, -46)],
+      armFront: [p(6, -56), p(4, -64)],
     }),
     f({
       hip: p(-2, -38 + dy),
@@ -190,15 +203,24 @@ export const POSE_LIBRARY: Record<string, Pose> = {
     ],
   },
   guard: {
-    frameDuration: 6,
-    loop: false,
+    frameDuration: 4,
+    loop: true,
     frames: [
       f({
         head: p(-1, -71),
         neck: p(-2, -61),
-        armFront: [p(4, -58), p(0, -56)],
-        armBack: [p(-2, -56), p(2, -54)],
+        armFront: [p(5, -62), p(2, -68)],
+        armBack: [p(-1, -60), p(4, -64)],
         legBack: [p(-6, -22), p(-12, -1)],
+      }),
+      // 被顶住：上身再缩一点，双手夹得更紧
+      f({
+        head: p(-3, -70),
+        neck: p(-4, -60),
+        hip: p(-1, -40),
+        armFront: [p(4, -62), p(1, -70)],
+        armBack: [p(-2, -60), p(3, -66)],
+        legBack: [p(-7, -22), p(-13, -1)],
       }),
     ],
   },
@@ -218,20 +240,33 @@ export const POSE_LIBRARY: Record<string, Pose> = {
     frameDuration: 3,
     loop: false,
     frames: [
+      // 刚被打中：头被打偏、上身向后折、双手散开
       f({
-        head: p(-4, -70),
-        neck: p(-5, -60),
+        head: p(-7, -69),
+        neck: p(-7, -59),
         hip: p(-2, -40),
-        armFront: [p(2, -60), p(0, -70)],
-        armBack: [p(-10, -58), p(-14, -64)],
-        legBack: [p(-8, -22), p(-14, -2)],
+        armFront: [p(3, -62), p(2, -74)],
+        armBack: [p(-12, -60), p(-18, -68)],
+        legBack: [p(-8, -22), p(-16, -2)],
+        legFront: [p(6, -22), p(13, -1)],
       }),
+      // 后仰到底（这一帧最"痛"）
+      f({
+        head: p(-10, -66),
+        neck: p(-9, -57),
+        hip: p(-4, -39),
+        armFront: [p(0, -58), p(-6, -70)],
+        armBack: [p(-15, -55), p(-20, -62)],
+        legBack: [p(-9, -22), p(-18, -2)],
+      }),
+      // 回了一半（接后续状态不会突然弹回中立）
       f({
         head: p(-6, -68),
-        neck: p(-7, -58),
-        hip: p(-3, -39),
-        armFront: [p(0, -58), p(-4, -66)],
-        armBack: [p(-12, -56), p(-16, -60)],
+        neck: p(-5, -59),
+        hip: p(-2, -40),
+        armFront: [p(2, -58), p(-2, -66)],
+        armBack: [p(-11, -56), p(-16, -60)],
+        legBack: [p(-7, -22), p(-14, -2)],
       }),
     ],
   },
@@ -450,12 +485,58 @@ export function poseFrameIndex(anim: string, elapsed: number, duration?: number)
   return pose.loop ? idx % pose.frames.length : Math.min(idx, pose.frames.length - 1);
 }
 
-export function resolvePose(anim: string, elapsed: number, duration?: number): PoseFrame {
+/** 关键帧之间怎么过渡 */
+export type Easing = 'linear' | 'out' | 'inOut';
+
+const EASE: Record<Easing, (t: number) => number> = {
+  linear: (t) => t,
+  // 快出慢停：出拳/踢腿要"啪"地到位，不能匀速滑过去
+  out: (t) => 1 - (1 - t) * (1 - t),
+  inOut: (t) => (t < 0.5 ? 2 * t * t : 1 - 2 * (1 - t) * (1 - t)),
+};
+
+const lerp = (a: number, b: number, t: number): number => a + (b - a) * t;
+const lerpPoint = (a: Point, b: Point, t: number): Point => [lerp(a[0], b[0], t), lerp(a[1], b[1], t)];
+
+/** 两个关键帧之间插值 */
+export function lerpFrame(a: PoseFrame, b: PoseFrame, t: number): PoseFrame {
+  const k = Math.min(1, Math.max(0, t));
+  return {
+    head: lerpPoint(a.head, b.head, k),
+    neck: lerpPoint(a.neck, b.neck, k),
+    hip: lerpPoint(a.hip, b.hip, k),
+    armBack: [lerpPoint(a.armBack[0], b.armBack[0], k), lerpPoint(a.armBack[1], b.armBack[1], k)],
+    armFront: [lerpPoint(a.armFront[0], b.armFront[0], k), lerpPoint(a.armFront[1], b.armFront[1], k)],
+    legBack: [lerpPoint(a.legBack[0], b.legBack[0], k), lerpPoint(a.legBack[1], b.legBack[1], k)],
+    legFront: [lerpPoint(a.legFront[0], b.legFront[0], k), lerpPoint(a.legFront[1], b.legFront[1], k)],
+  };
+}
+
+/**
+ * 按时间取当前姿势（**关键帧之间插值**）。
+ *
+ * 以前是直接跳到下一张关键帧——三帧的出拳就是"举着→伸出去→收回来"三次硬切，
+ * 看起来像木偶。插值之后同一套三帧数据能连续动起来，这是"像真人在打"最省的一块。
+ *
+ * 出招用 `out` 缓动（快出慢停），待机/走路用 `inOut`（呼吸感）。
+ */
+export function resolvePose(anim: string, elapsed: number, duration?: number, ease: Easing = 'out'): PoseFrame {
   const pose = hasPose(anim) ? POSE_LIBRARY[anim]! : POSE_LIBRARY['idle']!;
-  const span = duration !== undefined && duration > 0 ? duration / pose.frames.length : Math.max(1, pose.frameDuration);
-  const idx = Math.floor(Math.max(0, elapsed) / span);
-  const frame = pose.loop ? idx % pose.frames.length : Math.min(idx, pose.frames.length - 1);
-  return pose.frames[frame]!;
+  const count = pose.frames.length;
+  if (count <= 1) return pose.frames[0]!;
+
+  const span =
+    duration !== undefined && duration > 0 ? duration / count : Math.max(1, pose.frameDuration);
+  const pos = Math.max(0, elapsed) / span;
+  const index = Math.floor(pos);
+  const frac = pos - index;
+
+  // 非循环动画走到末帧就定住（受击/出招的收尾不该弹回第一帧）
+  if (!pose.loop && index >= count - 1) return pose.frames[count - 1]!;
+
+  const from = pose.frames[index % count]!;
+  const to = pose.frames[(index + 1) % count]!;
+  return lerpFrame(from, to, EASE[ease](Math.min(1, Math.max(0, frac))));
 }
 
 /**
@@ -469,4 +550,14 @@ export function winPoseFor(charId: string): WinPose {
   let sum = 0;
   for (let i = 0; i < charId.length; i++) sum += charId.charCodeAt(i);
   return WIN_VARIANTS[sum % WIN_VARIANTS.length]!;
+}
+
+/** 循环类动画用 inOut 缓动（呼吸感），出招类用 out（快出慢停） */
+export function easeForAnim(anim: string): Easing {
+  return POSE_LIBRARY[anim]?.loop === true ? 'inOut' : 'out';
+}
+
+/** 这套姿势是不是"打出去"的动作（画挥击拖尾用） */
+export function isAttackAnim(anim: string): boolean {
+  return anim.startsWith('punch') || anim.startsWith('kick') || anim === 'special' || anim === 'super';
 }

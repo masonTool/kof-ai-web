@@ -195,6 +195,7 @@ export class Match {
     if (this.superFlash > 0) return;
     if (!started.some((f) => f.move?.kind === 'super')) return;
     this.superFlash = SUPER_FLASH_FRAMES;
+    this.cam.shake(SUPER_FLASH_FRAMES, 3.5);
     for (const f of this.fighters) f.addHitstop(SUPER_FREEZE_FRAMES);
   }
 
@@ -208,8 +209,15 @@ export class Match {
 
   private applyHitEffects(hits: readonly HitResolution[]): void {
     for (const h of hits) {
-      if (h.kind === 'block') this.fx.spawnGuard(h.x, h.y, h.style);
-      else this.fx.spawnHit(h.x, h.y, { heavy: h.hit.damage >= 60, counter: h.counter, style: h.style });
+      if (h.kind === 'block') {
+        this.fx.spawnGuard(h.x, h.y, h.style);
+        this.cam.shake(3, 1); // 防御也要"顶一下"，否则看不出挡住了
+      } else {
+        const heavy = h.hit.damage >= 60;
+        this.fx.spawnHit(h.x, h.y, { heavy, counter: h.counter, style: h.style });
+        // 震屏：重击更狠，反击再加一点
+        this.cam.shake(heavy ? 8 : 5, (heavy ? 3 : 1.6) + (h.counter ? 0.8 : 0));
+      }
     }
   }
 

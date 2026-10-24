@@ -214,3 +214,36 @@ describe('镜头缩放覆盖（超必杀运镜）', () => {
     expect(cam.x + halfView).toBeLessThanOrEqual(STAGE_RIGHT + 1);
   });
 });
+
+describe('震屏（打击感）', () => {
+  it('触发后有偏移，逐帧衰减到 0', () => {
+    const cam = new Camera({ x: 200, zoom: 1 });
+    cam.shake(6, 3);
+    expect(Math.abs(cam.shakeOffset.x)).toBeGreaterThan(0);
+    for (let i = 0; i < 6; i++) cam.update({ x: 200 }, { x: 200 });
+    expect(cam.shakeOffset).toEqual({ x: 0, y: 0 });
+  });
+
+  it('方向逐帧翻转（左右抖，不是单方向位移）', () => {
+    const cam = new Camera({ x: 200, zoom: 1 });
+    cam.shake(6, 3);
+    const a = cam.shakeOffset.x;
+    cam.update({ x: 200 }, { x: 200 });
+    const b = cam.shakeOffset.x;
+    expect(Math.sign(a)).not.toBe(Math.sign(b));
+  });
+
+  it('同时触发取更强的那次，不叠加', () => {
+    const cam = new Camera({ x: 200, zoom: 1 });
+    cam.shake(6, 2);
+    cam.shake(6, 5);
+    expect(cam.shakePower).toBe(5);
+  });
+
+  it('震屏不影响镜头位置本身（只是绘制偏移）', () => {
+    const cam = new Camera({ x: 200, zoom: 1 });
+    cam.shake(6, 3);
+    cam.update({ x: 200 }, { x: 200 });
+    expect(cam.x).toBeCloseTo(200, 0);
+  });
+});

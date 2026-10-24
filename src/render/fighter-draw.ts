@@ -8,7 +8,7 @@ import type { Palette } from '../data/schema';
 import type { Ctx2D } from './ctx';
 import { DEFAULT_LOOK, type Look } from './looks';
 import { spriteFor } from './assets';
-import { poseFrameIndex, resolvePose, type Point, type PoseFrame } from './poses';
+import { easeForAnim, isAttackAnim, poseFrameIndex, resolvePose, type Point, type PoseFrame } from './poses';
 
 const OUTLINE = '#0c0a09';
 const HEAD_RADIUS = 7;
@@ -62,10 +62,8 @@ export interface PoseDrawOptions {
   flash?: boolean;
   /** 外观（身高/壮实/发型/配件） */
   look?: Look;
-  /** 角色 id：有自绘贴图时按它取图（没有就回落程序化绘制） */
-  charId?: string;
-  /** 贴图整体的缩放（美术素材像素密度和 320×224 逻辑分辨率不一致时用） */
-  spriteScale?: number;
+  /** 当前动画名（决定是否画挥击拖尾） */
+  anim?: string;
 }
 
 export function drawPose(ctx: Ctx2D, frame: PoseFrame, palette: Palette, opts: PoseDrawOptions = {}): void {
@@ -112,6 +110,32 @@ export function drawPose(ctx: Ctx2D, frame: PoseFrame, palette: Palette, opts: P
   limb(ctx, frame.legFront[0]!, frame.legFront[1]!, 5 * b, secondary);
   limb(ctx, frame.neck, frame.armFront[0]!, 5 * b, primary);
   limb(ctx, frame.armFront[0]!, frame.armFront[1]!, 4 * b, skin);
+
+  // 挥击拖尾：从拳/脚沿前臂方向拉一条渐隐光带。
+  // 插值之后手的位置是连续的，这条带子就把"挥过去"这件事画出来了。
+  if (opts.anim !== undefined && isAttackAnim(opts.anim)) {
+    const trail = (elbow: Point, hand: Point, color: string, width: number): void => {
+      const dx = hand[0] - elbow[0];
+      const dy = hand[1] - elbow[1];
+      const len = Math.hypot(dx, dy) || 1;
+      const ux = dx / len;
+      const uy = dy / len;
+      for (let i = 0; i < 3; i++) {
+        const back = 6 + i * 5;
+        const fade = 0.26 - i * 0.07;
+        ctx.strokeStyle = color;
+        ctx.globalAlpha = Math.max(0.04, fade);
+        ctx.lineWidth = width - i * 1.2;
+        ctx.beginPath();
+        ctx.moveTo(hand[0] - ux * back, hand[1] - uy * back);
+        ctx.lineTo(hand[0], hand[1]);
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+    };
+    trail(frame.armFront[0], frame.armFront[1], '#ffffff', 4);
+    trail(frame.legFront[0], frame.legFront[1], '#ffe9c8', 4.5);
+  }
 
   drawHead(ctx, frame, { skin, hair, trim, flash, look });
   drawAccessory(ctx, frame, { trim, hair, look, flash });
@@ -270,7 +294,11 @@ export function drawFighter(ctx: Ctx2D, v: FighterVisual): void {
       ctx.fillRect(dx, dy, w, h);
     }
   } else {
-    drawPose(ctx, resolvePose(v.anim, v.elapsed, v.duration), v.palette, { flash: v.flash, look: v.look });
+    drawPose(ctx, resolvePose(v.anim, v.elapsed, v.duration, easeForAnim(v.anim)), v.palette, {
+      flash: v.flash,
+      look: v.look,
+      anim: v.anim,
+    });
   }
   ctx.restore();
 }

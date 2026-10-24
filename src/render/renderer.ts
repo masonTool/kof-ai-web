@@ -185,7 +185,9 @@ export function drawFrame(ctx: Ctx2D, match: Match, opts: RenderOptions = {}): v
       anim,
       elapsed,
       duration,
-      flash: f.hitstop > 2,
+      // 只在"挨打的那一方"刚被打中的 3 帧闪白：
+      // 攻击方也闪的话，两个人一起变成白影子，反而看不出谁打了谁
+      flash: f.state === FighterState.Hit && f.stateFrame < 3,
       alpha: f.state === FighterState.Dead ? 0.8 : 1,
       look: lookFor(f.char.id),
       charId: f.char.id,

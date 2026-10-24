@@ -8,7 +8,7 @@ import {
   spriteFor,
   spriteSheetProvider,
 } from '../src/render/assets';
-import { POSE_LIBRARY, resolvePose } from '../src/render/poses';
+import { POSE_LIBRARY, poseFrameIndex, resolvePose } from '../src/render/poses';
 import { FakeCtx } from './helpers/fake-ctx';
 
 /** 假的图片对象：只要能当 CanvasImageSource 传进去即可 */
@@ -139,8 +139,9 @@ describe('绘制层接管', () => {
     });
     const ctx = new FakeCtx();
     drawFighter(ctx, { palette, facing: 1, x: 0, y: 0, anim: 'punchHeavy', elapsed: 12, duration: 24, charId: 'kyo' });
-    // 贴图取的那一帧，必须和骨架按 elapsed/duration 算出来的是同一帧
-    expect(POSE_LIBRARY['punchHeavy']!.frames[frames[0]!]).toEqual(resolvePose('punchHeavy', 12, 24));
+    // 贴图取的那一帧，必须和骨架"最近的关键帧"是同一个（骨架现在会插值，不能直接比姿势）
+    expect(frames[0]).toBe(poseFrameIndex('punchHeavy', 12, 24));
+    expect(resolvePose('punchHeavy', 12, 24)).not.toEqual(POSE_LIBRARY['punchHeavy']!.frames[frames[0]!]);
     setAssetProvider(null);
     expect(currentAssetProvider()).toBeNull();
     expect(spriteFor('kyo', 'idle', 0)).toBeNull();

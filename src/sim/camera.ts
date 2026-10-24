@@ -44,6 +44,10 @@ export class Camera {
    */
   zoomOverride: number | null = null;
 
+  /** 震屏剩余帧与强度（打击感的关键：纯表现，但要不要震由模拟层决定才同步） */
+  shakeFrames = 0;
+  shakePower = 0;
+
   constructor(init: { x?: number; zoom?: number } = {}) {
     const cx = init.x ?? (STAGE_LEFT + STAGE_RIGHT) / 2;
     this.zoom = init.zoom ?? ZOOM_MIN;
@@ -60,6 +64,10 @@ export class Camera {
 
   /** 一帧：算出目标并平滑逼近（确定性，逐帧固定步长） */
   update(a: CameraBody, b: CameraBody): void {
+    if (this.shakeFrames > 0) {
+      this.shakeFrames--;
+      if (this.shakeFrames === 0) this.shakePower = 0;
+    }
     this.computeTargets(a, b);
 
     const dx = this.targetX - this.x;
@@ -125,8 +133,25 @@ export class Camera {
   }
 
   /** 把画布变换设置成"之后都按世界坐标画" */
+  /** 触发震屏（受击/超必杀起手）。同一次里取较强的那次，不叠加。 */
+  shake(frames: number, power: number): void {
+    if (power >= this.shakePower || this.shakeFrames <= 0) {
+      this.shakePower = power;
+      this.shakeFrames = Math.max(this.shakeFrames, frames);
+    }
+  }
+
+  /** 当前震屏偏移（用帧号算方向，确定性；不用随机数，回放才对得上） */
+  get shakeOffset(): { x: number; y: number } {
+    if (this.shakeFrames <= 0) return { x: 0, y: 0 };
+    const decay = this.shakePower * (this.shakeFrames / 12);
+    const dir = this.shakeFrames % 2 === 0 ? 1 : -1;
+    return { x: dir * decay, y: -dir * decay * 0.5 };
+  }
+
   applyTo(ctx: { translate(x: number, y: number): void; scale(x: number, y: number): void }): void {
-    ctx.translate(VIEW_WIDTH / 2, GROUND_SCREEN_Y);
+    const shake = this.shakeOffset;
+    ctx.translate(VIEW_WIDTH / 2 + shake.x, GROUND_SCREEN_Y + shake.y);
     ctx.scale(this.zoom, this.zoom);
     ctx.translate(-this.x, -GROUND_Y);
   }

@@ -107,11 +107,14 @@ describe('姿势库数据完整性', () => {
 });
 
 describe('姿势解析', () => {
-  it('循环动画按 frameDuration 取模', () => {
+  it('循环动画一圈后回到起点，且帧间是连续过渡（不是硬切）', () => {
     const a = resolvePose('idle', 0);
-    const b = resolvePose('idle', POSE_LIBRARY['idle']!.frameDuration * POSE_LIBRARY['idle']!.frames.length);
-    expect(a).toEqual(b);
-    expect(resolvePose('idle', 1)).toEqual(a);
+    const lap = POSE_LIBRARY['idle']!.frameDuration * POSE_LIBRARY['idle']!.frames.length;
+    expect(resolvePose('idle', lap)).toEqual(a);
+    // 刚过 1 帧时应该是"接近第一帧"，而不是与某个关键帧完全相等
+    const next = resolvePose('idle', 1);
+    expect(next.head[0]).toBeCloseTo(a.head[0], 0);
+    expect(next).not.toEqual(a);
   });
 
   it('定格动画停在最后一帧', () => {
@@ -400,5 +403,76 @@ describe('超必杀运镜（上下黑边）', () => {
     const heights = bars.map((r) => r.h);
     expect(heights).toContain(CINEMA_BAR);
     expect(CINEMA_BAR * 2).toBeLessThan(VIEW_HEIGHT / 2);
+  });
+});
+
+describe('姿势插值（去木偶感的核心）', () => {
+  it('两个关键帧之间是连续过渡，不是硬切', () => {
+    const a = POSE_LIBRARY['punchHeavy']!.frames[0]!;
+    const b = POSE_LIBRARY['punchHeavy']!.frames[1]!;
+    const mid = resolvePose('punchHeavy', 4, 24); // 3 帧里第 0→1 之间
+    expect(mid).not.toEqual(a);
+    expect(mid).not.toEqual(b);
+    // 手的位置落在两帧之间
+    const lo = Math.min(a.armFront[1][0], b.armFront[1][0]);
+    const hi = Math.max(a.armFront[1][0], b.armFront[1][0]);
+    expect(mid.armFront[1][0]).toBeGreaterThanOrEqual(lo - 0.01);
+    expect(mid.armFront[1][0]).toBeLessThanOrEqual(hi + 0.01);
+  });
+
+  it('起始帧精确等于关键帧、末帧停在最后一帧', () => {
+    expect(resolvePose('punchHeavy', 0, 24)).toEqual(POSE_LIBRARY['punchHeavy']!.frames[0]!);
+    expect(resolvePose('punchHeavy', 999, 24)).toEqual(POSE_LIBRARY['punchHeavy']!.frames.at(-1)!);
+  });
+
+  it('出招用 ease-out：前半段走得更远（快出慢停）', () => {
+    const start = POSE_LIBRARY['punchHeavy']!.frames[0]!.armFront[1][0];
+    const end = POSE_LIBRARY['punchHeavy']!.frames[1]!.armFront[1][0];
+    const q1 = resolvePose('punchHeavy', 2, 24).armFront[1][0]; // 1/4 处
+    const q3 = resolvePose('punchHeavy', 6, 24).armFront[1][0]; // 3/4 处
+    expect(q1 - start).toBeGreaterThan((q3 - start) / 3);
+    expect(end).toBeGreaterThan(start);
+  });
+
+  it('循环动画用 inOut：中点仍在两帧之间', () => {
+    const idle = POSE_LIBRARY['idle']!;
+    const mid = resolvePose('idle', idle.frameDuration / 2);
+    expect(mid).not.toEqual(idle.frames[0]!);
+    expect(mid).not.toEqual(idle.frames[1]!);
+  });
+
+  it('受击姿势有三帧（被打弯 → 后仰 → 回一半）', () => {
+    expect(POSE_LIBRARY['hit']!.frames.length).toBe(3);
+    // 第二帧头被打得最偏
+    const heads = POSE_LIBRARY['hit']!.frames.map((fr) => fr.head[0]);
+    expect(Math.min(...heads)).toBe(heads[1]);
+  });
+
+  it('防御姿势是循环的（会有呼吸/被顶住的微动，不是一张静止图）', () => {
+    expect(POSE_LIBRARY['guard']!.loop).toBe(true);
+    const g = POSE_LIBRARY['guard']!;
+    expect(resolvePose('guard', 0)).not.toEqual(resolvePose('guard', g.frameDuration / 2));
+  });
+});
+
+describe('挥击拖尾', () => {
+  const drawWith = (anim: string): FakeCtx => {
+    const ctx = new FakeCtx();
+    drawPose(ctx, POSE_LIBRARY['punchHeavy']!.frames[1]!, PALETTE, { anim });
+    return ctx;
+  };
+
+  it('攻击动画会多画几条拖尾线', () => {
+    const attack = drawWith('punchHeavy');
+    const idle = drawWith('idle');
+    expect(attack.calls.filter((c) => c === 'stroke').length).toBeGreaterThan(
+      idle.calls.filter((c) => c === 'stroke').length,
+    );
+  });
+
+  it('拖尾是半透明的（叠在角色身上不会糊成一团白）', () => {
+    const ctx = new FakeCtx();
+    drawPose(ctx, POSE_LIBRARY['punchHeavy']!.frames[1]!, PALETTE, { anim: 'punchHeavy' });
+    expect(ctx.globalAlpha).toBe(1); // 画完要还原
   });
 });
