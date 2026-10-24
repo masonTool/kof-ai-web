@@ -18,7 +18,7 @@ async (page) => {
     await wait(110);
   };
 
-  await page.goto('http://localhost:5174/');
+  await page.goto('http://localhost:5171/');
   await wait(1200);
   // 设置是持久化的：上个脚本可能把键位改成了 WASD，这里先归零，
   // 否则"按方向键下移光标"会因为方向键没映射而失败（这一步本身也验证了持久化生效）。

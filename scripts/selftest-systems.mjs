@@ -27,7 +27,7 @@ async (page) => {
   const key = (type, code) =>
     page.evaluate(([t, c]) => window.dispatchEvent(new KeyboardEvent(t, { code: c, bubbles: true })), [type, code]);
 
-  await page.goto('http://localhost:5174/');
+  await page.goto('http://localhost:5171/');
   await wait(1400);
   await page.evaluate(() => {
     const k = window.__kof;

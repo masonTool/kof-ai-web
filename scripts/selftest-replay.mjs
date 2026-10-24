@@ -10,7 +10,7 @@ async (page) => {
     report.push(`${pass ? 'PASS' : 'FAIL'} ${name} = ${JSON.stringify(value)}${pass ? '' : ` (期望 ${JSON.stringify(expect)})`}`);
   };
 
-  await page.goto('http://localhost:5174/');
+  await page.goto('http://localhost:5171/');
   await wait(1200);
 
   // 进对战，并按住右键一小会儿，让录像里有真实输入

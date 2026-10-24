@@ -30,7 +30,7 @@ async (page) => {
       };
     });
 
-  await page.goto('http://localhost:5174/');
+  await page.goto('http://localhost:5171/');
   await wait(1200);
   await page.evaluate(() => window.localStorage.removeItem('kof97.settings'));
   await page.reload();

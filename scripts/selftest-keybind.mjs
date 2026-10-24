@@ -31,7 +31,7 @@ async (page) => {
       };
     });
 
-  await page.goto('http://localhost:5174/');
+  await page.goto('http://localhost:5171/');
   await wait(1200);
   // 清掉存档，避免上一轮把键位改过（设置是持久化的）
   await page.evaluate(() => window.localStorage.removeItem('kof97.settings'));

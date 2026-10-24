@@ -9,7 +9,7 @@ async (page) => {
     report.push(`${pass ? 'PASS' : 'FAIL'} ${name} = ${JSON.stringify(value)}${pass ? '' : ` (期望 ${JSON.stringify(expect)})`}`);
   };
 
-  await page.goto('http://localhost:5174/');
+  await page.goto('http://localhost:5171/');
   await wait(1200);
 
   // 训练模式：打一拳应该推进"命中 20 次"的进度

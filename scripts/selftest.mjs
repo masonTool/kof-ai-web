@@ -60,7 +60,7 @@ async (page) => {
       [frames, button],
     );
 
-  await page.goto('http://localhost:5174/');
+  await page.goto('http://localhost:5171/');
   await wait(1500);
   // 流程已经变成"标题→选人→VS→对战"，自测直接跳到对战
   await page.evaluate(() => {

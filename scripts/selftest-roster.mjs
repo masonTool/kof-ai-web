@@ -17,7 +17,7 @@ async (page) => {
     await wait(90);
   };
 
-  await page.goto('http://localhost:5174/');
+  await page.goto('http://localhost:5171/');
   await wait(1200);
   record('花名册 29 人', await page.evaluate(() => window.__kof.flow.roster.length), 29);
 

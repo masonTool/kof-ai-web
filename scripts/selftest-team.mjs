@@ -26,7 +26,7 @@ async (page) => {
       };
     });
 
-  await page.goto('http://localhost:5174/');
+  await page.goto('http://localhost:5171/');
   await wait(1200);
   await page.evaluate(() => {
     const k = window.__kof;

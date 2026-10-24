@@ -13,7 +13,7 @@
 
 ```bash
 npm install      # 安装依赖（只有 devDependencies，运行期零依赖）
-npm run dev      # 启动开发服务器，默认 http://localhost:5173
+npm run dev      # 启动开发服务器，默认 http://localhost:5171
 ```
 
 打开浏览器后直接就能开打：目前入口是「训练模式 + 京 vs 京」的一局对战。

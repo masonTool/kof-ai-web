@@ -33,7 +33,7 @@ async (page) => {
       };
     });
 
-  await page.goto('http://localhost:5174/');
+  await page.goto('http://localhost:5171/');
   await wait(1200);
   record('开局在标题屏', (await snap()).screen, 'title');
 

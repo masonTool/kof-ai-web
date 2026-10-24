@@ -9,7 +9,7 @@ async (page) => {
     report.push(`${pass ? 'PASS' : 'FAIL'} ${name} = ${JSON.stringify(value)}${pass ? '' : ` (期望 ${JSON.stringify(expect)})`}`);
   };
 
-  await page.goto('http://localhost:5174/');
+  await page.goto('http://localhost:5171/');
   await wait(1200);
 
   // 京 vs 京：先让他出一记必杀（236C 毒咬 → fire）
