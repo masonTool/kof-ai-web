@@ -5,8 +5,11 @@
 import type { CharDef } from '../schema';
 import { ANDY } from './andy';
 import { ATHENA } from './athena';
+import { CHANG } from './chang';
 import { CHIN } from './chin';
+import { CHOI } from './choi';
 import { KENSOU } from './kensou';
+import { KIM } from './kim';
 import { BENIMARU } from './benimaru';
 import { DAIMON } from './daimon';
 import { CLARK } from './clark';
@@ -37,6 +40,9 @@ export const ROSTER: readonly CharDef[] = [
   ATHENA,
   KENSOU,
   CHIN,
+  KIM,
+  CHANG,
+  CHOI,
 ];
 
 export function charById(id: string): CharDef | undefined {
@@ -60,4 +66,7 @@ export {
   ATHENA,
   KENSOU,
   CHIN,
+  KIM,
+  CHANG,
+  CHOI,
 };

@@ -141,6 +141,33 @@ export const PALETTES: Record<string, Palette> = {
     trim: '#e8dfca',
     accent: '#b8e06a',
   },
+  /** 金家藩：白道服 + 黑带 */
+  kim: {
+    skin: '#eab98d',
+    hair: '#241f1a',
+    primary: '#f0ece0',
+    secondary: '#22262e',
+    trim: '#c8342c',
+    accent: '#ffd166',
+  },
+  /** 陈国汉：光头大汉 + 铁球 */
+  chang: {
+    skin: '#e2ab7e',
+    hair: '#c9a06a',
+    primary: '#5c4a2e',
+    secondary: '#2b2620',
+    trim: '#9aa3ad',
+    accent: '#ffcc55',
+  },
+  /** 蔡宝奇：小个子 + 爪 */
+  choi: {
+    skin: '#e8b389',
+    hair: '#3a2a1c',
+    primary: '#6b3f8f',
+    secondary: '#26202c',
+    trim: '#e9e4d8',
+    accent: '#9fe0ff',
+  },
   /** 特瑞·博加德 */
   terry: {
     skin: '#f0c39a',
