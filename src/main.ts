@@ -15,6 +15,7 @@ import { Match } from './game/match';
 import { ReplayPlayer, ReplayRecorder, matchFromReplay, type Replay } from './game/replay';
 import { KeyboardSource, keyPresetAt } from './input/keyboard';
 import type { Ctx2D } from './render/ctx';
+import { setPixelSize } from './render/fighter-draw';
 import { drawFrame } from './render/renderer';
 import { applyViewport, computeViewport, shouldRotate, type SafeInsets } from './render/scale';
 import {
@@ -84,6 +85,15 @@ function browserStorage(): StorageLike | null {
   } catch {
     return null;
   }
+}
+
+/**
+ * 像素粒度：`?px=1` 最细、`?px=16` 最粗（就是个马赛克玩具）。
+ * 做成 URL 参数是为了方便对比——正式选项在"选项屏 → 像素粒度"。
+ */
+{
+  const raw = new URLSearchParams(window.location.search).get('px');
+  if (raw !== null) setPixelSize(Number.parseFloat(raw));
 }
 
 const audio = new WebAudioSink();

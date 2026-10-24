@@ -25,6 +25,8 @@ export interface GameSettings {
   showBoxes: boolean;
   /** 键盘预设下标（见 input/keyboard.ts 的 KEY_PRESETS） */
   keyPreset: number;
+  /** 像素粒度：1 = 最细（默认）、2/4 = 越来越粗 */
+  pixelSize: number;
   /** 逐键自定义（只存与预设不同的项） */
   customKeys: CustomKeys;
 }
@@ -37,14 +39,26 @@ export const DEFAULT_SETTINGS: GameSettings = {
   showFrameData: false,
   showBoxes: false,
   keyPreset: 0,
+  pixelSize: 1,
   customKeys: { p1: {}, p2: {} },
 };
+
+/** 可选的像素粒度（越大越"马赛克"：1 = 每逻辑像素一块，4 = 4×4 一块） */
+export const PIXEL_SIZES: readonly number[] = [1, 2, 4];
 
 export const ROUNDS_CHOICES = [1, 2, 3] as const;
 export const TIME_CHOICES = [30, 60, 99] as const;
 export const VOLUME_CHOICES = [0, 0.25, 0.5, 0.75, 1] as const;
 
-export type OptionKey = 'roundsToWin' | 'roundSeconds' | 'cpuLevel' | 'volume' | 'showFrameData' | 'showBoxes' | 'keyPreset';
+export type OptionKey =
+  | 'roundsToWin'
+  | 'roundSeconds'
+  | 'cpuLevel'
+  | 'volume'
+  | 'showFrameData'
+  | 'showBoxes'
+  | 'keyPreset'
+  | 'pixelSize';
 
 /** 可以重绑的按键动作 */
 export type KeyAction = 'up' | 'down' | 'left' | 'right' | 'a' | 'b' | 'c' | 'd' | 'start';
@@ -158,6 +172,7 @@ export function sanitize(raw: unknown): GameSettings {
     showFrameData: typeof obj['showFrameData'] === 'boolean' ? obj['showFrameData'] : DEFAULT_SETTINGS.showFrameData,
     showBoxes: typeof obj['showBoxes'] === 'boolean' ? obj['showBoxes'] : DEFAULT_SETTINGS.showBoxes,
     keyPreset: Math.round(clampNumber(obj['keyPreset'], [0, KEY_PRESETS.length - 1], DEFAULT_SETTINGS.keyPreset)),
+    pixelSize: PIXEL_SIZES.includes(Number(obj['pixelSize'])) ? Number(obj['pixelSize']) : DEFAULT_SETTINGS.pixelSize,
     customKeys: sanitizeCustom(obj['customKeys']),
   };
 }
@@ -172,6 +187,7 @@ export function optionRows(s: GameSettings): OptionRow[] {
     { key: 'showFrameData', label: '帧数面板', value: s.showFrameData ? '开' : '关' },
     { key: 'showBoxes', label: '判定框', value: s.showBoxes ? '开' : '关' },
     { key: 'keyPreset', label: '键盘布局', value: KEY_PRESETS[s.keyPreset]?.name ?? '默认' },
+    { key: 'pixelSize', label: '像素粒度', value: `${s.pixelSize}×${s.pixelSize}` },
   ];
 }
 
@@ -236,6 +252,12 @@ export class SettingsStore {
       case 'keyPreset':
         s.keyPreset = ((s.keyPreset + dir) % KEY_PRESETS.length + KEY_PRESETS.length) % KEY_PRESETS.length;
         break;
+      case 'pixelSize': {
+        const i = PIXEL_SIZES.indexOf(s.pixelSize);
+        const next = ((i + dir) % PIXEL_SIZES.length + PIXEL_SIZES.length) % PIXEL_SIZES.length;
+        s.pixelSize = PIXEL_SIZES[next]!;
+        break;
+      }
     }
     this.save();
   }

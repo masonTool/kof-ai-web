@@ -15,7 +15,7 @@ import { drawFighter, drawPose, shade } from '../src/render/fighter-draw';
 import { currentAssetProvider, hasCustomArt, setAssetProvider, spriteFor } from '../src/render/assets';
 import { FxSystem } from '../src/render/fx';
 import { CINEMA_BAR, drawFrame, drawProjectile, introAnimFor } from '../src/render/renderer';
-import { lighten } from '../src/render/fighter-draw';
+import { getPixelSize, lighten } from '../src/render/fighter-draw';
 import { Match } from '../src/game/match';
 import { Projectile } from '../src/sim/projectile';
 import { KYO } from '../src/data/chars/kyo';
@@ -162,15 +162,14 @@ describe('角色绘制', () => {
   });
 
   it('角色是由像素块拼出来的（方块数够多，不再是矢量线条）', () => {
+    const px = getPixelSize();
     const ctx = new FakeCtx();
     drawPose(ctx, resolvePose('idle', 0), PALETTE);
-    // 四肢 + 躯干 + 头全是 2×2 的方块
     expect(ctx.rects.length).toBeGreaterThan(120);
-    // 方块都对齐到 2px 网格
+    // 方块都对齐到当前粒度网格（负数取模会得到 -0，取绝对值再比）
     for (const r of ctx.rects.slice(0, 30)) {
-      // 负数取模会得到 -0，所以取绝对值再比
-      expect(Math.abs(r.x % 2)).toBe(0);
-      expect(Math.abs(r.y % 2)).toBe(0);
+      expect(Math.abs(r.x % px), `x=${r.x}`).toBe(0);
+      expect(Math.abs(r.y % px), `y=${r.y}`).toBe(0);
     }
   });
 
@@ -559,5 +558,43 @@ describe('身体体积与重量感', () => {
     // 而且确实铺满了头的宽度（不是一个小点）
     const width = Math.max(...headBlocks.map((r) => r.w));
     expect(width).toBeGreaterThan(8);
+  });
+});
+
+describe('细节层（五官/鞋/衣褶/暗部）', () => {
+  const frame = POSE_LIBRARY['idle']!.frames[0]!;
+  const draw = (): FakeCtx => {
+    const ctx = new FakeCtx();
+    drawPose(ctx, frame, PALETTE, {});
+    return ctx;
+  };
+
+  it('脸上有眼白与瞳孔（不是一块纯皮肤色）', () => {
+    const ctx = draw();
+    const eyeWhites = ctx.rects.filter((r) => r.fill === '#f6efe4' && Math.abs(r.x) < 18 && r.y < -55);
+    expect(eyeWhites.length).toBeGreaterThan(0);
+  });
+
+  it('脚上有鞋面（腰带色出现在脚部高度）', () => {
+    const ctx = draw();
+    const shoes = ctx.rects.filter((r) => r.fill === PALETTE.trim && r.y > -8);
+    expect(shoes.length).toBeGreaterThan(0);
+  });
+
+  it('肢体有暗部（同一部位不止一个色阶，才有体积）', () => {
+    const ctx = draw();
+    const colors = new Set(ctx.rects.map((r) => r.fill));
+    // 皮肤 + 皮肤暗部 + 外套 + 外套暗部 + 副色 + 副色暗部 + 头发 + 腰带 + 眼白 + 描边
+    expect(colors.size).toBeGreaterThanOrEqual(8);
+  });
+
+  it('闪白时细节也跟着提亮（不会在白影子上浮出深色碎块）', () => {
+    const ctx = new FakeCtx();
+    drawPose(ctx, frame, PALETTE, { flash: true });
+    const dark = ctx.rects.filter((r) => r.fill !== '#0c0a09' && r.fill !== '#ffffff');
+    for (const r of dark) {
+      const v = Number.parseInt(r.fill.slice(1, 3), 16);
+      expect(v).toBeGreaterThan(150);
+    }
   });
 });

@@ -61,6 +61,7 @@ describe('消毒（读盘必过）', () => {
       showFrameData: true,
       showBoxes: false,
       keyPreset: 0,
+      pixelSize: 1,
       customKeys: { p1: {}, p2: {} },
     });
   });
@@ -135,9 +136,9 @@ describe('循环切换', () => {
 });
 
 describe('选项屏的行', () => {
-  it('七行、有标签有值，音量为 0 显示静音', () => {
+  it('八行、有标签有值，音量为 0 显示静音', () => {
     const rows = optionRows({ ...DEFAULT_SETTINGS, volume: 0 });
-    expect(rows).toHaveLength(7);
+    expect(rows).toHaveLength(8);
     expect(rows.map((r) => r.key)).toEqual([
       'roundsToWin',
       'roundSeconds',
@@ -146,6 +147,7 @@ describe('选项屏的行', () => {
       'showFrameData',
       'showBoxes',
       'keyPreset',
+      'pixelSize',
     ]);
     expect(rows[3]!.value).toBe('静音');
     expect(rows[4]!.value).toBe('关');
@@ -153,9 +155,10 @@ describe('选项屏的行', () => {
 
   it('键盘预设显示名字，切换后跟着变', () => {
     const store = new SettingsStore(null);
-    const first = optionRows(store.settings).at(-1)!.value;
+    const presetValue = (): string => optionRows(store.settings).find((r) => r.key === 'keyPreset')!.value;
+    const first = presetValue();
     store.cycle('keyPreset');
-    const second = optionRows(store.settings).at(-1)!.value;
+    const second = presetValue();
     expect(first).not.toBe(second);
     expect(store.settings.keyPreset).toBe(1);
     store.cycle('keyPreset');
@@ -164,5 +167,31 @@ describe('选项屏的行', () => {
 
   it('难度用中文显示', () => {
     expect(optionRows({ ...DEFAULT_SETTINGS, cpuLevel: 'hard' })[2]!.value).toBe('困难');
+  });
+});
+
+describe('像素粒度', () => {
+  it('默认最细（1×1），选项文案跟着变', () => {
+    expect(DEFAULT_SETTINGS.pixelSize).toBe(1);
+    const rows = optionRows(DEFAULT_SETTINGS);
+    expect(rows.find((r) => r.key === 'pixelSize')!.value).toBe('1×1');
+  });
+
+  it('循环切换 1 → 2 → 4 → 1', () => {
+    const store = new SettingsStore(null);
+    store.cycle('pixelSize');
+    expect(store.settings.pixelSize).toBe(2);
+    store.cycle('pixelSize');
+    expect(store.settings.pixelSize).toBe(4);
+    store.cycle('pixelSize');
+    expect(store.settings.pixelSize).toBe(1); // 转一圈回来
+    store.cycle('pixelSize', -1);
+    expect(store.settings.pixelSize).toBe(4); // 反向也能绕
+  });
+
+  it('读盘时非法粒度回落默认（用户手改成 9 也不崩）', () => {
+    expect(sanitize({ pixelSize: 9 }).pixelSize).toBe(1);
+    expect(sanitize({ pixelSize: '粗' }).pixelSize).toBe(1);
+    expect(sanitize({ pixelSize: 4 }).pixelSize).toBe(4);
   });
 });

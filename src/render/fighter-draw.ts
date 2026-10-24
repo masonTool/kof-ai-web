@@ -41,13 +41,28 @@ export function lighten(hex: string, amount: number): string {
 }
 
 /**
- * 像素块边长（逻辑像素）。
+ * 像素粒度：一个"方块"占多少逻辑像素。
  *
- * 整个角色用 2×2 的方块拼出来——不是把矢量图缩小再放大，而是**每一笔都是方块**：
- * 线是沿线段排的方块、圆是按网格扫描出来的方块、多边形是按行填充的方块。
- * 这样在 320×224 的分辨率下才有"像素格斗游戏"的质感，而不是矢量图配了个复古色调。
+ * **这个数是"块有多大"，不是"分辨率有多高"**——块越大画面越糊、细节越少：
+ * - `1`：每个逻辑像素独立成块，最细（320×224 下线条是 1px 的锯齿）
+ * - `2`：粗一号（早期的默认值）
+ * - `4 / 8 / 16`：越来越像"马赛克"，16 时角色只剩 5 块高，只能算玩具
+ *
+ * 想更清晰要同时满足两件事：把这里调小，并且让画布按整数倍放大（`render/scale.ts` 的
+ * `computeViewport` 已经按整数倍做，配合 `dpr` 就等于超采样）。
  */
-export const PX = 2;
+let PX = 1;
+
+/** 当前像素粒度 */
+export function getPixelSize(): number {
+  return PX;
+}
+
+/** 设定像素粒度（1~16，越界自动夹住；非法值回落 1） */
+export function setPixelSize(size: number): void {
+  const n = Math.round(size);
+  PX = Math.min(16, Math.max(1, Number.isFinite(n) && n > 0 ? n : 1));
+}
 
 // 注意别返回 -0：`-0 % 2` 是 -0，会让"对齐网格"的断言与哈希都变味
 const snapTo = (v: number): number => {
@@ -170,8 +185,8 @@ function drawTorso(
   const n = torsoNormal(frame);
   const shoulder = alongTorso(frame, 0.96);
   const waist = alongTorso(frame, 0.16);
-  const shoulderW = 8.2 * opts.build;
-  const waistW = 5.6 * opts.build;
+  const shoulderW = 9.2 * opts.build;
+  const waistW = 6.3 * opts.build;
 
   const pts: Point[] = [
     [shoulder[0] + n[0] * shoulderW, shoulder[1] + n[1] * shoulderW],
@@ -292,9 +307,99 @@ export function drawPose(ctx: Ctx2D, frame: PoseFrame, palette: Palette, opts: P
   }
 
   drawHead(ctx, frame, { skin, hair, trim, flash, look });
+  drawFineDetails(ctx, frame, { skin, primary, secondary, trim, hair, flash, look, build: b });
   drawAccessory(ctx, frame, { trim, hair, look, flash });
 
   if (look.height !== 1 || squash !== 0) ctx.restore();
+}
+
+/**
+ * 细节层：在身体画完之后补一层"小东西"——五官、指缝、鞋底、衣褶、肢体暗部。
+ *
+ * 这一层是"看起来像人"和"看起来像纸片"的分界线：形体（梯形躯干、粗细四肢）解决轮廓，
+ * 细节解决"这身体有没有被光照过、有没有布料"。
+ */
+function drawFineDetails(
+  ctx: Ctx2D,
+  frame: PoseFrame,
+  o: {
+    skin: string;
+    primary: string;
+    secondary: string;
+    trim: string;
+    hair: string;
+    flash: boolean;
+    look: Look;
+    build: number;
+  },
+): void {
+  // 闪白时也要"提亮"而不是压暗，否则白影子上会浮出深色碎块
+  const dark = (c: string, k = 0.8): string => (o.flash ? lighten(c, 0.7) : shade(c, k));
+  const ink = o.flash ? '#ffffff' : OUTLINE;
+
+  // ---- 面部：眉 / 眼白 + 瞳孔 / 鼻影 / 嘴 ----
+  const r = HEAD_RADIUS * o.look.head;
+  const hx = frame.head[0];
+  const hy = frame.head[1];
+
+  // 眉：一小段，给脸上一个"表情"
+  block(ctx, hx + 2.6, hy - 3.8, PX * 2.6, PX, dark(o.hair, 0.72));
+  // 眼白（盖住底层的黑块），再点一个瞳孔
+  block(ctx, hx + 3.4, hy - 2, PX * 2, PX * 1.4, o.flash ? '#ffffff' : '#f6efe4');
+  block(ctx, hx + 4.2, hy - 1.8, PX * 1.2, PX * 1.2, ink);
+  // 鼻影：一条 1px 的竖线
+  block(ctx, hx + 6.2, hy + 1.4, PX, PX * 1.6, dark(o.skin, 0.86));
+  // 嘴：短横线
+  block(ctx, hx + 3.6, hy + 4.2, PX * 1.8, PX, dark(o.skin, 0.7));
+
+  // ---- 肢体暗部：沿右下侧压一道 1px，身体立刻有体积 ----
+  const shadeLimb = (a: Point, b: Point, w: number): void => {
+    const dx = b[0] - a[0];
+    const dy = b[1] - a[1];
+    const len = Math.hypot(dx, dy) || 1;
+    // 法线（指向右下）
+    let nx = -dy / len;
+    let ny = dx / len;
+    if (ny < 0) {
+      nx = -nx;
+      ny = -ny;
+    }
+    const off = Math.max(PX, Math.round((w / 2) * 0.55));
+    const steps = Math.max(1, Math.ceil(len / PX));
+    for (let i = 0; i <= steps; i++) {
+      const t = i / steps;
+      const px = a[0] + dx * t + nx * off;
+      const py = a[1] + dy * t + ny * off;
+      block(ctx, px - PX / 2, py - PX / 2, PX, PX, dark(o.secondary, 0.9));
+    }
+  };
+  shadeLimb(frame.legFront[0], frame.legFront[1], 6 * o.build);
+  shadeLimb(frame.legBack[0], frame.legBack[1], 6 * o.build);
+  shadeLimb(frame.armFront[0], frame.armFront[1], 4.5 * o.build);
+
+  // ---- 手：拳头分瓣（两道指缝）----
+  const hand = frame.armFront[1];
+  block(ctx, hand[0] - PX, hand[1] - PX * 1.6, PX, PX * 1.2, dark(o.skin, 0.74));
+  block(ctx, hand[0] + PX * 0.6, hand[1] - PX * 1.6, PX, PX * 1.2, dark(o.skin, 0.74));
+
+  // ---- 脚：鞋底 + 鞋面高光 ----
+  const foot = frame.legFront[1];
+  block(ctx, foot[0] - PX * 1.6, foot[1] - PX * 0.6, PX * 3.2, PX, dark(o.secondary, 0.6));
+  block(ctx, foot[0] - PX * 1.2, foot[1] - PX * 2, PX * 2.4, PX, o.flash ? '#ffffff' : o.trim);
+
+  // ---- 衣褶：腰带下沿 + 裤脚口 ----
+  const hip = frame.hip;
+  block(ctx, hip[0] - 5 * o.build, hip[1] + PX * 2, PX * 10 * o.build, PX, dark(o.primary, 0.76));
+  for (const knee of [frame.legFront[0], frame.legBack[0]]) {
+    block(ctx, knee[0] - PX * 1.6, knee[1] + PX * 2, PX * 3.2, PX, dark(o.secondary, 0.7));
+  }
+
+  // ---- 头发：几缕深色发丝（只在有头发的造型上）----
+  if (o.look.hair !== 'bald') {
+    for (const dx of [-2.5, 0.5, 3]) {
+      block(ctx, hx + dx, hy - r + PX, PX, PX * 2.4, dark(o.hair, 0.74));
+    }
+  }
 }
 
 /** 头发 + 脸 + 眼睛 */
