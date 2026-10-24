@@ -253,14 +253,14 @@ export function drawPose(ctx: Ctx2D, frame: PoseFrame, palette: Palette, opts: P
     ctx.scale(1 + squash * -0.05, look.height * (1 + squash * 0.06));
   }
 
-  // 落地影子（脚底）
+  // 落地影子：椭圆（外圈淡、内圈实），比菱形自然得多
+  ctx.fillStyle = 'rgba(0,0,0,0.18)';
   ctx.beginPath();
-  ctx.moveTo(-13, 0);
-  ctx.lineTo(0, -3);
-  ctx.lineTo(13, 0);
-  ctx.lineTo(0, 3);
-  ctx.closePath();
-  ctx.fillStyle = 'rgba(0,0,0,0.35)';
+  ctx.ellipse(0, -1, 17, 5.5, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = 'rgba(0,0,0,0.32)';
+  ctx.beginPath();
+  ctx.ellipse(0, -1, 12, 3.6, 0, 0, Math.PI * 2);
   ctx.fill();
 
   const b = look.build;
@@ -307,17 +307,27 @@ export function drawPose(ctx: Ctx2D, frame: PoseFrame, palette: Palette, opts: P
   }
 
   drawHead(ctx, frame, { skin, hair, trim, flash, look });
-  drawFineDetails(ctx, frame, { skin, primary, secondary, trim, hair, flash, look, build: b });
+  drawFineDetails(ctx, frame, {
+    skin,
+    primary,
+    secondary,
+    trim,
+    hair,
+    accent: pick(palette.accent),
+    flash,
+    look,
+    build: b,
+    anim: opts.anim,
+  });
   drawAccessory(ctx, frame, { trim, hair, look, flash });
 
   if (look.height !== 1 || squash !== 0) ctx.restore();
 }
 
 /**
- * 细节层：在身体画完之后补一层"小东西"——五官、指缝、鞋底、衣褶、肢体暗部。
+ * 细节层：身体画完之后补"小东西"——五官、关节、手指、鞋带、衣领徽章、头发层次。
  *
- * 这一层是"看起来像人"和"看起来像纸片"的分界线：形体（梯形躯干、粗细四肢）解决轮廓，
- * 细节解决"这身体有没有被光照过、有没有布料"。
+ * 这一层是"纸片人"和"人"的分界：形体解决轮廓，细节解决"这身体有没有被光照过、有没有布料"。
  */
 function drawFineDetails(
   ctx: Ctx2D,
@@ -328,76 +338,137 @@ function drawFineDetails(
     secondary: string;
     trim: string;
     hair: string;
+    accent: string;
     flash: boolean;
     look: Look;
     build: number;
+    /** 当前动画名：用来决定表情（受击皱眉、胜利笑） */
+    anim?: string;
   },
 ): void {
   // 闪白时也要"提亮"而不是压暗，否则白影子上会浮出深色碎块
   const dark = (c: string, k = 0.8): string => (o.flash ? lighten(c, 0.7) : shade(c, k));
+  const lite = (c: string, k = 0.28): string => (o.flash ? lighten(c, 0.85) : lighten(c, k));
   const ink = o.flash ? '#ffffff' : OUTLINE;
+
+  /** 沿线段某一侧压一道 1px（side=1 右下、-1 左上） */
+  const edge = (a: Point, b: Point, w: number, color: string, side: 1 | -1): void => {
+    const dx = b[0] - a[0];
+    const dy = b[1] - a[1];
+    const len = Math.hypot(dx, dy) || 1;
+    let nx = (-dy / len) * side;
+    let ny = (dx / len) * side;
+    if (side === 1 && ny < 0) {
+      nx = -nx;
+      ny = -ny;
+    }
+    const off = Math.max(PX, Math.round((w / 2) * 0.5));
+    const steps = Math.max(1, Math.ceil(len / PX));
+    for (let i = 0; i <= steps; i++) {
+      const t = i / steps;
+      block(ctx, a[0] + dx * t + nx * off - PX / 2, a[1] + dy * t + ny * off - PX / 2, PX, PX, color);
+    }
+  };
+
+  // ---- 三段明暗：左上高光 + 右下暗部（同一条肢体上有三个色阶才像圆柱）----
+  edge(frame.legFront[0], frame.legFront[1], 6 * o.build, dark(o.secondary, 0.9), 1);
+  edge(frame.legBack[0], frame.legBack[1], 6 * o.build, dark(o.secondary, 0.86), 1);
+  edge(frame.armFront[0], frame.armFront[1], 4.5 * o.build, dark(o.skin, 0.86), 1);
+  edge(frame.legFront[0], frame.legFront[1], 6 * o.build, lite(o.secondary, 0.18), -1);
+  edge(frame.armFront[0], frame.armFront[1], 4.5 * o.build, lite(o.skin, 0.16), -1);
+
+  // ---- 关节：肘 / 膝 / 肩各一个小圆，别让两段管子硬拼在一起 ----
+  disc(ctx, frame.legFront[0], 2.2 * o.build, dark(o.secondary, 0.94));
+  disc(ctx, frame.armFront[0], 1.8 * o.build, dark(o.skin, 0.94));
+  disc(ctx, [frame.neck[0] - 1, frame.neck[1] + 2], 2.2 * o.build, dark(o.primary, 0.92));
 
   // ---- 面部：眉 / 眼白 + 瞳孔 / 鼻影 / 嘴 ----
   const r = HEAD_RADIUS * o.look.head;
   const hx = frame.head[0];
   const hy = frame.head[1];
 
-  // 眉：一小段，给脸上一个"表情"
-  block(ctx, hx + 2.6, hy - 3.8, PX * 2.6, PX, dark(o.hair, 0.72));
-  // 眼白（盖住底层的黑块），再点一个瞳孔
-  block(ctx, hx + 3.4, hy - 2, PX * 2, PX * 1.4, o.flash ? '#ffffff' : '#f6efe4');
-  block(ctx, hx + 4.2, hy - 1.8, PX * 1.2, PX * 1.2, ink);
-  // 鼻影：一条 1px 的竖线
+  const anim = o.anim ?? '';
+  const hurt = anim === 'hit' || anim === 'hitFall';
+  const happy = anim.startsWith('win') || anim === 'taunt';
+
+  // 眉：受击时上挑（皱眉），胜利时舒展
+  if (hurt) {
+    block(ctx, hx + 2.4, hy - 4.2, PX * 1.2, PX, dark(o.hair, 0.72));
+    block(ctx, hx + 4, hy - 3.4, PX * 1.2, PX, dark(o.hair, 0.72));
+  } else if (happy) {
+    block(ctx, hx + 2.6, hy - 4.4, PX * 2.8, PX, dark(o.hair, 0.8));
+  } else {
+    block(ctx, hx + 2.6, hy - 3.8, PX * 2.6, PX, dark(o.hair, 0.72));
+  }
+
+  if (hurt) {
+    // 闭眼：一条横线（打得睁不开）
+    block(ctx, hx + 3.4, hy - 1.6, PX * 2, PX, ink);
+  } else if (happy) {
+    // 笑眼：两小段向上挑的黑线
+    block(ctx, hx + 3.4, hy - 2.4, PX * 0.9, PX, ink);
+    block(ctx, hx + 4.8, hy - 2.4, PX * 0.9, PX, ink);
+  } else {
+    block(ctx, hx + 3.4, hy - 2, PX * 2, PX * 1.4, o.flash ? '#ffffff' : '#f6efe4');
+    block(ctx, hx + 4.2, hy - 1.8, PX * 1.2, PX * 1.2, ink);
+  }
+
+  // 鼻影
   block(ctx, hx + 6.2, hy + 1.4, PX, PX * 1.6, dark(o.skin, 0.86));
-  // 嘴：短横线
-  block(ctx, hx + 3.6, hy + 4.2, PX * 1.8, PX, dark(o.skin, 0.7));
+  // 嘴：受击时张开（喊），胜利时上扬两段，平时一条短线
+  if (hurt) {
+    block(ctx, hx + 3.6, hy + 3.6, PX * 2, PX * 1.6, dark(o.skin, 0.5));
+  } else if (happy) {
+    block(ctx, hx + 3.4, hy + 4.2, PX, PX, dark(o.skin, 0.7));
+    block(ctx, hx + 4.4, hy + 4.8, PX * 1.4, PX, dark(o.skin, 0.7));
+    block(ctx, hx + 5.8, hy + 4.2, PX, PX, dark(o.skin, 0.7));
+  } else {
+    block(ctx, hx + 3.6, hy + 4.2, PX * 1.8, PX, dark(o.skin, 0.7));
+  }
 
-  // ---- 肢体暗部：沿右下侧压一道 1px，身体立刻有体积 ----
-  const shadeLimb = (a: Point, b: Point, w: number): void => {
-    const dx = b[0] - a[0];
-    const dy = b[1] - a[1];
-    const len = Math.hypot(dx, dy) || 1;
-    // 法线（指向右下）
-    let nx = -dy / len;
-    let ny = dx / len;
-    if (ny < 0) {
-      nx = -nx;
-      ny = -ny;
-    }
-    const off = Math.max(PX, Math.round((w / 2) * 0.55));
-    const steps = Math.max(1, Math.ceil(len / PX));
-    for (let i = 0; i <= steps; i++) {
-      const t = i / steps;
-      const px = a[0] + dx * t + nx * off;
-      const py = a[1] + dy * t + ny * off;
-      block(ctx, px - PX / 2, py - PX / 2, PX, PX, dark(o.secondary, 0.9));
-    }
-  };
-  shadeLimb(frame.legFront[0], frame.legFront[1], 6 * o.build);
-  shadeLimb(frame.legBack[0], frame.legBack[1], 6 * o.build);
-  shadeLimb(frame.armFront[0], frame.armFront[1], 4.5 * o.build);
+  // 颈部阴影：头压在脖子上，不画的话头像是飘着的
+  block(ctx, frame.neck[0] - PX * 1.5, frame.neck[1] - PX * 0.6, PX * 3, PX, dark(o.skin, 0.62));
 
-  // ---- 手：拳头分瓣（两道指缝）----
+  // ---- 手：三根手指 + 拇指（张开时有缝，不再是一坨）----
   const hand = frame.armFront[1];
-  block(ctx, hand[0] - PX, hand[1] - PX * 1.6, PX, PX * 1.2, dark(o.skin, 0.74));
-  block(ctx, hand[0] + PX * 0.6, hand[1] - PX * 1.6, PX, PX * 1.2, dark(o.skin, 0.74));
+  for (const dy of [-1.4, 0, 1.4]) {
+    block(ctx, hand[0] + PX * 0.6, hand[1] + dy, PX, PX * 0.9, dark(o.skin, 0.74));
+  }
+  block(ctx, hand[0] - PX * 1.2, hand[1] + PX * 0.4, PX, PX * 1.2, dark(o.skin, 0.8));
 
-  // ---- 脚：鞋底 + 鞋面高光 ----
+  // ---- 脚：鞋底 + 鞋帮 + 两道鞋带 ----
   const foot = frame.legFront[1];
-  block(ctx, foot[0] - PX * 1.6, foot[1] - PX * 0.6, PX * 3.2, PX, dark(o.secondary, 0.6));
-  block(ctx, foot[0] - PX * 1.2, foot[1] - PX * 2, PX * 2.4, PX, o.flash ? '#ffffff' : o.trim);
+  block(ctx, foot[0] - PX * 1.8, foot[1] - PX * 0.6, PX * 3.6, PX, dark(o.secondary, 0.55));
+  block(ctx, foot[0] - PX * 1.4, foot[1] - PX * 2.2, PX * 2.8, PX, o.flash ? '#ffffff' : o.trim);
+  block(ctx, foot[0] - PX * 1, foot[1] - PX * 3, PX * 2, PX, dark(o.secondary, 0.7));
+  block(ctx, foot[0] + PX * 0.4, foot[1] - PX * 2.6, PX, PX, ink);
 
-  // ---- 衣褶：腰带下沿 + 裤脚口 ----
+  // ---- 衣褶：腰带下沿 + 两个膝盖 / 袖口 ----
   const hip = frame.hip;
   block(ctx, hip[0] - 5 * o.build, hip[1] + PX * 2, PX * 10 * o.build, PX, dark(o.primary, 0.76));
   for (const knee of [frame.legFront[0], frame.legBack[0]]) {
     block(ctx, knee[0] - PX * 1.6, knee[1] + PX * 2, PX * 3.2, PX, dark(o.secondary, 0.7));
   }
+  // 袖口：前臂与外套交界处一道亮边
+  const cuff = frame.armFront[0];
+  block(ctx, cuff[0] - PX * 0.6, cuff[1] - PX * 1.6, PX * 1.2, PX * 3.2, o.flash ? '#ffffff' : o.trim);
 
-  // ---- 头发：几缕深色发丝（只在有头发的造型上）----
+  // ---- 衣领 + 胸口徽章（让"这是件外套"成立）----
+  const neck = frame.neck;
+  block(ctx, neck[0] - PX * 2, neck[1] - PX * 0.4, PX * 4, PX, o.flash ? '#ffffff' : o.trim);
+  block(ctx, neck[0] + PX * 2.4, neck[1] + PX * 2, PX * 1.6, PX * 1.6, o.flash ? '#ffffff' : o.accent);
+
+  // ---- 头发：后层深、前层亮、几缕发丝 ----
   if (o.look.hair !== 'bald') {
+    // 发际线（深色弧）
+    for (const dx of [-r * 0.7, -r * 0.2, r * 0.3]) {
+      block(ctx, hx + dx, hy - r + PX * 0.6, PX * 1.6, PX, dark(o.hair, 0.66));
+    }
+    // 刘海高光
+    block(ctx, hx + PX * 1.2, hy - r - PX * 0.6, PX * 2.4, PX, lite(o.hair, 0.3));
+    // 发丝
     for (const dx of [-2.5, 0.5, 3]) {
-      block(ctx, hx + dx, hy - r + PX, PX, PX * 2.4, dark(o.hair, 0.74));
+      block(ctx, hx + dx, hy - r + PX * 1.4, PX, PX * 2.4, dark(o.hair, 0.74));
     }
   }
 }

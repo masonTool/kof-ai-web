@@ -506,14 +506,19 @@ describe('身体体积与重量感', () => {
     return ctx;
   };
 
-  it('躯干是梯形路径（有肩有腰），不是一根粗线', () => {
+  it('躯干是梯形（肩比腰宽），不是一根粗线', () => {
     const ctx = draw();
-    // 躯干用多边形：closePath 次数里至少有一次来自躯干路径
-    expect(ctx.calls.filter((c) => c === 'closePath').length).toBeGreaterThanOrEqual(2);
-    // 躯干是一次"填外套色 + 描边"的多边形填充
-    const primaryFills = ctx.fills.filter((f) => f === PALETTE.primary).length;
-    expect(primaryFills).toBeGreaterThanOrEqual(1);
-    expect(ctx.calls.filter((c) => c === 'lineTo').length).toBeGreaterThanOrEqual(3);
+    // 躯干按行填充：每行一条方块带，最宽的那行就是肩宽
+    const bodyRows = ctx.rects.filter((r) => r.fill === PALETTE.primary && r.w > 4);
+    expect(bodyRows.length).toBeGreaterThan(4);
+    const widths = [...new Set(bodyRows.map((r) => r.w))].sort((a, b) => b - a);
+    expect(widths[0]!).toBeGreaterThan(widths[widths.length - 1]! + 2);
+  });
+
+  it('影子是两层椭圆（外淡内实），不是菱形', () => {
+    const ctx = draw();
+    expect(ctx.ellipses.length).toBeGreaterThanOrEqual(2);
+    expect(ctx.ellipses[0]!.rx).toBeGreaterThan(ctx.ellipses[0]!.ry);
   });
 
   it('挤压拉伸会改变整体缩放（纵向拉长 / 横向压扁）', () => {
