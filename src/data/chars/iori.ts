@@ -123,18 +123,25 @@ export const IORI: CharDef = {
     }),
 
     // ---------------------------------------------------------------- 必杀技
-    '236A': mv('236A', '百八式・闇払い', 'special', 40, 'special', [
-      hit('h1', {
-        box: { x: 16, y: -56, w: 46, h: 26 },
-        frames: [12, 16],
-        damage: 62,
-        hitStun: 20,
-        blockStun: 13,
-        hitstop: 9,
-        knockdown: 'slam',
-        meterGain: 7,
-      }),
-    ], { input: { motion: '236', buttons: ['A'] } }),
+    '236A': mv('236A', '百八式・闇払い', 'special', 40, 'special', [], {
+      input: { motion: '236', buttons: ['A'] },
+      projectile: {
+        anim: '闇払い',
+        speed: 3.4,
+        life: 90,
+        spawnFrame: 12,
+        hit: hit('p1', {
+          box: { x: 0, y: 0, w: 26, h: 24 },
+          frames: [1, 2],
+          damage: 62,
+          hitStun: 20,
+          blockStun: 13,
+          hitstop: 9,
+          knockdown: 'slam',
+          meterGain: 0,
+        }),
+      },
+    }),
 
     '623A': mv('623A', '百式・鬼焼き', 'special', 42, 'special', [
       hit('h1', {

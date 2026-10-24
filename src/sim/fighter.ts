@@ -24,6 +24,7 @@ import { FighterState, canAct, type FighterState as StateName } from './state';
 import type { Entity, World } from './world';
 import type { Hasher } from '../core/hash';
 import { FighterControls, acceptsMoveInput } from './controls';
+import { spawnProjectile } from './projectile';
 
 export interface FighterInit {
   x?: number;
@@ -36,7 +37,8 @@ const INPUT_BUFFER_FRAMES = 8;
 
 export class Fighter implements Entity {
   id = -1;
-  readonly char: CharDef;
+  /** 当前角色（组队战换人时会被替换） */
+  char: CharDef;
 
   x: number;
   y = GROUND_Y;
@@ -45,7 +47,7 @@ export class Fighter implements Entity {
   facing: 1 | -1;
 
   hp: number;
-  readonly maxHp: number;
+  maxHp: number;
   /** 气槽（KOF97 满槽用 MAX 模式，具体上限见后续条目） */
   meter = 0;
   /** 气绝值，攒满进晕眩 */
@@ -206,13 +208,13 @@ export class Fighter implements Entity {
   }
 
   /** 回合重置：血量、位置、状态、连段、硬直全部归零（气槽默认也清） */
-  reset(opts: { x: number; facing: 1 | -1; keepMeter?: boolean }): void {
+  reset(opts: { x: number; facing: 1 | -1; keepMeter?: boolean; keepHp?: boolean }): void {
     this.x = opts.x;
     this.y = GROUND_Y;
     this.vx = 0;
     this.vy = 0;
     this.facing = opts.facing;
-    this.hp = this.maxHp;
+    if (opts.keepHp !== true) this.hp = this.maxHp;
     if (opts.keepMeter !== true) this.meter = 0;
     this.state = FighterState.Idle;
     this.stateFrame = 0;
@@ -234,6 +236,13 @@ export class Fighter implements Entity {
     this.travelForward = 1;
     this.combo = newCombo();
     this.input = { held: 0, pressed: 0, released: 0 };
+  }
+
+  /** 组队战换人：换成下一个角色（血量按新角色满血重算，气槽可选保留） */
+  switchChar(char: CharDef, opts: { x: number; facing: 1 | -1; keepMeter?: boolean }): void {
+    this.char = char;
+    this.maxHp = char.hp;
+    this.reset({ x: opts.x, facing: opts.facing, keepMeter: opts.keepMeter === true });
   }
 
   turn(): void {
@@ -454,7 +463,7 @@ export class Fighter implements Entity {
 
     switch (this.state) {
       case FighterState.Attack:
-        this.stepAttack();
+        this.stepAttack(_world);
         break;
       case FighterState.Jump:
         this.stepAir(input);
@@ -515,13 +524,20 @@ export class Fighter implements Entity {
     this.setState(forward ? FighterState.WalkF : FighterState.WalkB);
   }
 
-  private stepAttack(): void {
+  private stepAttack(world: World): void {
     const move = this.move;
     if (!move) {
       this.toNeutral();
       return;
     }
     this.moveFrame = this.stateFrame;
+
+    // 飞行道具：到生成帧就从身上放一个出去
+    const proj = move.projectile;
+    if (proj) {
+      const spawnAt = proj.spawnFrame ?? move.hits[0]?.frames[0] ?? 1;
+      if (this.moveFrame === spawnAt) spawnProjectile(world, this, proj);
+    }
 
     // 位移型招式（回避/突进）：均匀分摊到 travelFrames 帧里
     if (move.travel !== undefined && !this.airborne) {

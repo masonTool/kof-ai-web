@@ -11,6 +11,7 @@ import { centerOf, intersects } from './collision';
 import { addComboHit, scaledDamage } from './combo';
 import { DIZZY_FRAMES, GUARD_CRUSH_MAX, GUARD_CRUSH_STUN, MAX_MODE_DAMAGE, STUN_MAX } from './constants';
 import type { Fighter } from './fighter';
+import { Projectile } from './projectile';
 import { isNeutral } from './state';
 import type { World } from './world';
 
@@ -115,112 +116,170 @@ function collect(fighters: readonly Fighter[]): Candidate[] {
   return found;
 }
 
-/** 结算本帧全部撞击；返回发生的事件（给 FX / 音效 / 连击显示用） */
-export function resolveCombat(world: World, fighters: readonly Fighter[]): HitResolution[] {
-  const candidates = collect(fighters);
-  const results: HitResolution[] = [];
+/** 一次撞击的上下文（近身判定与飞行道具共用同一套结算，避免两套规则漂移） */
+export interface HitCandidate {
+  attacker: Fighter;
+  defender: Fighter;
+  hit: HitDef;
+  blocked: boolean;
+  counter: boolean;
+  x: number;
+  y: number;
+}
 
-  for (const c of candidates) {
-    const { attacker, defender, hit } = c;
-    // 同一段判定只结算一次（多帧生效的判定不会连续打）
-    if (attacker.usedHits.has(hit.id)) continue;
-    attacker.usedHits.add(hit.id);
+/** 结算一次撞击：伤害 / 硬直 / 削防 / 气槽 / 连段 / 事件 */
+export function applyHit(world: World, c: HitCandidate): HitResolution {
+  const { attacker, defender, hit } = c;
+  attacker.addHitstop(hit.hitstop);
+  defender.addHitstop(hit.hitstop);
 
-    attacker.addHitstop(hit.hitstop);
-    defender.addHitstop(hit.hitstop);
+  const comboBefore = defender.combo.hits;
 
-    const comboBefore = defender.combo.hits;
-
-    if (c.blocked) {
-      // 被防也能接取消（KOF 的"防御取消"），表里没写就不开
-      const onBlock = attacker.move?.cancel?.onBlock;
-      if (onBlock && onBlock.length > 0) attacker.allowCancel(onBlock);
-      // 削防：连续防御会累积，满则崩防（大硬直）
-      defender.guardGauge += Math.max(6, Math.floor(hit.damage * 0.5));
-      if (defender.guardGauge >= GUARD_CRUSH_MAX) {
-        defender.guardGauge = 0;
-        defender.enterHitstun(GUARD_CRUSH_STUN);
-        defender.push(attacker.facing * hit.blockPushback * 2);
-        world.emit('guardcrush', { x: c.x, y: c.y });
-      } else {
-        defender.enterBlockstun(hit.blockStun);
-      }
-      defender.push(attacker.facing * hit.blockPushback);
-      attacker.push(-attacker.facing * hit.blockPushback * 0.5);
-      attacker.addMeter(Math.floor(hit.damage * 0.15));
-      world.emit('guard', { x: c.x, y: c.y, level: hit.level });
-      results.push({
-        kind: 'block',
-        hit,
-        attacker,
-        defender,
-        damage: 0,
-        comboHits: comboBefore,
-        counter: false,
-        ko: false,
-        x: c.x,
-        y: c.y,
-      });
-      continue;
+  if (c.blocked) {
+    // 被防也能接取消（KOF 的"防御取消"），表里没写就不开
+    const onBlock = attacker.move?.cancel?.onBlock;
+    if (onBlock && onBlock.length > 0) attacker.allowCancel(onBlock);
+    // 削防：连续防御会累积，满则崩防（大硬直）
+    defender.guardGauge += Math.max(6, Math.floor(hit.damage * 0.5));
+    if (defender.guardGauge >= GUARD_CRUSH_MAX) {
+      defender.guardGauge = 0;
+      defender.enterHitstun(GUARD_CRUSH_STUN);
+      defender.push(attacker.facing * hit.blockPushback * 2);
+      world.emit('guardcrush', { x: c.x, y: c.y });
+    } else {
+      defender.enterBlockstun(hit.blockStun);
     }
-
-    const base = c.counter ? Math.round(hit.damage * COUNTER_DAMAGE_MULT) : hit.damage;
-    // MAX 模式期间伤害提升
-    const raw = Math.round(base * (attacker.maxMode > 0 ? MAX_MODE_DAMAGE : 1));
-    const damage = scaledDamage(raw, comboBefore);
-
-    // 命中了才开取消窗口（没打中不能取消，这是连段成立的前提）
-    const onHit = attacker.move?.cancel?.onHit;
-    if (onHit && onHit.length > 0) attacker.allowCancel(onHit);
-
-    defender.takeDamage(damage);
-    addComboHit(defender.combo, damage);
-    if (!defender.isDead) {
-      defender.enterHitstun(hit.hitStun + (c.counter ? COUNTER_EXTRA_STUN : 0), {
-        launch: hit.launch,
-        knockdown: hit.knockdown !== undefined && hit.knockdown !== 'none',
-      });
-
-      // 气绝：挨够了会晕（晕眩中挨打不再累积，否则永远醒不过来）
-      if (defender.state !== 'dizzy') {
-        defender.stunGauge += Math.floor(damage * 0.45);
-        if (defender.stunGauge >= STUN_MAX) {
-          defender.enterDizzy(DIZZY_FRAMES);
-          defender.stunGauge = 0;
-          world.emit('dizzy', { x: defender.x, y: defender.y });
-        }
-      }
-    }
-    defender.push(attacker.facing * hit.pushback);
-
-    attacker.addMeter(hit.meterGain ?? Math.floor(damage * 0.6));
-    defender.addMeter(Math.floor(damage * 0.2));
-
-    world.emit('hit', {
-      x: c.x,
-      y: c.y,
-      damage,
-      level: hit.level,
-      counter: c.counter,
-      combo: defender.combo.hits,
-      sfx: hit.sfx ?? 'hit',
-    });
-
-    const ko = defender.isDead;
-    if (ko) world.emit('ko', { x: defender.x, y: defender.y });
-
-    results.push({
-      kind: 'hit',
+    defender.push(attacker.facing * hit.blockPushback);
+    attacker.push(-attacker.facing * hit.blockPushback * 0.5);
+    attacker.addMeter(Math.floor(hit.damage * 0.15));
+    world.emit('guard', { x: c.x, y: c.y, level: hit.level });
+    return {
+      kind: 'block',
       hit,
       attacker,
       defender,
-      damage,
-      comboHits: defender.combo.hits,
-      counter: c.counter,
-      ko,
+      damage: 0,
+      comboHits: comboBefore,
+      counter: false,
+      ko: false,
       x: c.x,
       y: c.y,
+    };
+  }
+
+  const base = c.counter ? Math.round(hit.damage * COUNTER_DAMAGE_MULT) : hit.damage;
+  // MAX 模式期间伤害提升
+  const raw = Math.round(base * (attacker.maxMode > 0 ? MAX_MODE_DAMAGE : 1));
+  const damage = scaledDamage(raw, comboBefore);
+
+  // 命中了才开取消窗口（没打中不能取消，这是连段成立的前提）
+  const onHit = attacker.move?.cancel?.onHit;
+  if (onHit && onHit.length > 0) attacker.allowCancel(onHit);
+
+  defender.takeDamage(damage);
+  addComboHit(defender.combo, damage);
+  if (!defender.isDead) {
+    defender.enterHitstun(hit.hitStun + (c.counter ? COUNTER_EXTRA_STUN : 0), {
+      launch: hit.launch,
+      knockdown: hit.knockdown !== undefined && hit.knockdown !== 'none',
     });
+
+    // 气绝：挨够了会晕（晕眩中挨打不再累积，否则永远醒不过来）
+    if (defender.state !== 'dizzy') {
+      defender.stunGauge += Math.floor(damage * 0.45);
+      if (defender.stunGauge >= STUN_MAX) {
+        defender.enterDizzy(DIZZY_FRAMES);
+        defender.stunGauge = 0;
+        world.emit('dizzy', { x: defender.x, y: defender.y });
+      }
+    }
+  }
+  defender.push(attacker.facing * hit.pushback);
+
+  attacker.addMeter(hit.meterGain ?? Math.floor(damage * 0.6));
+  defender.addMeter(Math.floor(damage * 0.2));
+
+  world.emit('hit', {
+    x: c.x,
+    y: c.y,
+    damage,
+    level: hit.level,
+    counter: c.counter,
+    combo: defender.combo.hits,
+    sfx: hit.sfx ?? 'hit',
+  });
+
+  const ko = defender.isDead;
+  if (ko) world.emit('ko', { x: defender.x, y: defender.y });
+
+  return {
+    kind: 'hit',
+    hit,
+    attacker,
+    defender,
+    damage,
+    comboHits: defender.combo.hits,
+    counter: c.counter,
+    ko,
+    x: c.x,
+    y: c.y,
+  };
+}
+
+/** 结算本帧全部近身撞击；返回发生的事件（给 FX / 音效 / 连击显示用） */
+export function resolveCombat(world: World, fighters: readonly Fighter[]): HitResolution[] {
+  const results: HitResolution[] = [];
+  for (const c of collect(fighters)) {
+    // 同一段判定只结算一次（多帧生效的判定不会连续打）
+    if (c.attacker.usedHits.has(c.hit.id)) continue;
+    c.attacker.usedHits.add(c.hit.id);
+    results.push(applyHit(world, c));
+  }
+  return results;
+}
+
+/**
+ * 结算飞行道具：先判道具相撞（不同主人的两个道具同归于尽），再判打人。
+ * 道具是"一次性"的——打中或被打掉就消失。
+ */
+export function resolveProjectiles(world: World, fighters: readonly Fighter[]): HitResolution[] {
+  const projectiles = world.entities.filter((e): e is Projectile => e instanceof Projectile && !e.dead);
+  const results: HitResolution[] = [];
+
+  for (let i = 0; i < projectiles.length; i++) {
+    for (let j = i + 1; j < projectiles.length; j++) {
+      const a = projectiles[i]!;
+      const b = projectiles[j]!;
+      if (a.dead || b.dead || a.owner === b.owner) continue;
+      if (!intersects(a.box(), b.box())) continue;
+      a.dead = true;
+      b.dead = true;
+      world.emit('clash', { x: Math.round((a.x + b.x) / 2), y: Math.round(a.y) });
+    }
+  }
+
+  for (const p of projectiles) {
+    if (p.dead) continue;
+    for (const d of fighters) {
+      if (d === p.owner || d.isDead) continue;
+      if (d.state === 'down' || d.state === 'wakeup') continue;
+      if (isInvulnerable(d, p.hit)) continue;
+      if (!intersects(p.box(), d.worldBox(d.hurtbox()))) continue;
+
+      results.push(
+        applyHit(world, {
+          attacker: p.owner,
+          defender: d,
+          hit: p.hit,
+          blocked: isGuarding(d, p.hit),
+          counter: false,
+          x: p.x,
+          y: p.y,
+        }),
+      );
+      p.dead = true;
+      break;
+    }
   }
 
   return results;

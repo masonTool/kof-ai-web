@@ -91,10 +91,16 @@ export interface CancelSpec {
 
 export interface ProjectileDef {
   anim: string;
+  /** 每帧水平速度（px），方向自动按朝向 */
   speed: number;
   hit: HitDef;
   /** 存活帧数；0 = 打到人或出屏才消失 */
   life: number;
+  /** 在第几帧生成（默认 = 第一条判定的起始帧） */
+  spawnFrame?: number;
+  /** 生成位置（相对脚底原点，x 已按朝向镜像） */
+  spawnOffsetX?: number;
+  spawnOffsetY?: number;
 }
 
 /** 一个招式（通常技 / 必杀技 / 超必杀 / 特殊动作） */
@@ -182,7 +188,9 @@ export const MOVE_KEY = /^(?:j?[1-9]?[ABCD]|CD|AB|throw|\d{2,8}(?:AC|[ABCDPK])(?
 export function validateMove(move: MoveDef): string[] {
   const problems: string[] = [];
   if (!Number.isInteger(move.total) || move.total <= 0) problems.push(`${move.id}: total 必须是正整数`);
-  if (move.hits.length === 0 && move.kind !== 'system') problems.push(`${move.id}: 没有判定盒`);
+  if (move.hits.length === 0 && move.kind !== 'system' && !move.projectile) {
+    problems.push(`${move.id}: 没有判定盒（也没有飞行道具）`);
+  }
   const seen = new Set<string>();
   for (const h of move.hits) {
     if (seen.has(h.id)) problems.push(`${move.id}: 判定 id 重复 ${h.id}`);

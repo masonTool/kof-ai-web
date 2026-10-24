@@ -28,6 +28,8 @@ export interface Entity {
   step(world: World, input: InputState): void;
   /** 把自身状态压进哈希（用于确定性断言） */
   hash(h: Hasher): void;
+  /** 标记结束后由 `World.sweep()` 回收 */
+  dead?: boolean;
 }
 
 const EMPTY: InputSample = { held: 0 };
@@ -64,7 +66,9 @@ export class World {
    */
   step(inputs: readonly InputSample[] = []): readonly WorldEvent[] {
     this.events.length = 0;
-    for (let i = 0; i < this.entities.length; i++) {
+    // 快照长度：实体在 step 里可能生成新实体（飞行道具），新来的这一帧不再推进
+    const count = this.entities.length;
+    for (let i = 0; i < count; i++) {
       const held = (inputs[i] ?? EMPTY).held >>> 0;
       const prev = this.prevHeld[i]!;
       this.prevHeld[i] = held;
@@ -72,6 +76,16 @@ export class World {
     }
     this.tick++;
     return this.events;
+  }
+
+  /** 回收已标记 dead 的实体（飞行道具打完就消失） */
+  sweep(): void {
+    for (let i = this.entities.length - 1; i >= 0; i--) {
+      if (this.entities[i]!.dead === true) {
+        this.entities.splice(i, 1);
+        this.prevHeld.splice(i, 1);
+      }
+    }
   }
 
   /** 状态指纹：tick + rng + 输入历史 + 每个实体（按 id 升序） */

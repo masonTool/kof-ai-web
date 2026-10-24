@@ -7,6 +7,7 @@
 import { sfxForWorldEvent, WebAudioSink } from './audio/sfx';
 import { FixedStepper, startAnimationLoop } from './core/loop';
 import { ROSTER } from './data/chars';
+import type { CharDef } from './data/schema';
 import { Match } from './game/match';
 import { DEFAULT_KEYMAP_P1, DEFAULT_KEYMAP_P2, KeyboardSource } from './input/keyboard';
 import type { Ctx2D } from './render/ctx';
@@ -51,10 +52,19 @@ window.addEventListener('blur', () => {
   pad.releaseAll();
 });
 
+/**
+ * 组队：以选中的角色打头，其余角色按花名册顺序补满。
+ * （真正的"选三个人 + 排顺序"要等花名册有足够角色再做，见 TASKS T10）
+ */
+function teamFor(starter: CharDef): CharDef[] {
+  const first = ROSTER.indexOf(starter);
+  return [ROSTER[first]!, ...ROSTER.filter((_, i) => i !== first)];
+}
+
 /** 开始一场新对局（选人结果已定） */
 function startMatch(): void {
   const [a, b] = flow.picks ?? [ROSTER[0]!, ROSTER[1] ?? ROSTER[0]!];
-  match = new Match(a, b, { roundsToWin: 2 });
+  match = new Match(teamFor(a), teamFor(b), { roundsToWin: 2 });
   training = new TrainingSession(match);
 }
 

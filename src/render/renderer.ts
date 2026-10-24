@@ -12,6 +12,7 @@ import { drawFighter } from './fighter-draw';
 import { drawHud } from './hud';
 import { STATE_ANIM } from './poses';
 import { STAGES, drawStage, type StageDef } from './stage-draw';
+import { Projectile } from '../sim/projectile';
 
 export interface RenderOptions {
   stage?: StageDef;
@@ -71,6 +72,27 @@ export function drawFrame(ctx: Ctx2D, match: Match, opts: RenderOptions = {}): v
       alpha: f.state === FighterState.Dead ? 0.8 : 1,
     });
   }
+  // 飞行道具：外圈发光 + 内芯，按朝向拖一条尾巴
+  for (const entity of match.world.entities) {
+    if (!(entity instanceof Projectile) || entity.dead) continue;
+    const p = entity;
+    const theme = p.owner.char.palette;
+    ctx.globalAlpha = 0.35;
+    ctx.fillStyle = theme.accent;
+    ctx.beginPath();
+    ctx.arc(p.x - p.facing * 10, p.y, 9, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = theme.accent;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 7, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = theme.trim;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 3.5, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
   match.fx.draw(ctx);
   if (opts.showBoxes === true) drawDebugBoxes(ctx, match);
   ctx.restore();

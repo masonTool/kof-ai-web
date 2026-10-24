@@ -10,7 +10,7 @@ import type { CharDef } from '../data/schema';
 import { Camera } from '../sim/camera';
 import { METER_MAX, STAGE_LEFT, STAGE_RIGHT } from '../sim/constants';
 import { Fighter } from '../sim/fighter';
-import { resolveCombat, type HitResolution } from '../sim/hit';
+import { resolveCombat, resolveProjectiles, type HitResolution } from '../sim/hit';
 import { resolvePushAll } from '../sim/physics';
 import { FighterState, canAct } from '../sim/state';
 import { TICK_RATE, World } from '../sim/world';
@@ -36,6 +36,8 @@ export interface MatchConfig {
   roundEndFrames: number;
   /** 开局两人间距（中心到中心） */
   spawnGap: number;
+  /** 组队战换人时的演出帧数（比开局短） */
+  swapIntroFrames: number;
 }
 
 export const DEFAULT_MATCH: MatchConfig = {
@@ -44,6 +46,7 @@ export const DEFAULT_MATCH: MatchConfig = {
   introFrames: 48,
   roundEndFrames: 90,
   spawnGap: 96,
+  swapIntroFrames: 30,
 };
 
 export class Match {
@@ -63,20 +66,30 @@ export class Match {
   /** 整场赢家（0 = 还没分出） */
   matchWinner: 0 | 1 | 2 = 0;
   lastRound: RoundResult | null = null;
+  /** 队伍（单人模式就是长度 1 的数组） */
+  readonly teams: [readonly CharDef[], readonly CharDef[]];
+  /** 双方当前用到队伍里的第几个 */
+  indexes: [number, number] = [0, 0];
   /** 本帧发生的命中（给特效/音效/连击显示） */
   lastHits: HitResolution[] = [];
 
   private introLeft: number;
   private endLeft = 0;
 
-  constructor(c1: CharDef, c2: CharDef, config: Partial<MatchConfig> = {}, seed = 0x970317) {
+  constructor(
+    c1: CharDef | readonly CharDef[],
+    c2: CharDef | readonly CharDef[],
+    config: Partial<MatchConfig> = {},
+    seed = 0x970317,
+  ) {
     this.config = { ...DEFAULT_MATCH, ...config };
     this.world = new World(seed);
+    this.teams = [Array.isArray(c1) ? [...c1] : [c1 as CharDef], Array.isArray(c2) ? [...c2] : [c2 as CharDef]];
 
     const center = (STAGE_LEFT + STAGE_RIGHT) / 2;
     const half = this.config.spawnGap / 2;
-    this.p1 = this.world.add(new Fighter(c1, { x: center - half, facing: 1 }));
-    this.p2 = this.world.add(new Fighter(c2, { x: center + half, facing: -1 }));
+    this.p1 = this.world.add(new Fighter(this.teams[0][0]!, { x: center - half, facing: 1 }));
+    this.p2 = this.world.add(new Fighter(this.teams[1][0]!, { x: center + half, facing: -1 }));
     // 互相知道对方：投技要判距离、镜头要判朝向
     this.p1.opponent = this.p2;
     this.p2.opponent = this.p1;
@@ -139,7 +152,8 @@ export class Match {
   private stepFight(inputs: readonly [InputSample, InputSample]): void {
     this.faceOff();
     this.world.step([inputs[0], inputs[1]]);
-    this.lastHits = resolveCombat(this.world, this.fighters);
+    this.lastHits = [...resolveCombat(this.world, this.fighters), ...resolveProjectiles(this.world, this.fighters)];
+    this.world.sweep();
     this.applyHitEffects(this.lastHits);
     resolvePushAll(this.fighters);
     this.stepSpectators();
@@ -186,7 +200,25 @@ export class Match {
     this.endLeft = this.config.roundEndFrames;
   }
 
+  /** 组队战：某一侧还有后备角色吗 */
+  hasNext(side: 1 | 2): boolean {
+    return this.indexes[side - 1] + 1 < this.teams[side - 1].length;
+  }
+
+  /** 某一侧还剩几个人（含当前上场者），给 HUD 画小方块 */
+  teamLeft(side: 1 | 2): number {
+    return this.teams[side - 1].length - this.indexes[side - 1];
+  }
+
+  get teamMode(): boolean {
+    return this.teams[0].length > 1 || this.teams[1].length > 1;
+  }
+
   private advanceRound(): void {
+    if (this.teamMode) {
+      this.advanceTeamRound();
+      return;
+    }
     if (this.wins[0] >= this.config.roundsToWin || this.wins[1] >= this.config.roundsToWin) {
       this.phase = 'over';
       this.matchWinner = this.wins[0] > this.wins[1] ? 1 : this.wins[1] > this.wins[0] ? 2 : 0;
@@ -194,6 +226,56 @@ export class Match {
     }
     this.round++;
     this.startRound();
+  }
+
+  /**
+   * 组队战换人：输的一方换下一个角色（满血），赢的一方**保留剩余血量**、
+   * 双方回到起始位置，计时重置，播一段短的换人演出。
+   * 平局（双 KO / 时间到同血）两边同时换人。
+   */
+  private advanceTeamRound(): void {
+    const winner = this.lastRound?.winner ?? 0;
+    // 平局（双 KO / 时间到同血）两边都算输，都要换人
+    const losers: (1 | 2)[] = winner === 0 ? [1, 2] : [winner === 1 ? 2 : 1];
+
+    const eliminated: (1 | 2)[] = [];
+    for (const side of losers) {
+      if (this.hasNext(side)) this.indexes[side - 1]++;
+      else eliminated.push(side);
+    }
+
+    if (eliminated.length > 0) {
+      this.phase = 'over';
+      this.matchWinner = eliminated.length === 2 ? 0 : eliminated[0] === 1 ? 2 : 1;
+      return;
+    }
+
+    this.round++;
+    this.startTeamRound(losers);
+  }
+
+  /** 换人后的下一回合：赢家留血，输家换将 */
+  private startTeamRound(losers: readonly (1 | 2)[]): void {
+    const center = (STAGE_LEFT + STAGE_RIGHT) / 2;
+    const half = this.config.spawnGap / 2;
+
+    if (losers.includes(1)) {
+      this.p1.switchChar(this.teams[0][this.indexes[0]]!, { x: center - half, facing: 1, keepMeter: true });
+    } else {
+      this.p1.reset({ x: center - half, facing: 1, keepMeter: true, keepHp: true });
+    }
+    if (losers.includes(2)) {
+      this.p2.switchChar(this.teams[1][this.indexes[1]]!, { x: center + half, facing: -1, keepMeter: true });
+    } else {
+      this.p2.reset({ x: center + half, facing: -1, keepMeter: true, keepHp: true });
+    }
+
+    this.cam.snap(this.p1, this.p2);
+    this.fx.clear();
+    this.timerFrames = this.config.roundSeconds * TICK_RATE;
+    this.introLeft = this.config.swapIntroFrames;
+    this.phase = 'intro';
+    this.lastHits = [];
   }
 
   /** 回合开始：位置/血量/状态复位，镜头立即对齐，进入 ROUND 演出 */
@@ -276,7 +358,7 @@ export class Match {
       maxHp: f.maxHp,
       meter: f.meter,
       maxMeter: METER_MAX,
-      teamLeft: 1,
+      teamLeft: this.teamLeft(side),
       wins: this.wins[side - 1]!,
       ko: f.state === FighterState.Dead,
       maxMode: f.maxMode > 0,
