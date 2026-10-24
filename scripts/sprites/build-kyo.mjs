@@ -54,15 +54,40 @@ const ANIMS = {
   jump: ['jumpup', 'jumpdown', 'jumpup'],
   punchLight: ['punchwindup', 'punchout', 'punchout'],
   punchHeavy: ['punchwindup', 'punchout', 'punchout'],
-  attack: ['punchwindup', 'punchout', 'punchout'],
   kickLight: ['kickwindup', 'kickout', 'kickout'],
   kickHeavy: ['kickwindup', 'kickout', 'kickout'],
   hit: ['hit', 'hit', 'hit'],
   win: ['win', 'win'],
-  win2: ['win', 'win'],
-  win3: ['win', 'win'],
+  // 蹲姿攻击：蹲着出拳 / 蹲着扫腿（KOF 的 2A 2B 2C 2D 全靠这两套）
+  crouchPunch: ['crouchpunch'],
+  crouchKick: ['crouchkick'],
+  // 空中攻击（jA jB jC jD）
+  jumpAttack: ['jumpattack'],
+  // 必杀技：所有必杀/超必杀共用一个起手姿势
+  special: ['special'],
   // 躺在地上：按"宽度"归一，锚点用包围盒中心（横躺的人没有"脚底"这个概念）
   down: ['down'],
+};
+
+/**
+ * 姿势库里没有单独出图的动画 → 借用最接近的那一套。
+ *
+ * 不借的话，`spriteFor()` 返回 null，绘制层就掉回程序化骨架——
+ * 表现就是"格挡一瞬间闪出像素人"。借用的帧直接复用同一块图集区域，不占额外空间。
+ */
+const ALIAS = {
+  attack: 'punchLight', // 默认攻击动画 == 轻拳
+  win2: 'win',
+  win3: 'win',
+  block: 'guard', // 格挡：和"按住防御"是同一个姿势
+  landing: 'crouch', // 落地缓冲
+  wakeup: 'crouch', // 起身
+  hitFall: 'hit', // 被打飞
+  taunt: 'win', // 挑衅
+  lose: 'hit', // 败北
+  dizzy: 'idle', // 眩晕（暂时用站架，将来单独出图）
+  roll: 'crouch', // 受身翻滚
+  throwStart: 'special', // 投技起手
 };
 
 /** 这些动画按宽度归一 + 水平居中（横躺姿势） */
@@ -250,6 +275,13 @@ for (const [anim, list] of Object.entries(frames)) {
   if (animsJson[anim].length === 0) throw new Error(`动画 ${anim} 一帧都没有`);
   void list;
 }
+// 别名：直接指到源动画的矩形上（同一块图集区域，JSON 里多几个键而已）
+for (const [alias, src] of Object.entries(ALIAS)) {
+  if (!animsJson[src]) throw new Error(`别名 ${alias} → ${src} 失败：源动画不存在`);
+  animsJson[alias] = animsJson[src].map((f) => ({ ...f }));
+  if (flashJson[src]) flashJson[alias] = flashJson[src].map((f) => ({ ...f }));
+}
+
 writeFileSync(
   OUT_JSON,
   JSON.stringify(

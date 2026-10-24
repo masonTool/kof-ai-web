@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import sheetJson from '../public/sheets/kyo.json';
 import { frameListProvider, type FrameListSheet, type SpriteFrame } from '../src/render/assets';
+import { poseNames } from '../src/render/poses';
 import { isSheetJson, providerFromSheetJson, type SheetJson } from '../src/render/sprite-loader';
 
 const IMG = {} as unknown as CanvasImageSource;
@@ -80,6 +81,16 @@ describe('京的贴图产物（build-kyo.mjs 的输出）', () => {
   const raw: unknown = sheetJson;
   if (!isSheetJson(raw)) throw new Error('public/sheets/kyo.json 形状不合法，先跑 node scripts/sprites/build-kyo.mjs');
   const sheet = raw;
+
+  it('姿势库里的每个动画都有贴图（少一个就会在那一下闪回程序化像素人）', () => {
+    // 格挡用 block 而不是 guard、蹲重拳用 crouchPunch 而不是 punchHeavy——
+    // 名字对不上就是"闪一下旧动画"，所以这里按姿势库全量核对，而不是挑几个抽查
+    for (const anim of poseNames()) {
+      const list = sheet.anims[anim];
+      expect(list, anim).toBeTruthy();
+      expect(list!.length, anim).toBeGreaterThan(0);
+    }
+  });
 
   it('关键动画都在（缺了会掉回程序化骨架，风格会跳）', () => {
     for (const anim of ['idle', 'walkF', 'walkB', 'guard', 'crouch', 'jump', 'punchLight', 'punchHeavy', 'kickLight', 'kickHeavy', 'hit', 'win', 'down']) {
