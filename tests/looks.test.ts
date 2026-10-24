@@ -54,16 +54,21 @@ describe('外观表', () => {
 });
 
 describe('外观影响绘制', () => {
-  it('壮实的人肢体更粗', () => {
-    const slim = Math.max(...draw({ look: { ...DEFAULT_LOOK, build: 0.8 } }).lineWidths);
-    const heavy = Math.max(...draw({ look: { ...DEFAULT_LOOK, build: 1.4 } }).lineWidths);
+  it('壮实的人肢体更粗（四肢占的外套面积更大）', () => {
+    // 头的大小不受 build 影响，所以比"外套色方块的总面积"而不是最大方块
+    const limbArea = (ctx: FakeCtx): number =>
+      ctx.rects.filter((r) => r.fill === palette.primary).reduce((s, r) => s + r.w * r.h, 0);
+    const slim = limbArea(draw({ look: { ...DEFAULT_LOOK, build: 0.8 } }));
+    const heavy = limbArea(draw({ look: { ...DEFAULT_LOOK, build: 1.4 } }));
     expect(heavy).toBeGreaterThan(slim);
   });
 
-  it('秃头不画后脑那块头发（少一个圆）', () => {
-    const withHair = count(draw({ look: { ...DEFAULT_LOOK, hair: 'short' } }), 'arc');
-    const bald = count(draw({ look: { ...DEFAULT_LOOK, hair: 'bald' } }), 'arc');
-    expect(bald).toBe(withHair - 1);
+  it('秃头不画后脑那块头发（头发色方块数量明显变少）', () => {
+    const hairBlocks = (ctx: FakeCtx): number => ctx.rects.filter((r) => r.fill === palette.hair).length;
+    const withHair = hairBlocks(draw({ look: { ...DEFAULT_LOOK, hair: 'short' } }));
+    const bald = hairBlocks(draw({ look: { ...DEFAULT_LOOK, hair: 'bald' } }));
+    expect(bald).toBe(0);
+    expect(withHair).toBeGreaterThan(4);
   });
 
   it('刺猬头比短发多画几笔填充（发尖）', () => {
@@ -106,9 +111,11 @@ describe('外观影响绘制', () => {
     expect(flat.transforms.scale).toHaveLength(1); // 只有 drawFighter 那一层
   });
 
-  it('闪白时头发/配件也变白（不会在白色人形上留深色块）', () => {
+  it('闪白时头发/配件也被提亮（不会在浅色人形上留深色块）', () => {
     const ctx = draw({ look: { ...DEFAULT_LOOK, accessory: 'mask' }, flash: true });
-    const dark = ctx.fills.filter((f) => f === '#0c0a09');
-    expect(dark).toHaveLength(0);
+    // 描边块仍然是纯黑（轮廓该黑），但角色本体色不该再出现原本的深色
+    const bodyColors = ctx.fills.filter((f) => f.startsWith('#') && f !== '#0c0a09');
+    expect(bodyColors).not.toContain(palette.hair);
+    expect(bodyColors).not.toContain(palette.primary);
   });
 });

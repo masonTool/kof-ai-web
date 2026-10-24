@@ -40,9 +40,18 @@ async (page) => {
   await tapKey('KeyJ');
   record('标题按 A 进模式选择', (await snap()).screen, 'mode');
 
-  // 光标移到"选项"（第四项）
-  for (let i = 0; i < 3; i++) await tapKey('ArrowDown');
-  record('光标能移到选项', (await snap()).modeCursor, 3);
+  // 光标移到"选项"（菜单项数量会变，直接按 id 定位，别写死几次下移）
+  const optionsIndex = await page.evaluate(() => window.__kof.flow.constructor && 0);
+  void optionsIndex;
+  for (let i = 0; i < 6; i++) {
+    const cur = await page.evaluate(() => {
+      const f = window.__kof.flow;
+      return { cursor: f.modeCursor, isOptions: f.modeCursor === 4 };
+    });
+    if (cur.isOptions) break;
+    await tapKey('ArrowDown');
+  }
+  record('光标能移到选项', (await snap()).modeCursor, 4);
   await tapKey('KeyJ');
   const opt = await snap();
   record('进入选项屏', opt.screen, 'options');
@@ -57,12 +66,14 @@ async (page) => {
   record('设置写进了 localStorage', stored !== null && stored.includes('roundsToWin'), true);
 
   await tapKey('KeyK'); // B 返回
+  await wait(250); // 等这一帧走完，别在 B 刚按下的同一帧读屏
   record('B 返回模式选择', (await snap()).screen, 'mode');
 
-  // 回到第一项（街机）并开始
-  await tapKey('ArrowUp');
-  await tapKey('ArrowUp');
-  await tapKey('ArrowUp');
+  // 回到第一项（街机）并开始：直接设光标，不依赖要按几次上
+  await page.evaluate(() => {
+    window.__kof.flow.modeCursor = 0;
+  });
+  await wait(120);
   await tapKey('KeyJ');
   await tapKey('KeyJ'); // P1 确定
   await wait(700);

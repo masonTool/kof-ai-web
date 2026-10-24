@@ -11,7 +11,7 @@ import { spriteFor } from './assets';
 import { easeForAnim, isAttackAnim, poseFrameIndex, resolvePose, type Point, type PoseFrame } from './poses';
 
 const OUTLINE = '#0c0a09';
-const HEAD_RADIUS = 7;
+const HEAD_RADIUS = 8;
 
 /** 把 #rgb / #rrggbb 按系数调暗（做"远侧肢体"的阴影色） */
 export function shade(hex: string, k: number): string {
@@ -40,34 +40,108 @@ export function lighten(hex: string, amount: number): string {
   return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, '0')}`;
 }
 
-function limb(ctx: Ctx2D, from: Point, to: Point, width: number, color: string): void {
-  ctx.lineCap = 'round';
-  ctx.lineJoin = 'round';
+/**
+ * 像素块边长（逻辑像素）。
+ *
+ * 整个角色用 2×2 的方块拼出来——不是把矢量图缩小再放大，而是**每一笔都是方块**：
+ * 线是沿线段排的方块、圆是按网格扫描出来的方块、多边形是按行填充的方块。
+ * 这样在 320×224 的分辨率下才有"像素格斗游戏"的质感，而不是矢量图配了个复古色调。
+ */
+export const PX = 2;
 
-  ctx.strokeStyle = OUTLINE;
-  ctx.lineWidth = width + 2;
-  ctx.beginPath();
-  ctx.moveTo(from[0], from[1]);
-  ctx.lineTo(to[0], to[1]);
-  ctx.stroke();
+// 注意别返回 -0：`-0 % 2` 是 -0，会让"对齐网格"的断言与哈希都变味
+const snapTo = (v: number): number => {
+  const q = Math.round(v / PX);
+  return q === 0 ? 0 : q * PX;
+};
 
-  ctx.strokeStyle = color;
-  ctx.lineWidth = width;
-  ctx.beginPath();
-  ctx.moveTo(from[0], from[1]);
-  ctx.lineTo(to[0], to[1]);
-  ctx.stroke();
+/** 一个对齐到网格的实心块 */
+function block(ctx: Ctx2D, x: number, y: number, w: number, h: number, color: string): void {
+  ctx.fillStyle = color;
+  ctx.fillRect(snapTo(x), snapTo(y), Math.max(PX, snapTo(w)), Math.max(PX, snapTo(h)));
 }
 
+/** 像素线段：沿线段铺方块，先铺一圈描边块 */
+function limb(ctx: Ctx2D, from: Point, to: Point, width: number, color: string): void {
+  const dx = to[0] - from[0];
+  const dy = to[1] - from[1];
+  const len = Math.hypot(dx, dy) || 1;
+  const half = Math.max(PX, Math.round(width / 2 / PX) * PX);
+  // 步进用半宽而不是 2px：块之间有重叠就够了，块数能少一半以上
+  const steps = Math.max(1, Math.ceil(len / Math.max(PX, half)));
+
+  for (let pass = 0; pass < 2; pass++) {
+    const grow = pass === 0 ? PX : 0;
+    const c = pass === 0 ? OUTLINE : color;
+    for (let i = 0; i <= steps; i++) {
+      const t = i / steps;
+      const cx = from[0] + dx * t;
+      const cy = from[1] + dy * t;
+      block(ctx, cx - half - grow, cy - half - grow, (half + grow) * 2, (half + grow) * 2, c);
+    }
+  }
+}
+
+/**
+ * 像素圆：**按行填充**——每行一个方块带，宽度由 `2√(r²-y²)` 算。
+ * 早期版本是逐格扫描（每格一个 fillRect），一个头就要上百次调用，
+ * 一帧两个角色直接掉到 48fps。按行填同样有像素锯齿，调用数只有 1/4。
+ */
 function disc(ctx: Ctx2D, at: Point, radius: number, color: string, outline = false): void {
-  ctx.beginPath();
-  ctx.arc(at[0], at[1], radius, 0, Math.PI * 2);
-  ctx.fillStyle = color;
-  ctx.fill();
+  const r = Math.max(PX, radius);
+  const rowSpan = (rr: number, y: number): number => Math.sqrt(Math.max(0, rr * rr - y * y));
   if (outline) {
-    ctx.strokeStyle = OUTLINE;
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
+    const rr = r + PX;
+    for (let y = -rr; y <= rr; y += PX) {
+      const half = rowSpan(rr, y);
+      if (half <= 0) continue;
+      block(ctx, at[0] - half, at[1] + y, half * 2, PX, OUTLINE);
+    }
+  }
+  for (let y = -r; y <= r; y += PX) {
+    const half = rowSpan(r, y);
+    if (half <= 0) continue;
+    block(ctx, at[0] - half, at[1] + y, half * 2, PX, color);
+  }
+}
+
+/** 按行扫描填充凸多边形（躯干梯形用），每行填一条方块带 */
+function fillConvex(ctx: Ctx2D, pts: readonly Point[], color: string): void {
+  let minY = Infinity;
+  let maxY = -Infinity;
+  for (const p of pts) {
+    minY = Math.min(minY, p[1]);
+    maxY = Math.max(maxY, p[1]);
+  }
+  for (let y = Math.floor(minY / PX) * PX; y <= maxY; y += PX) {
+    const xs: number[] = [];
+    for (let i = 0; i < pts.length; i++) {
+      const a = pts[i]!;
+      const b = pts[(i + 1) % pts.length]!;
+      if (a[1] === b[1]) continue;
+      const lo = Math.min(a[1], b[1]);
+      const hi = Math.max(a[1], b[1]);
+      if (y < lo || y > hi) continue;
+      xs.push(a[0] + ((y - a[1]) / (b[1] - a[1])) * (b[0] - a[0]));
+    }
+    if (xs.length < 2) continue;
+    const left = Math.min(...xs);
+    const right = Math.max(...xs);
+    block(ctx, left, y, right - left, PX, color);
+  }
+}
+
+/** 轮廓：把多边形的边用描边块走一遍 */
+function strokeConvex(ctx: Ctx2D, pts: readonly Point[], color: string): void {
+  for (let i = 0; i < pts.length; i++) {
+    const a = pts[i]!;
+    const b = pts[(i + 1) % pts.length]!;
+    const len = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
+    const steps = Math.max(1, Math.ceil(len / PX));
+    for (let k = 0; k <= steps; k++) {
+      const t = k / steps;
+      block(ctx, a[0] + (b[0] - a[0]) * t - PX / 2, a[1] + (b[1] - a[1]) * t - PX / 2, PX, PX, color);
+    }
   }
 }
 
@@ -106,28 +180,32 @@ function drawTorso(
     [waist[0] + n[0] * waistW, waist[1] + n[1] * waistW],
   ];
 
-  const path = (): void => {
-    ctx.beginPath();
-    ctx.moveTo(pts[0]![0], pts[0]![1]);
-    for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i]![0], pts[i]![1]);
-    ctx.closePath();
-  };
+  // 下摆：腰以下往外扩一点，衣服才有"罩在外面"的层次
+  const hem = alongTorso(frame, 0.02);
+  const hemW = shoulderW * 0.92;
+  const hemPts: Point[] = [
+    [waist[0] + n[0] * waistW, waist[1] + n[1] * waistW],
+    [waist[0] - n[0] * waistW, waist[1] - n[1] * waistW],
+    [hem[0] - n[0] * hemW, hem[1] - n[1] * hemW],
+    [hem[0] + n[0] * hemW, hem[1] + n[1] * hemW],
+  ];
+  fillConvex(ctx, hemPts, opts.primary);
+  strokeConvex(ctx, hemPts, OUTLINE);
 
-  path();
-  ctx.fillStyle = opts.primary;
-  ctx.fill();
-  ctx.strokeStyle = OUTLINE;
-  ctx.lineWidth = opts.flash ? 1 : 2;
-  ctx.stroke();
+  fillConvex(ctx, pts, opts.primary);
+  strokeConvex(ctx, pts, OUTLINE);
+
+  // 肩线：一条更亮的横线，让"肩"这个结构看得出来
+  const shoulderLine = alongTorso(frame, 0.9);
+  for (let i = -shoulderW; i <= shoulderW; i += PX) {
+    block(ctx, shoulderLine[0] + n[0] * i - PX / 2, shoulderLine[1] + n[1] * i - PX / 2, PX, PX, opts.trim);
+  }
 
   // 腰带：腰线偏上一点，一条横带
   const belt = alongTorso(frame, 0.3);
-  ctx.strokeStyle = opts.trim;
-  ctx.lineWidth = 3 * opts.build;
-  ctx.beginPath();
-  ctx.moveTo(belt[0] + n[0] * waistW * 0.95, belt[1] + n[1] * waistW * 0.95);
-  ctx.lineTo(belt[0] - n[0] * waistW * 0.95, belt[1] - n[1] * waistW * 0.95);
-  ctx.stroke();
+  for (let i = -waistW; i <= waistW; i += PX) {
+    block(ctx, belt[0] + n[0] * i - PX / 2, belt[1] + n[1] * i - PX / 2, PX, PX * 1.5, opts.trim);
+  }
 }
 
 export interface PoseDrawOptions {
@@ -173,8 +251,8 @@ export function drawPose(ctx: Ctx2D, frame: PoseFrame, palette: Palette, opts: P
   const b = look.build;
   // 远侧肢体先画（压暗；闪白时一并不压暗，否则闪不出来）
   const dim = (c: string): string => (flash ? lighten(c, 0.62) : shade(c, 0.62));
-  limb(ctx, frame.hip, frame.legBack[0]!, 6 * b, dim(secondary));
-  limb(ctx, frame.legBack[0]!, frame.legBack[1]!, 5 * b, dim(secondary));
+  limb(ctx, frame.hip, frame.legBack[0]!, 7 * b, dim(secondary));
+  limb(ctx, frame.legBack[0]!, frame.legBack[1]!, 6 * b, dim(secondary));
   limb(ctx, frame.neck, frame.armBack[0]!, 5 * b, dim(primary));
   limb(ctx, frame.armBack[0]!, frame.armBack[1]!, 4 * b, dim(skin));
 
@@ -182,10 +260,10 @@ export function drawPose(ctx: Ctx2D, frame: PoseFrame, palette: Palette, opts: P
   drawTorso(ctx, frame, { primary, trim, build: b, flash });
 
   // 近侧肢体
-  limb(ctx, frame.hip, frame.legFront[0]!, 6 * b, secondary);
-  limb(ctx, frame.legFront[0]!, frame.legFront[1]!, 5 * b, secondary);
-  limb(ctx, frame.neck, frame.armFront[0]!, 5 * b, primary);
-  limb(ctx, frame.armFront[0]!, frame.armFront[1]!, 4 * b, skin);
+  limb(ctx, frame.hip, frame.legFront[0]!, 7 * b, secondary);
+  limb(ctx, frame.legFront[0]!, frame.legFront[1]!, 6 * b, secondary);
+  limb(ctx, frame.neck, frame.armFront[0]!, 5.5 * b, primary);
+  limb(ctx, frame.armFront[0]!, frame.armFront[1]!, 4.5 * b, skin);
 
   // 挥击拖尾：从拳/脚沿前臂方向拉一条渐隐光带。
   // 插值之后手的位置是连续的，这条带子就把"挥过去"这件事画出来了。
@@ -279,8 +357,10 @@ function drawHead(
   ctx.fill();
   // 耳朵（后侧一个小圆）
   disc(ctx, [hx - r * 0.75, hy + 0.5], 1.6, skin);
-  // 眼睛
-  disc(ctx, [hx + 4.5, hy - 1], 1.4, flash ? '#ffffff' : OUTLINE);
+  // 眼睛：像素风里就是两个方块（1 个方块太糊，看不出是眼）
+  const eye = flash ? '#ffffff' : OUTLINE;
+  block(ctx, hx + 3.5, hy - 1.5, PX, PX, eye);
+  block(ctx, hx + 5.5, hy - 1.5, PX, PX, eye);
 }
 
 /** 配件：头带 / 帽子 / 面罩 / 墨镜 */

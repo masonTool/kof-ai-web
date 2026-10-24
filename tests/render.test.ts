@@ -161,18 +161,24 @@ describe('角色绘制', () => {
     expect(ctx.depth).toBe(0);
   });
 
-  it('会把四肢与躯干描出来（笔画数与填充数都够）', () => {
+  it('角色是由像素块拼出来的（方块数够多，不再是矢量线条）', () => {
     const ctx = new FakeCtx();
     drawPose(ctx, resolvePose('idle', 0), PALETTE);
-    // 4 肢 × 2 笔（描边+填色）= 8，加躯干 2 笔
-    expect(ctx.count('stroke')).toBeGreaterThanOrEqual(10);
-    expect(ctx.count('fill')).toBeGreaterThanOrEqual(3);
+    // 四肢 + 躯干 + 头全是 2×2 的方块
+    expect(ctx.rects.length).toBeGreaterThan(120);
+    // 方块都对齐到 2px 网格
+    for (const r of ctx.rects.slice(0, 30)) {
+      // 负数取模会得到 -0，所以取绝对值再比
+      expect(Math.abs(r.x % 2)).toBe(0);
+      expect(Math.abs(r.y % 2)).toBe(0);
+    }
   });
 
   it('命中闪白：整体提亮但仍保留本色（不是糊成一个白影子）', () => {
     const ctx = new FakeCtx();
     drawPose(ctx, resolvePose('hit', 0), PALETTE, { flash: true });
-    const solid = ctx.fills.filter((c) => c.startsWith('#'));
+    // 描边块永远是纯黑（那是轮廓，不该被提亮），排除掉再看角色本体色
+    const solid = ctx.fills.filter((c) => c.startsWith('#') && c !== '#0c0a09');
     expect(solid.length).toBeGreaterThan(0);
     // 全部都被提亮：亮度接近白，但不是纯白
     for (const c of solid) {
@@ -195,7 +201,7 @@ describe('角色绘制', () => {
     for (const name of poseNames()) {
       const ctx = new FakeCtx();
       expect(() => drawFighter(ctx, { palette: PALETTE, facing: -1, x: 10, y: 200, anim: name, elapsed: 9 })).not.toThrow();
-      expect(ctx.count('stroke')).toBeGreaterThan(0);
+      expect(ctx.rects.length).toBeGreaterThan(50);
     }
   });
 
@@ -543,9 +549,15 @@ describe('身体体积与重量感', () => {
     expect(resolvePose('punchHeavy', 8, 24)).toEqual(resolvePose('punchHeavy', 8, 24, 'out', 0));
   });
 
-  it('头部不是单纯一个圆：有下巴与耳朵的额外笔画', () => {
+  it('头部是由方块拼的（像素圆 + 下巴 + 耳朵），占够面积', () => {
     const ctx = draw();
-    // 头相关的 arc 调用：后脑 + 脸 + 下巴 + 耳朵 + 眼睛
-    expect(ctx.arcs.length).toBeGreaterThanOrEqual(4);
+    // 头部区域（脚底原点，头在 y≈-78..-56）里的皮肤色方块
+    const headBlocks = ctx.rects.filter(
+      (r) => r.fill === PALETTE.skin && r.y <= -56 && r.y >= -82 && Math.abs(r.x) < 16,
+    );
+    expect(headBlocks.length).toBeGreaterThan(5);
+    // 而且确实铺满了头的宽度（不是一个小点）
+    const width = Math.max(...headBlocks.map((r) => r.w));
+    expect(width).toBeGreaterThan(8);
   });
 });

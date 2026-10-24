@@ -183,6 +183,8 @@ describe('飞行道具：渲染', () => {
 
     const ctx = new FakeCtx();
     expect(() => drawFrame(ctx, m)).not.toThrow();
-    expect(ctx.count('arc')).toBeGreaterThan(6); // 角色本身也有 arc，道具会再加
+    // 角色现在是像素块画的（大量 fillRect），道具仍用圆弧画
+    expect(ctx.count('arc')).toBeGreaterThanOrEqual(2);
+    expect(ctx.rects.length).toBeGreaterThan(50);
   });
 });
