@@ -39,7 +39,8 @@
 - 胜负演出：`data/chars/quotes.ts` 台词表（按胜场轮换，不用随机数）+ `resultAnimFor()` 让赢家 win / 输家 lose · `T98` · 批次 20261025-0245
 - 登场挑衅（`introAnimFor()` → `taunt` 姿势）与飞行道具四种形状（`shapeOfProjectile()` 按属性推）· `T100` `T101` · 批次 20261025-0320
 - 超必杀起手演出：`Fighter.justStartedMove` + `Match.superFlash`（双方定格 10 帧 + 全屏闪白 12 帧，进 hash）· `T103` · 批次 20261025-0400
-- BGM 四条曲：标题/战斗/BOSS 战/结果，BOSS 按 `char.boss` 属性切换 · `T104` · 批次 20261025-0400
+- BGM 五条曲：标题/战斗/暗色/ BOSS 战/结果；`fightTrackFor()` 按对手选（BOSS 优先，其次暗色系）· `T104` `T107` · 批次 20261025-0400 / 20261025-0450
+- 超必杀运镜：`Camera.zoomOverride` 拉近到 1.45 + 上下 20px 黑边，与 `superFlash` 同步 · `T106` · 批次 20261025-0450
 - 移动端：DPR 夹在 [1,2]、安全区扣减、竖屏提示层 · `T87` · 批次 20261025-0010
 
 ### 模拟内核
