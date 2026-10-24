@@ -66,6 +66,7 @@ async (page) => {
   await page.evaluate(() => {
     const k = window.__kof;
     k.flow.picks = [k.flow.roster[0], k.flow.roster[1]];
+    k.flow.mode = 'arcade';
     k.flow.screen = 'fight';
     k.startMatch();
   });

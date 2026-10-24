@@ -21,7 +21,9 @@ async (page) => {
   await wait(1200);
   record('花名册 29 人', await page.evaluate(() => window.__kof.flow.roster.length), 29);
 
-  // 标题 → 选人，光标移到第 4 人（大门）
+  // 标题 → 模式选择 → 街机 → 选人
+  await tapKey('KeyJ');
+  await wait(200);
   await tapKey('KeyJ');
   await wait(200);
   for (let i = 0; i < 3; i++) {

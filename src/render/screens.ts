@@ -4,7 +4,7 @@
  */
 import type { CharDef } from '../data/schema';
 import { VIEW_HEIGHT, VIEW_WIDTH } from '../sim/constants';
-import { gridColumns, type AppFlow } from '../ui/flow';
+import { MODE_ITEMS, gridColumns, type AppFlow } from '../ui/flow';
 import type { Ctx2D } from './ctx';
 import { drawFighter } from './fighter-draw';
 
@@ -167,6 +167,54 @@ export function drawResult(ctx: Ctx2D, winnerName: string, blinkOn: boolean): vo
   text(ctx, winnerName, VIEW_WIDTH / 2, 84, 'center', 16, SCREEN_COLORS.gold);
   text(ctx, 'WINS', VIEW_WIDTH / 2, 104, 'center', 12, SCREEN_COLORS.text);
   if (blinkOn) text(ctx, '按 A 回到标题', VIEW_WIDTH / 2, 140, 'center', 8, SCREEN_COLORS.dim);
+}
+
+export function drawMode(ctx: Ctx2D, flow: AppFlow, blinkOn: boolean): void {
+  ctx.fillStyle = SCREEN_COLORS.bg;
+  ctx.fillRect(0, 0, VIEW_WIDTH, VIEW_HEIGHT);
+  text(ctx, 'SELECT MODE', VIEW_WIDTH / 2, 34, 'center', 13, SCREEN_COLORS.gold);
+
+  MODE_ITEMS.forEach((item, i) => {
+    const y = 76 + i * 26;
+    const active = flow.modeCursor === i;
+    if (active) {
+      ctx.fillStyle = 'rgba(255,91,61,0.22)';
+      ctx.fillRect(60, y - 4, VIEW_WIDTH - 120, 20);
+    }
+    text(ctx, item.label, VIEW_WIDTH / 2, y, 'center', active ? 11 : 9, active ? SCREEN_COLORS.text : SCREEN_COLORS.dim);
+  });
+
+  if (blinkOn) text(ctx, 'A 确定 · ↑↓ 选择', VIEW_WIDTH / 2, 194, 'center', 7, SCREEN_COLORS.dim);
+}
+
+export function drawOptions(ctx: Ctx2D, flow: AppFlow): void {
+  ctx.fillStyle = SCREEN_COLORS.bg;
+  ctx.fillRect(0, 0, VIEW_WIDTH, VIEW_HEIGHT);
+  text(ctx, 'OPTIONS', VIEW_WIDTH / 2, 20, 'center', 13, SCREEN_COLORS.gold);
+
+  flow.options.forEach((row, i) => {
+    const y = 56 + i * 22;
+    const active = flow.optionCursor === i;
+    if (active) {
+      ctx.fillStyle = 'rgba(255,91,61,0.22)';
+      ctx.fillRect(24, y - 4, VIEW_WIDTH - 48, 18);
+    }
+    text(ctx, row.label, 32, y, 'left', 8, active ? SCREEN_COLORS.text : SCREEN_COLORS.dim);
+    text(ctx, `${active ? '◀ ' : ''}${row.value}${active ? ' ▶' : ''}`, VIEW_WIDTH - 32, y, 'right', 8, active ? SCREEN_COLORS.accent : SCREEN_COLORS.text);
+  });
+
+  text(ctx, '←→ 或 A 修改 · B 返回', VIEW_WIDTH / 2, 200, 'center', 7, SCREEN_COLORS.dim);
+}
+
+export function drawContinue(ctx: Ctx2D, flow: AppFlow, blinkOn: boolean): void {
+  ctx.fillStyle = 'rgba(5,7,10,0.78)';
+  ctx.fillRect(0, 0, VIEW_WIDTH, VIEW_HEIGHT);
+  text(ctx, 'CONTINUE?', VIEW_WIDTH / 2, 62, 'center', 16, SCREEN_COLORS.accent);
+
+  const seconds = Math.max(0, Math.ceil(flow.continueLeft / 60));
+  text(ctx, `${seconds}`, VIEW_WIDTH / 2, 96, 'center', 30, SCREEN_COLORS.gold);
+  text(ctx, `已续关 ${flow.continues} 次`, VIEW_WIDTH / 2, 138, 'center', 7, SCREEN_COLORS.dim);
+  if (blinkOn) text(ctx, '按 A 继续挑战', VIEW_WIDTH / 2, 162, 'center', 9, SCREEN_COLORS.text);
 }
 
 /** 选人格子命中测试（鼠标/触屏点选） */

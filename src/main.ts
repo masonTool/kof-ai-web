@@ -14,9 +14,19 @@ import { DEFAULT_KEYMAP_P1, DEFAULT_KEYMAP_P2, KeyboardSource } from './input/ke
 import type { Ctx2D } from './render/ctx';
 import { drawFrame } from './render/renderer';
 import { applyViewport, computeViewport } from './render/scale';
-import { drawResult, drawSelect, drawTitle, drawVs, hitTestCell } from './render/screens';
+import {
+  drawContinue,
+  drawMode,
+  drawOptions,
+  drawResult,
+  drawSelect,
+  drawTitle,
+  drawVs,
+  hitTestCell,
+} from './render/screens';
 import { VIEW_HEIGHT, VIEW_WIDTH } from './sim/constants';
 import { AppFlow } from './ui/flow';
+import { SettingsStore, type StorageLike } from './ui/settings';
 import { TrainingSession, drawTrainingOverlay } from './ui/training';
 import { mountTouchControls } from './ui/touch-controls';
 import { VirtualPad } from './ui/virtual-pad';
@@ -36,8 +46,22 @@ function resize(): void {
 window.addEventListener('resize', resize);
 resize();
 
+/** localStorage 可能被禁（隐私模式），拿不到就用 null —— 设置只是不持久化，不影响开局 */
+function browserStorage(): StorageLike | null {
+  try {
+    const probe = '__kof_probe__';
+    window.localStorage.setItem(probe, '1');
+    window.localStorage.removeItem(probe);
+    return window.localStorage;
+  } catch {
+    return null;
+  }
+}
+
 const audio = new WebAudioSink();
-const flow = new AppFlow(ROSTER);
+const settings = new SettingsStore(browserStorage());
+audio.setVolume(settings.settings.volume);
+const flow = new AppFlow(ROSTER, undefined, settings);
 const pad = new VirtualPad();
 
 let match: Match | null = null;
@@ -63,11 +87,27 @@ function teamFor(starter: CharDef): CharDef[] {
   return [ROSTER[first]!, ...ROSTER.filter((_, i) => i !== first)].slice(0, 3);
 }
 
-/** 开始一场新对局（选人结果已定） */
+/**
+ * 开始一场新对局（选人结果已定）。
+ * 局数/时间/难度都从设置里读——设置改了不用重启页面。
+ */
 function startMatch(): void {
   const [a, b] = flow.picks ?? [ROSTER[0]!, ROSTER[1] ?? ROSTER[0]!];
-  match = new Match(teamFor(a), teamFor(b), { roundsToWin: 2 });
-  training = new TrainingSession(match);
+  const cfg = settings.settings;
+  match = new Match(teamFor(a), teamFor(b), {
+    roundsToWin: cfg.roundsToWin,
+    roundSeconds: cfg.roundSeconds,
+  });
+  training = new TrainingSession(match, {
+    showBoxes: cfg.showBoxes,
+    showFrameData: cfg.showFrameData,
+    cpuLevel: cfg.cpuLevel,
+    // 训练模式：无限血/气，站着不动的木桩，方便练连段
+    infiniteHp: flow.mode === 'training',
+    infiniteMeter: flow.mode === 'training',
+    dummy: flow.mode === 'training' ? 'stand' : flow.mode === 'versus' ? 'human' : 'cpu',
+  });
+  audio.setVolume(cfg.volume);
 }
 
 function dummyLabel(): string {
@@ -183,7 +223,7 @@ startAnimationLoop(
       const p1In = { held: (p1keys.sample.held | pad.sampleFrame().held) >>> 0 };
       const p2In = p2keys.sample;
       const matchOver = match !== null && match.phase === 'over';
-      const action = flow.step([p1In, p2In], { matchOver });
+      const action = flow.step([p1In, p2In], { matchOver, matchWinner: match?.matchWinner ?? 0 });
 
       if (action === 'start-match') {
         audio.resume();
@@ -241,12 +281,22 @@ startAnimationLoop(
           }
           break;
         }
+        case 'mode':
+          drawMode(ctx, flow, blink);
+          break;
+        case 'options':
+          drawOptions(ctx, flow);
+          break;
+        case 'continue':
+          if (match) drawFrame(ctx, match);
+          drawContinue(ctx, flow, blink);
+          break;
       }
 
       uiTick++;
       if (uiTick % 20 === 0) {
         controls.refresh();
-        controls.setBarVisible(flow.screen === 'fight' || flow.screen === 'result');
+        controls.setBarVisible(flow.screen === 'fight' || flow.screen === 'result' || flow.screen === 'continue');
       }
     },
   },

@@ -37,10 +37,13 @@ async (page) => {
   await wait(1200);
   record('开局在标题屏', (await snap()).screen, 'title');
 
-  await tapKey('KeyJ'); // A = 开始
+  await tapKey('KeyJ'); // A = 开始 → 模式选择
+  await wait(200);
+  record('标题按 A 进模式选择', (await snap()).screen, 'mode');
+  await tapKey('KeyJ'); // 选"街机模式"（第一项）
   await wait(200);
   const selecting = await snap();
-  record('按 A 进入选人屏', selecting.screen, 'select');
+  record('选街机模式后进选人屏', selecting.screen, 'select');
 
   await tapKey('KeyK'); // 方向？B 键？——用方向键更稳
   await key('keydown', 'ArrowRight');
@@ -69,13 +72,15 @@ async (page) => {
   // 选的是第二个角色（八神庵）
   record('P1 用的是选中的角色', fight.p1name, '八神庵');
 
-  // 打完（直接压血）→ 结果屏
+  // 打完（直接压血）→ 结果屏。
+  // 注意是 3v3：必须把对方换到最后一人，KO 才算"队伍被打空 = 整场结束"。
   await page.evaluate(() => {
     const m = window.__kof.match;
     m.p1.x = 220;
     m.p2.x = 260;
     m.p2.hp = 5;
     m.wins = [1, 0];
+    m.indexes[1] = m.teams[1].length - 1;
   });
   await key('keydown', 'KeyU');
   await wait(80);

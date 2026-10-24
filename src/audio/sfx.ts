@@ -77,7 +77,21 @@ export class WebAudioSink implements SfxSink {
   private noiseBuffer: AudioBuffer | null = null;
   private failed = false;
 
-  constructor(private readonly volume = 0.22) {}
+  private volume: number;
+
+  constructor(volume = 0.22) {
+    this.volume = volume;
+  }
+
+  /** 运行时改音量（选项屏用）；静音就是 0，不重建 AudioContext */
+  setVolume(volume: number): void {
+    this.volume = Math.min(1, Math.max(0, volume));
+    if (this.master) this.master.gain.value = this.volume;
+  }
+
+  get currentVolume(): number {
+    return this.volume;
+  }
 
   private ensure(): AudioContext | null {
     if (this.ctx || this.failed) return this.ctx;
