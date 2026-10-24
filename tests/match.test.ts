@@ -7,6 +7,8 @@ import {
   Match,
   SUPER_CINEMA_ZOOM,
   SUPER_FLASH_FRAMES,
+  SUPER_HIT_FRAMES,
+  SUPER_HIT_ZOOM,
   type MatchConfig,
 } from '../src/game/match';
 import { GROUND_Y } from '../src/sim/constants';
@@ -276,6 +278,52 @@ describe('超必杀起手演出', () => {
     for (let i = 0; i < SUPER_FLASH_FRAMES + 2; i++) m.step([{ held: 0 }, { held: 0 }]);
     expect(start).toBeGreaterThan(0);
     expect(m.superFlash).toBe(0);
+  });
+
+  it('超必杀打中会触发命中特写，且只演一次', () => {
+    const m = new Match(KYO, IORI, { introFrames: 1, roundEndFrames: 3 }, 11);
+    while (m.phase === 'intro') m.step([{ held: 0 }, { held: 0 }]);
+    m.p1.meter = 100;
+    // 把对手摆到贴身的位置，保证超必杀的第一段能打中
+    m.p2.x = m.p1.x + 18;
+    m.p1.startMove(KYO.moves['236236AC']!);
+
+    let fired = -1;
+    for (let i = 0; i < 120; i++) {
+      m.step([{ held: 0 }, { held: 0 }]);
+      if (m.superHit > 0) {
+        fired = m.superHit;
+        break;
+      }
+    }
+    // 触发那一帧的 stepSpectators 已经先减了一帧，所以是 FRAMES 或 FRAMES-1
+    expect(fired).toBeGreaterThan(0);
+    expect(fired).toBeLessThanOrEqual(SUPER_HIT_FRAMES);
+    // 命中特写比起手更近
+    expect(m.cam.zoomOverride).toBe(SUPER_HIT_ZOOM);
+    // 双方都被定住（特写的"定格"）
+    expect(m.p1.hitstop).toBeGreaterThan(0);
+    expect(m.p2.hitstop).toBeGreaterThan(0);
+
+    // 多段命中不重复触发：只减不增
+    let prev = m.superHit;
+    for (let i = 0; i < 40; i++) {
+      m.step([{ held: 0 }, { held: 0 }]);
+      expect(m.superHit).toBeLessThanOrEqual(prev);
+      prev = m.superHit;
+    }
+  });
+
+  it('特写结束后镜头交还焦点（不会一直盯着刚才那个人）', () => {
+    const m = new Match(KYO, IORI, { introFrames: 1, roundEndFrames: 3 }, 11);
+    while (m.phase === 'intro') m.step([{ held: 0 }, { held: 0 }]);
+    m.p1.meter = 100;
+    m.p2.x = m.p1.x + 18;
+    m.p1.startMove(KYO.moves['236236AC']!);
+    for (let i = 0; i < 200 && (m.superHit > 0 || i < 30); i++) m.step([{ held: 0 }, { held: 0 }]);
+    for (let i = 0; i < SUPER_HIT_FRAMES + SUPER_FLASH_FRAMES + 40; i++) m.step([{ held: 0 }, { held: 0 }]);
+    expect(m.cam.focusX).toBeNull();
+    expect(m.cam.zoomOverride).toBeNull();
   });
 
   it('闪光状态进哈希（回放能对齐）', () => {

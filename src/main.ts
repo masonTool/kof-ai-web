@@ -6,7 +6,7 @@
  */
 import { CPU_LEVEL_LABEL } from './ai/cpu';
 import { WebAudioBgm, fightTrackFor } from './audio/bgm';
-import { sfxForWorldEvent, WebAudioSink } from './audio/sfx';
+import { sfxForWorldEvent, voiceForWorldEvent, WebAudioSink } from './audio/sfx';
 import { FixedStepper, startAnimationLoop } from './core/loop';
 import { ROSTER } from './data/chars';
 import { winQuoteFor } from './data/chars/quotes';
@@ -426,6 +426,8 @@ canvas.addEventListener('pointerup', () => pad.release('A'));
 
 const stepper = new FixedStepper();
 let uiTick = 0;
+/** 上一次喊的时间（人声冷却，避免连段里连喊） */
+let lastVoiceAt = 0;
 
 startAnimationLoop(
   {
@@ -472,6 +474,7 @@ startAnimationLoop(
         matchWinner: match?.matchWinner ?? 0,
       });
       bgm.setTrack(trackFor(flow.screen));
+      if (flow.screen !== 'fight') bgm.setMood('calm');
       if (flow.screen === 'keybind' && flow.timer === 1) keybind.show(1);
 
       if (action === 'start-match') {
@@ -518,7 +521,17 @@ startAnimationLoop(
         for (const ev of match.world.events) {
           const sfx = sfxForWorldEvent(ev.type, ev.data);
           if (sfx) audio.play(sfx);
+          // 人声单独一层：连段里每一下都喊会很吵，给个 260ms 冷却
+          const voice = voiceForWorldEvent(ev.type, ev.data);
+          const nowMs = performance.now();
+          if (voice && nowMs - lastVoiceAt > 260) {
+            audio.play(voice);
+            lastVoiceAt = nowMs;
+          }
         }
+        // 残血变奏：任意一方血量低于 30% 就给 BGM 加底鼓
+        const lowHp = match.p1.hp / match.p1.maxHp < 0.3 || match.p2.hp / match.p2.maxHp < 0.3;
+        bgm.setMood(lowHp ? 'urgent' : 'calm');
       }
     },
     render: () => {

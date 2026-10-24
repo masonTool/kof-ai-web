@@ -45,6 +45,14 @@ export const SUPER_FLASH_FRAMES = 12;
 export const SUPER_FREEZE_FRAMES = 10;
 export const SUPER_CINEMA_ZOOM = 1.85;
 
+/**
+ * 超必杀**命中**特写：比起手更狠一档（更近、更白、定格更久）。
+ * 起手是"要放大招了"，命中是"打中了"，两者必须看得出来不一样。
+ */
+export const SUPER_HIT_FRAMES = 14;
+export const SUPER_HIT_FREEZE = 8;
+export const SUPER_HIT_ZOOM = 2.35;
+
 export const DEFAULT_MATCH: MatchConfig = {
   roundsToWin: 2,
   roundSeconds: 99,
@@ -87,6 +95,11 @@ export class Match {
    * 分开算迟早对不上（闪完了人还在定，或人动了闪光还在）。
    */
   superFlash = 0;
+
+  /** 超必杀命中特写剩余帧（渲染层读它画白闪/集中线） */
+  superHit = 0;
+  /** 这次超必杀是否已经触发过命中特写（多段超必杀只演一次） */
+  private superHitFired = true;
 
   constructor(
     c1: CharDef | readonly CharDef[],
@@ -195,21 +208,38 @@ export class Match {
     if (this.superFlash > 0) return;
     if (!started.some((f) => f.move?.kind === 'super')) return;
     this.superFlash = SUPER_FLASH_FRAMES;
+    this.superHitFired = false; // 这一发还没演过命中特写
     this.cam.shake(SUPER_FLASH_FRAMES, 3.5);
     for (const f of this.fighters) f.addHitstop(SUPER_FREEZE_FRAMES);
     // 起手那一帧在角色身上炸一圈冲击（特效层是确定性的，回放一致）
     const caster = started.find((f) => f.move?.kind === 'super');
-    if (caster) this.fx.spawnImpact(caster.x, caster.y - 40, { heavy: true, dir: caster.facing });
+    if (caster) {
+      this.fx.spawnImpact(caster.x, caster.y - 40, { heavy: true, dir: caster.facing });
+      this.cinemaFocus = caster.x;
+    }
     this.world.emit('superstart', {});
   }
 
   /** 镜头与特效：（回合结束/结算里也要走，画面才不僵） */
   private stepSpectators(): void {
-    // 超必杀起手期间镜头拉近（配上下黑边就是"运镜"）
-    this.cam.zoomOverride = this.superFlash > 0 ? SUPER_CINEMA_ZOOM : null;
+    if (this.superHit > 0) this.superHit--;
+    // 运镜：起手推向施术者，命中推向挨打那边（焦点跟着事件走才像"镜头在跟"）
+    if (this.superHit > 0) {
+      this.cam.zoomOverride = SUPER_HIT_ZOOM;
+    } else if (this.superFlash > 0) {
+      this.cam.zoomOverride = SUPER_CINEMA_ZOOM;
+    } else {
+      this.cam.zoomOverride = null;
+    }
+    // 演出结束后必须交还焦点，否则镜头会一直停在刚才那个人身上
+    if (this.superFlash === 0 && this.superHit === 0) this.cinemaFocus = null;
+    this.cam.focusX = this.cinemaFocus;
     this.cam.update(this.p1, this.p2);
     this.fx.update();
   }
+
+  /** 运镜焦点：超必杀期间指向当事人，平时为 null（跟着两人中点） */
+  private cinemaFocus: number | null = null;
 
   private applyHitEffects(hits: readonly HitResolution[]): void {
     for (const h of hits) {
@@ -221,6 +251,16 @@ export class Match {
         this.fx.spawnImpact(h.x, h.y, { style: h.style, dir });
         this.cam.shake(3, 1); // 防御也要"顶一下"，否则看不出挡住了
       } else {
+        // 超必杀的第一下命中：演一次"打击特写"（多段超必杀只演一次）
+        if (h.attacker.move?.kind === 'super' && !this.superHitFired) {
+          this.superHitFired = true;
+          this.superHit = SUPER_HIT_FRAMES;
+          this.cinemaFocus = h.defender.x;
+          this.cam.shake(SUPER_HIT_FRAMES, 6.5);
+          this.p1.addHitstop(SUPER_HIT_FREEZE);
+          this.p2.addHitstop(SUPER_HIT_FREEZE);
+          this.world.emit('superhit', { x: h.x, y: h.y });
+        }
         const heavy = h.hit.damage >= 60;
         this.fx.spawnHit(h.x, h.y, { heavy, counter: h.counter, style: h.style });
         this.fx.spawnImpact(h.x, h.y, { heavy, counter: h.counter, style: h.style, dir });
@@ -328,9 +368,19 @@ export class Match {
     this.lastHits = [];
   }
 
+  /** 清空运镜/特写状态（回合开始、换人时都要清，否则会带着上一场的镜头） */
+  private resetCinema(): void {
+    this.superFlash = 0;
+    this.superHit = 0;
+    this.superHitFired = true;
+    this.cinemaFocus = null;
+    this.cam.zoomOverride = null;
+    this.cam.focusX = null;
+  }
+
   /** 回合开始：位置/血量/状态复位，镜头立即对齐，进入 ROUND 演出 */
   private startRound(): void {
-    this.superFlash = 0;
+    this.resetCinema();
     const center = (STAGE_LEFT + STAGE_RIGHT) / 2;
     const half = this.config.spawnGap / 2;
     this.p1.reset({ x: center - half, facing: 1 });

@@ -50,6 +50,12 @@ export class Camera {
    */
   zoomOverride: number | null = null;
 
+  /**
+   * 临时焦点覆盖（超必杀运镜用）：设了就以这个世界 x 为中心，而不是两人的中点。
+   * 用于"镜头推向被打的一方"，比单纯拉近更有电影感。
+   */
+  focusX: number | null = null;
+
   /** 震屏剩余帧与强度（打击感的关键：纯表现，但要不要震由模拟层决定才同步） */
   shakeFrames = 0;
   shakePower = 0;
@@ -94,9 +100,11 @@ export class Camera {
 
   private computeTargets(a: CameraBody, b: CameraBody): void {
     const mid = (a.x + b.x) / 2;
+    // 运镜时可以把焦点从"中点"挪到指定位置（比如挨打的一方）
+    const anchor = this.focusX ?? mid;
     const zoom = this.zoomOverride ?? Camera.zoomForDistance(b.x - a.x);
     this.targetZoom = zoom;
-    this.targetX = this.clampX(mid, zoom);
+    this.targetX = this.clampX(anchor, zoom);
   }
 
   /** 保证可见范围不越出舞台 */

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { NullSink, SFX, WebAudioSink, sfxForWorldEvent, type SfxName } from '../src/audio/sfx';
+import { NullSink, SFX, WebAudioSink, sfxForWorldEvent, voiceForWorldEvent, type SfxName } from '../src/audio/sfx';
 
 describe('音效表', () => {
   it('每个音效参数都合法（频率正、时长正、音量 0~1）', () => {
@@ -55,5 +55,21 @@ describe('播放端', () => {
     const sink = new WebAudioSink();
     expect(() => sink.play('hitHeavy')).not.toThrow();
     expect(() => sink.resume()).not.toThrow();
+  });
+});
+
+describe('人声', () => {
+  it('只在值得喊的时刻出声（重击/反击/超必杀/KO）', () => {
+    expect(voiceForWorldEvent('superstart', {})).toBe('voiceSuper');
+    expect(voiceForWorldEvent('superhit', {})).toBe('voiceHit');
+    expect(voiceForWorldEvent('ko', {})).toBe('voiceKo');
+    expect(voiceForWorldEvent('hit', { damage: 80 })).toBe('voiceHit');
+    expect(voiceForWorldEvent('hit', { damage: 10, counter: true })).toBe('voiceHit');
+  });
+
+  it('轻击不喊、无关事件不喊（否则连段里一直在叫）', () => {
+    expect(voiceForWorldEvent('hit', { damage: 10 })).toBeNull();
+    expect(voiceForWorldEvent('guard', {})).toBeNull();
+    expect(voiceForWorldEvent('proj', {})).toBeNull();
   });
 });

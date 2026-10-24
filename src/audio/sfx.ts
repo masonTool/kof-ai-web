@@ -19,6 +19,9 @@ export type SfxName =
   | 'whiff'
   | 'superStart'
   | 'proj'
+  | 'voiceHit'
+  | 'voiceSuper'
+  | 'voiceKo'
   | 'menu'
   | 'confirm'
   | 'start';
@@ -37,6 +40,8 @@ export interface SfxSpec {
   noise?: number;
   /** 低频撞击层（0~1）：80~180Hz 的正弦短促下滑，负责"沉"的那一半 */
   thump?: number;
+  /** 带通滤波（人声靠它：没有滤波的锯齿波听起来是"电子叫"） */
+  filter?: { type: BiquadFilterType; freq: number; q: number };
 }
 
 /**
@@ -61,6 +66,11 @@ export const SFX: Record<SfxName, SfxSpec> = {
   superStart: { wave: 'sawtooth', from: 180, to: 1200, ms: 420, gain: 0.26, noise: 0.45, thump: 0.35 },
   // 放飞行道具：短促的"呼"
   proj: { wave: 'sine', from: 300, to: 900, ms: 130, gain: 0.16, noise: 0.4 },
+  // 人声：锯齿波 + 带通，做出"喊"的共振峰。不是真人录音（原版语音有版权），
+  // 但在混音里足够听出"有人被打到了"
+  voiceHit: { wave: 'sawtooth', from: 430, to: 150, ms: 190, gain: 0.14, noise: 0.12, filter: { type: 'bandpass', freq: 900, q: 1.6 } },
+  voiceSuper: { wave: 'sawtooth', from: 240, to: 640, ms: 460, gain: 0.15, noise: 0.1, filter: { type: 'bandpass', freq: 1100, q: 2.2 } },
+  voiceKo: { wave: 'sawtooth', from: 320, to: 90, ms: 520, gain: 0.16, noise: 0.1, filter: { type: 'bandpass', freq: 700, q: 1.4 } },
   menu: { wave: 'square', from: 520, to: 520, ms: 40, gain: 0.1 },
   confirm: { wave: 'square', from: 660, to: 990, ms: 90, gain: 0.15 },
   start: { wave: 'square', from: 440, to: 880, ms: 180, gain: 0.2 },
@@ -102,6 +112,32 @@ export function sfxForWorldEvent(type: string, data?: Readonly<Record<string, nu
     case 'ko':
     case 'dizzy':
       return 'ko';
+    default:
+      return null;
+  }
+}
+
+/**
+ * 人声：只在这些时刻喊（每次都喊会很吵）
+ * - 重击 / 反击命中
+ * - 超必杀起手
+ * - KO
+ */
+export function voiceForWorldEvent(
+  type: string,
+  data?: Readonly<Record<string, number | string | boolean>>,
+): SfxName | null {
+  switch (type) {
+    case 'superstart':
+      return 'voiceSuper';
+    case 'ko':
+      return 'voiceKo';
+    case 'hit': {
+      const damage = Number(data?.['damage'] ?? 0);
+      return data?.['counter'] === true || damage >= 60 ? 'voiceHit' : null;
+    }
+    case 'superhit':
+      return 'voiceHit';
     default:
       return null;
   }
@@ -185,7 +221,17 @@ export class WebAudioSink implements SfxSink {
     osc.type = spec.wave;
     osc.frequency.setValueAtTime(spec.from, now);
     osc.frequency.exponentialRampToValueAtTime(Math.max(20, spec.to), now + dur);
-    osc.connect(env);
+    if (spec.filter) {
+      // 带通滤掉低频和超高频，只留"共振峰"那一段，才像嗓子而不是振荡器
+      const bp = ctx.createBiquadFilter();
+      bp.type = spec.filter.type;
+      bp.frequency.setValueAtTime(spec.filter.freq, now);
+      bp.Q.setValueAtTime(spec.filter.q, now);
+      osc.connect(bp);
+      bp.connect(env);
+    } else {
+      osc.connect(env);
+    }
     osc.start(now);
     osc.stop(now + dur + 0.02);
 

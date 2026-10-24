@@ -247,3 +247,30 @@ describe('震屏（打击感）', () => {
     expect(cam.x).toBeCloseTo(200, 0);
   });
 });
+
+describe('运镜焦点', () => {
+  it('focusX 让镜头对准指定位置，而不是两人中点', () => {
+    const a = { x: 180 };
+    const b = { x: 240 };
+    const mid = new Camera();
+    for (let i = 0; i < 200; i++) mid.update(a, b);
+
+    const focused = new Camera();
+    focused.focusX = 236;
+    for (let i = 0; i < 200; i++) focused.update(a, b);
+
+    expect(focused.x).toBeGreaterThan(mid.x);
+    expect(Math.abs(focused.x - 236)).toBeLessThan(Math.abs(mid.x - 210) + 1);
+  });
+
+  it('清掉 focusX 后会自己回到中点（不会卡在运镜位置上）', () => {
+    const a = { x: 180 };
+    const b = { x: 240 };
+    const cam = new Camera();
+    cam.focusX = 236;
+    for (let i = 0; i < 60; i++) cam.update(a, b);
+    cam.focusX = null;
+    for (let i = 0; i < 200; i++) cam.update(a, b);
+    expect(Math.abs(cam.x - 210)).toBeLessThan(2);
+  });
+});

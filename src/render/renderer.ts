@@ -4,7 +4,7 @@
  * 只在 `applyTo` 的区间里用世界坐标画，HUD 必须在 restore 之后画——
  * 否则血条会跟着镜头变焦一起放大，那种问题在截图里很明显、在代码里很难看出来。
  */
-import { SUPER_FLASH_FRAMES, type Match } from '../game/match';
+import { SUPER_FLASH_FRAMES, SUPER_HIT_FRAMES, type Match } from '../game/match';
 import { VIEW_HEIGHT, VIEW_WIDTH } from '../sim/constants';
 import type { Fighter } from '../sim/fighter';
 import { FighterState } from '../sim/state';
@@ -198,6 +198,27 @@ export function drawProjectile(ctx: Ctx2D, p: Projectile): void {
   ctx.fill();
 }
 
+/** 集中线：从四周射向画面中心的细三角（k: 1 → 0 当帧进度） */
+function drawSpeedLines(ctx: Ctx2D, k: number, count: number, thick: number): void {
+  const cx = VIEW_WIDTH / 2;
+  const cy = VIEW_HEIGHT / 2;
+  ctx.globalAlpha = 0.5 * k;
+  ctx.fillStyle = '#ffffff';
+  for (let i = 0; i < count; i++) {
+    const ang = (i / count) * Math.PI * 2 + (1 - k) * 0.5;
+    const outer = 240 - (1 - k) * 40;
+    const len = (46 + (i % 3) * 22) * thick;
+    const wide = (0.004 + (i % 2) * 0.003) * Math.sqrt(thick);
+    ctx.beginPath();
+    ctx.moveTo(cx + Math.cos(ang) * outer, cy + Math.sin(ang) * outer);
+    ctx.lineTo(cx + Math.cos(ang - wide) * (outer - len), cy + Math.sin(ang - wide) * (outer - len));
+    ctx.lineTo(cx + Math.cos(ang + wide) * (outer - len), cy + Math.sin(ang + wide) * (outer - len));
+    ctx.closePath();
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+
 export function drawFrame(ctx: Ctx2D, match: Match, opts: RenderOptions = {}): void {
   const stage = opts.stage ?? STAGES[0]!;
 
@@ -245,30 +266,24 @@ export function drawFrame(ctx: Ctx2D, match: Match, opts: RenderOptions = {}): v
 
   // 超必杀起手：先闪白（盖住 HUD），再压上下黑边——
   // 顺序反过来的话黑边也会被闪白冲淡，看着像灰条而不是电影黑边
-  if (match.superFlash > 0) {
-    const k = match.superFlash / SUPER_FLASH_FRAMES; // 1 → 0
-    const alpha = k * 0.45;
-    ctx.fillStyle = `rgba(255,255,255,${alpha.toFixed(3)})`;
+  if (match.superHit > 0 || match.superFlash > 0) {
+    // 命中特写比起手更狠：更白、集中线更多更粗
+    const hit = match.superHit > 0;
+    const k = hit ? match.superHit / SUPER_HIT_FRAMES : match.superFlash / SUPER_FLASH_FRAMES;
+    const peak = hit ? 0.44 : 0.42;
+    ctx.fillStyle = `rgba(255,255,255,${(k * peak).toFixed(3)})`;
     ctx.fillRect(0, 0, VIEW_WIDTH, VIEW_HEIGHT);
 
-    // 集中线：从四周射向画面中心的细三角，撑住"定格"那几帧的气势
-    const cx = VIEW_WIDTH / 2;
-    const cy = VIEW_HEIGHT / 2;
-    ctx.globalAlpha = 0.5 * k;
-    ctx.fillStyle = '#ffffff';
-    for (let i = 0; i < 24; i++) {
-      const ang = (i / 24) * Math.PI * 2 + (1 - k) * 0.5;
-      const outer = 240 - (1 - k) * 40;
-      const len = 34 + (i % 3) * 16;
-      const wide = 0.012 + (i % 2) * 0.008;
-      ctx.beginPath();
-      ctx.moveTo(cx + Math.cos(ang) * outer, cy + Math.sin(ang) * outer);
-      ctx.lineTo(cx + Math.cos(ang - wide) * (outer - len), cy + Math.sin(ang - wide) * (outer - len));
-      ctx.lineTo(cx + Math.cos(ang + wide) * (outer - len), cy + Math.sin(ang + wide) * (outer - len));
-      ctx.closePath();
-      ctx.fill();
+    // 集中线：细而密，才有"速度线"的味道；太粗会像碎玻璃
+    drawSpeedLines(ctx, k, hit ? 48 : 30, hit ? 1.6 : 1.1);
+
+    // 抢眼的暗角：把注意力压到画面中心（特写时才加，起手阶段不加）
+    if (hit) {
+      ctx.globalAlpha = 0.35 * k;
+      ctx.fillStyle = '#000000';
+      for (const [y, h] of [[0, 26], [VIEW_HEIGHT - 26, 26]] as const) ctx.fillRect(0, y, VIEW_WIDTH, h);
+      ctx.globalAlpha = 1;
     }
-    ctx.globalAlpha = 1;
 
     ctx.fillStyle = '#000000';
     ctx.fillRect(0, 0, VIEW_WIDTH, CINEMA_BAR);

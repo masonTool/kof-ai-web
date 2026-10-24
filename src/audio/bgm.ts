@@ -152,6 +152,16 @@ export const TRACKS: Record<string, TrackDef> = {
   },
 };
 
+/**
+ * BGM 情绪。
+ *
+ * - `calm`：常规战斗
+ * - `urgent`：有人残血 / 打到最后一个角色，加一层底鼓推进，同一个曲子情绪立刻变紧
+ *
+ * 只加节奏层、不换曲：换曲会打断玩家的节奏感，而且"变奏"比"换歌"更像原版做法。
+ */
+export type BgmMood = 'calm' | 'urgent';
+
 export interface BgmSink {
   setTrack(id: string | null): void;
   setVolume(volume: number): void;
@@ -159,6 +169,7 @@ export interface BgmSink {
   update(nowMs: number): void;
   /** 暂停时把音量压下去（不是停掉，回来还能接着响） */
   setDucked(ducked: boolean): void;
+  setMood(mood: BgmMood): void;
 }
 
 /** 记账用（测试/静音） */
@@ -167,6 +178,7 @@ export class NullBgm implements BgmSink {
   trackId: string | null = null;
   volume = 0;
   ducked = false;
+  mood: BgmMood = 'calm';
   setTrack(id: string | null): void {
     this.trackId = id;
   }
@@ -175,6 +187,9 @@ export class NullBgm implements BgmSink {
   }
   setDucked(ducked: boolean): void {
     this.ducked = ducked;
+  }
+  setMood(mood: BgmMood): void {
+    this.mood = mood;
   }
   update(): void {}
 }
@@ -191,6 +206,9 @@ export class WebAudioBgm implements BgmSink {
   private ducked = false;
   private lastMs = 0;
   private failed = false;
+  private mood: BgmMood = 'calm';
+  /** 底鼓累计时钟（只在 urgent 时推进） */
+  private beatMs = 0;
 
   /** 当前曲目 id（自测/调试用） */
   get trackId(): string | null {
@@ -231,6 +249,16 @@ export class WebAudioBgm implements BgmSink {
     if (this.master) this.master.gain.value = this.effectiveGain();
   }
 
+  setMood(mood: BgmMood): void {
+    if (mood === this.mood) return;
+    this.mood = mood;
+    this.beatMs = 0;
+  }
+
+  get currentMood(): BgmMood {
+    return this.mood;
+  }
+
   setTrack(id: string | null): void {
     if (id === this.track?.id) return;
     this.track = id ? (TRACKS[id] ?? null) : null;
@@ -249,6 +277,28 @@ export class WebAudioBgm implements BgmSink {
     // 每帧只推进一点点；页面切后台回来时会有大跳跃，夹住避免一次排上百个音
     const delta = Math.min(250, Math.max(0, nowMs - this.lastMs));
     this.lastMs = nowMs;
+    // 残血变奏：每 4 步一记底鼓，曲子不变但立刻"催"起来
+    if (this.mood === 'urgent') {
+      const bar = stepDurationMs(track) * 4;
+      this.beatMs += delta;
+      while (this.beatMs >= bar) {
+        this.beatMs -= bar;
+        const start = ctx.currentTime + 0.01;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(130, start);
+        osc.frequency.exponentialRampToValueAtTime(45, start + 0.14);
+        gain.gain.setValueAtTime(0.0001, start);
+        gain.gain.exponentialRampToValueAtTime(Math.max(0.0002, track.gain * 2.2), start + 0.005);
+        gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.16);
+        osc.connect(gain);
+        gain.connect(this.master);
+        osc.start(start);
+        osc.stop(start + 0.18);
+      }
+    }
+
     const notes = player.advance(player.positionMs + delta);
     for (const n of notes) {
       const start = ctx.currentTime + 0.01;

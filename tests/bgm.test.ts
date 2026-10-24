@@ -159,3 +159,15 @@ describe('按对手挑战斗曲', () => {
     for (const id of DARK_FIGHTERS) expect(ids.has(id), id).toBe(true);
   });
 });
+
+describe('BGM 情绪', () => {
+  it('残血变奏只改情绪，不换曲（换歌会打断节奏）', () => {
+    const bgm = new NullBgm();
+    bgm.setTrack('fight');
+    bgm.setMood('urgent');
+    expect(bgm.mood).toBe('urgent');
+    expect(bgm.trackId).toBe('fight');
+    bgm.setMood('calm');
+    expect(bgm.mood).toBe('calm');
+  });
+});
