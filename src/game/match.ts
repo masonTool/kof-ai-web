@@ -206,6 +206,23 @@ export class Match {
     this.lastHits = [];
   }
 
+  /**
+   * 训练模式用：原地重开一回合（不播演出、不改胜场、不换回合号）。
+   * 训练模式里 KO 不该推进流程，所以需要这个"只把人和血条摆回原位"的入口。
+   */
+  softReset(): void {
+    const center = (STAGE_LEFT + STAGE_RIGHT) / 2;
+    const half = this.config.spawnGap / 2;
+    this.p1.reset({ x: center - half, facing: 1 });
+    this.p2.reset({ x: center + half, facing: -1 });
+    this.cam.snap(this.p1, this.p2);
+    this.fx.clear();
+    this.timerFrames = this.config.roundSeconds * TICK_RATE;
+    this.phase = 'fight';
+    this.lastRound = null;
+    this.lastHits = [];
+  }
+
   /** 给 HUD 的数据模型（HUD 不认识 Fighter，只认这个） */
   toHudModel(): HudModel {
     const comboOf = (defender: Fighter, side: 1 | 2): HudModel['combo'] => {

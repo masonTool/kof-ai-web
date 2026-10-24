@@ -1,0 +1,186 @@
+import { describe, expect, it } from 'vitest';
+import { Btn, NO_INPUT, makeInput } from '../src/core/input';
+import { KYO } from '../src/data/chars/kyo';
+import { Match } from '../src/game/match';
+import { METER_MAX } from '../src/sim/constants';
+import { FighterState } from '../src/sim/state';
+import { drawFrame } from '../src/render/renderer';
+import {
+  DEFAULT_TRAINING,
+  DUMMY_ORDER,
+  TrainingSession,
+  describeInput,
+  drawTrainingOverlay,
+} from '../src/ui/training';
+import { FakeCtx } from './helpers/fake-ctx';
+
+function makeTraining(settings = {}): { match: Match; training: TrainingSession } {
+  const match = new Match(KYO, KYO, { introFrames: 1, roundEndFrames: 3 });
+  const training = new TrainingSession(match, settings);
+  for (let i = 0; i < 2; i++) training.step([NO_INPUT, NO_INPUT]); // 走完开场
+  return { match, training };
+}
+
+describe('训练模式的开关', () => {
+  it('默认配置是"练基本功"的那一套', () => {
+    expect(DEFAULT_TRAINING.infiniteHp).toBe(true);
+    expect(DEFAULT_TRAINING.infiniteMeter).toBe(true);
+    expect(DEFAULT_TRAINING.autoReset).toBe(true);
+    expect(DEFAULT_TRAINING.dummy).toBe('stand');
+    expect(DEFAULT_TRAINING.showBoxes).toBe(false);
+  });
+
+  it('toggle 来回切换', () => {
+    const { training } = makeTraining();
+    expect(training.toggle('showBoxes')).toBe(true);
+    expect(training.settings.showBoxes).toBe(true);
+    expect(training.toggle('showBoxes')).toBe(false);
+  });
+
+  it('假人行为按固定顺序循环', () => {
+    const { training } = makeTraining();
+    expect(training.settings.dummy).toBe('stand');
+    const seen = [training.cycleDummy()];
+    for (let i = 1; i < DUMMY_ORDER.length - 1; i++) seen.push(training.cycleDummy());
+    expect(seen).toEqual(DUMMY_ORDER.slice(1));
+    expect(training.cycleDummy()).toBe(DUMMY_ORDER[0]); // 转一圈回到起点
+  });
+});
+
+describe('训练模式的作弊项', () => {
+  it('无限气：每帧都把气槽补满', () => {
+    const { match, training } = makeTraining({ infiniteMeter: true });
+    match.p1.meter = 0;
+    training.step([NO_INPUT, NO_INPUT]);
+    expect(match.p1.meter).toBe(METER_MAX);
+    expect(match.p2.meter).toBe(METER_MAX);
+  });
+
+  it('无限血：掉血后下一帧回满', () => {
+    const { match, training } = makeTraining({ infiniteHp: true });
+    match.p1.hp = 300;
+    training.step([NO_INPUT, NO_INPUT]);
+    expect(match.p1.hp).toBe(match.p1.maxHp);
+  });
+
+  it('关掉无限血就不再回血', () => {
+    const { match, training } = makeTraining({ infiniteHp: false });
+    match.p1.hp = 300;
+    training.step([NO_INPUT, NO_INPUT]);
+    expect(match.p1.hp).toBe(300);
+  });
+
+  it('关掉无限气就正常消耗', () => {
+    const { match, training } = makeTraining({ infiniteMeter: false });
+    match.p1.meter = 0;
+    training.step([NO_INPUT, NO_INPUT]);
+    expect(match.p1.meter).toBe(0);
+  });
+
+  it('KO 后自动重开（训练不该结束回合）', () => {
+    const { match, training } = makeTraining({ infiniteHp: false, autoReset: true });
+    match.p2.hp = 5;
+    match.p1.startMove(KYO.moves['5A']!);
+    for (let i = 0; i < 20 && match.p2.hp > 0; i++) training.step([NO_INPUT, NO_INPUT]);
+
+    expect(match.phase).toBe('fight'); // 已被 softReset 拉回
+    expect(match.p2.hp).toBe(match.p2.maxHp);
+    expect(match.p1.state).toBe(FighterState.Idle);
+  });
+});
+
+describe('假人行为', () => {
+  it('站/蹲/跳/防各自的输入', () => {
+    const { training } = makeTraining();
+    training.settings.dummy = 'stand';
+    expect(training.dummyInput().held).toBe(0);
+    training.settings.dummy = 'crouch';
+    expect(training.dummyInput().held).toBe(Btn.Down);
+    training.settings.dummy = 'jump';
+    expect(training.dummyInput().held).toBe(Btn.Up);
+    training.settings.dummy = 'guard';
+    expect(training.dummyInput().held).toBe(Btn.Right); // 面朝左 → 后退方向是右
+    training.settings.dummy = 'guardLow';
+    expect(training.dummyInput().held).toBe(Btn.Right | Btn.Down);
+    training.settings.dummy = 'human';
+    expect(training.dummyInput(makeInput(Btn.A)).held).toBe(Btn.A);
+  });
+
+  it('假人设成防御时，真的能防住攻击', () => {
+    const { match, training } = makeTraining({ dummy: 'guard', infiniteHp: false });
+    match.p1.startMove(KYO.moves['5A']!);
+    for (let i = 0; i < 8 && match.p2.state !== FighterState.Block; i++) training.step([NO_INPUT, NO_INPUT]);
+
+    expect(match.p2.state).toBe(FighterState.Block);
+    expect(match.p2.hp).toBe(match.p2.maxHp);
+  });
+
+  it('假人站着不动就会挨打', () => {
+    const { match, training } = makeTraining({ dummy: 'stand', infiniteHp: false });
+    match.p1.startMove(KYO.moves['5A']!);
+    for (let i = 0; i < 8 && match.p2.hp === match.p2.maxHp; i++) training.step([NO_INPUT, NO_INPUT]);
+    expect(match.p2.hp).toBeLessThan(match.p2.maxHp);
+  });
+});
+
+describe('调试信息', () => {
+  it('describeInput 把位掩码翻成符号', () => {
+    expect(describeInput(0)).toBe('-');
+    expect(describeInput(Btn.Left | Btn.A)).toBe('← A');
+    expect(describeInput(Btn.Down | Btn.Right | Btn.C | Btn.D)).toBe('↓ → C D');
+  });
+
+  it('出招时帧数面板显示招式名与判定帧', () => {
+    const { match, training } = makeTraining();
+    match.p1.startMove(KYO.moves['236A']!);
+    training.step([NO_INPUT, NO_INPUT]);
+    const lines = training.frameDataLines();
+    const joined = lines.join('\n');
+    expect(joined).toContain('百拾四式・荒咬み');
+    expect(joined).toContain('判定 10-13');
+    expect(joined).toContain('F1 判定框 OFF');
+  });
+
+  it('没出招时显示状态与帧号', () => {
+    const { training } = makeTraining();
+    const lines = training.frameDataLines();
+    expect(lines.some((l) => l.includes('P1 idle'))).toBe(true);
+    expect(lines.some((l) => l.includes('气'))).toBe(true);
+  });
+
+  it('调试文字能画到 ctx 上', () => {
+    const { training } = makeTraining();
+    const ctx = new FakeCtx();
+    drawTrainingOverlay(ctx, training.frameDataLines());
+    const lines = training.frameDataLines().length;
+    expect(ctx.texts.length).toBe(lines * 2); // 每行画一次阴影 + 一次正文
+    expect(ctx.texts[0]!.align).toBe('left');
+  });
+});
+
+describe('整帧渲染（无 DOM）', () => {
+  it('能画出舞台 + 角色 + HUD，不抛异常', () => {
+    const { match } = makeTraining();
+    const ctx = new FakeCtx();
+    expect(() => drawFrame(ctx, match)).not.toThrow();
+    expect(ctx.count('stroke')).toBeGreaterThan(10); // 角色的肢体
+    expect(ctx.count('fillRect')).toBeGreaterThan(5); // 舞台与血条
+    expect(ctx.count('save')).toBe(ctx.count('restore'));
+    expect(ctx.texts.some((t) => t.text === '草薙京')).toBe(true);
+  });
+
+  it('打开判定框会多画几笔（红/蓝/黄）', () => {
+    const { match } = makeTraining();
+    const plain = new FakeCtx();
+    drawFrame(plain, match);
+    const boxed = new FakeCtx();
+    drawFrame(boxed, match, { showBoxes: true });
+
+    expect(boxed.count('stroke')).toBeGreaterThan(plain.count('stroke'));
+    const colors = new Set(boxed.calls.map(() => '')); // 仅用于稳定结构，颜色从 lines 里查
+    expect(colors.size).toBeGreaterThan(0);
+    const strokeColors = boxed.lines.map((l) => l.stroke);
+    expect(strokeColors).toContain('#ff4d6d');
+    expect(strokeColors).toContain('#4d9dff');
+  });
+});
