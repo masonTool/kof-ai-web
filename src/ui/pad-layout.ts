@@ -23,6 +23,22 @@ export interface Circle {
   r: number;
 }
 
+/**
+ * 自定义位置：归一化到 0~1（相对屏幕宽高）。
+ *
+ * 存归一化值而不是像素，是因为同一份设置要在手机和平板上都能用——
+ * 存 px 的话，换台设备就跑到屏幕外了。
+ */
+export interface PadPoint {
+  x: number;
+  y: number;
+}
+
+export type PadControlId = 'stick' | 'A' | 'B' | 'C' | 'D';
+
+/** 只存被改过的控件；空对象 = 全默认 */
+export type PadCustom = Partial<Record<PadControlId, PadPoint>>;
+
 export interface PadLayout {
   /** 参考尺寸 = min(宽,高) */
   unit: number;
@@ -44,7 +60,26 @@ const K = {
   barH: 0.052,
 };
 
-export function padLayout(width: number, height: number, insets: PadInsets = NO_PAD_INSETS): PadLayout {
+/** 把圆夹回安全区内（自定义位置拖到屏幕外时兜住） */
+export function clampCircle(c: Circle, width: number, height: number, insets: PadInsets = NO_PAD_INSETS): Circle {
+  const minX = insets.left + c.r;
+  const maxX = width - insets.right - c.r;
+  const minY = insets.top + c.r;
+  const maxY = height - insets.bottom - c.r;
+  return {
+    ...c,
+    // 屏幕比按钮还窄时 minX > maxX，取中间，避免出现负数位置
+    cx: maxX < minX ? (minX + maxX) / 2 : Math.min(Math.max(c.cx, minX), maxX),
+    cy: maxY < minY ? (minY + maxY) / 2 : Math.min(Math.max(c.cy, minY), maxY),
+  };
+}
+
+export function padLayout(
+  width: number,
+  height: number,
+  insets: PadInsets = NO_PAD_INSETS,
+  custom: PadCustom = {},
+): PadLayout {
   const w = Math.max(1, width);
   const h = Math.max(1, height);
   const unit = Math.min(w, h);
@@ -69,6 +104,13 @@ export function padLayout(width: number, height: number, insets: PadInsets = NO_
     D: { cx: dcx + d, cy: dcy, r: btnR },
   };
 
+  // 自定义位置：覆盖圆心，半径仍按比例（手感一致），最后夹进安全区
+  const applyCustom = (id: PadControlId, c: Circle): Circle => {
+    const pt = custom[id];
+    if (!pt) return c;
+    return clampCircle({ cx: pt.x * w, cy: pt.y * h, r: c.r }, w, h, insets);
+  };
+
   const barH = unit * K.barH;
   const barW = Math.min(w * 0.62, unit * 1.75);
   const bar = {
@@ -78,7 +120,17 @@ export function padLayout(width: number, height: number, insets: PadInsets = NO_
     h: barH,
   };
 
-  return { unit, stick, buttons, bar };
+  return {
+    unit,
+    stick: applyCustom('stick', stick),
+    buttons: {
+      A: applyCustom('A', buttons.A),
+      B: applyCustom('B', buttons.B),
+      C: applyCustom('C', buttons.C),
+      D: applyCustom('D', buttons.D),
+    },
+    bar,
+  };
 }
 
 /** 两个圆是否重叠（布局自检用） */

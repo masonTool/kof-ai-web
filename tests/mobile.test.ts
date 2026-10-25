@@ -53,9 +53,9 @@ describe('菜单点选（触屏）', () => {
   it('选项屏：含最后的"按键设置"一行', () => {
     const rows = 8 + 1;
     for (let i = 0; i < rows; i++) {
-      expect(hitTestOptionRow(160, 52 + i * 19, rows)).toBe(i);
+      expect(hitTestOptionRow(160, 44 + i * 15, rows)).toBe(i);
     }
-    expect(hitTestOptionRow(160, 12, rows)).toBe(-1);
+    expect(hitTestOptionRow(160, 8, rows)).toBe(-1);
   });
 
   it('暂停菜单：点第 i 项返回 i', () => {

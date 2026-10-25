@@ -60,6 +60,7 @@ describe('消毒（读盘必过）', () => {
       cpuLevel: 'hard',
       sfxVolume: 0.5,
       bgmVolume: 0.5,
+      padCustom: {},
       showFrameData: true,
       showBoxes: false,
       keyPreset: 0,
@@ -139,9 +140,9 @@ describe('循环切换', () => {
 });
 
 describe('选项屏的行', () => {
-  it('九行、有标签有值，音量为 0 显示静音', () => {
+  it('十行、有标签有值，音量为 0 显示静音', () => {
     const rows = optionRows({ ...DEFAULT_SETTINGS, sfxVolume: 0 });
-    expect(rows).toHaveLength(9);
+    expect(rows).toHaveLength(10);
     expect(rows.map((r) => r.key)).toEqual([
       'roundsToWin',
       'roundSeconds',
@@ -152,6 +153,7 @@ describe('选项屏的行', () => {
       'showBoxes',
       'keyPreset',
       'pixelSize',
+      'padCustom',
     ]);
     expect(rows[3]!.value).toBe('静音');
     expect(rows[5]!.value).toBe('关');
@@ -215,5 +217,35 @@ describe('两条音量总线', () => {
     const s = sanitize({ volume: 0.75 });
     expect(s.sfxVolume).toBe(0.75);
     expect(s.bgmVolume).toBe(0.75);
+  });
+});
+
+describe('手台位置设置', () => {
+  it('合法坐标原样保留，越界/未知控件/非数字一律丢掉', () => {
+    const s = sanitize({
+      padCustom: {
+        A: { x: 0.3, y: 0.7 },
+        stick: { x: 1.4, y: 0.2 }, // 越界
+        B: { x: 'a', y: 0.5 }, // 非数字
+        ZZ: { x: 0.5, y: 0.5 }, // 未知控件
+        C: null,
+      },
+    });
+    expect(s.padCustom).toEqual({ A: { x: 0.3, y: 0.7 } });
+  });
+
+  it('旧存档没有这个字段时是空对象（= 默认布局）', () => {
+    expect(sanitize({}).padCustom).toEqual({});
+    expect(sanitize({ padCustom: 'x' }).padCustom).toEqual({});
+  });
+
+  it('选项屏按一下就恢复默认（不循环）', () => {
+    const store = new SettingsStore(null);
+    store.settings.padCustom = { A: { x: 0.2, y: 0.2 } };
+    store.cycle('padCustom');
+    expect(store.settings.padCustom).toEqual({});
+    // 再按还是空，不会变出别的值
+    store.cycle('padCustom');
+    expect(store.settings.padCustom).toEqual({});
   });
 });

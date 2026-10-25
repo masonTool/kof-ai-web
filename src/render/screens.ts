@@ -150,6 +150,20 @@ export function drawBackButton(ctx: Ctx2D): void {
   text(ctx, '‹ 返回', BACK_BUTTON.x + BACK_BUTTON.w / 2, BACK_BUTTON.y + 4, 'center', 6, SCREEN_COLORS.text);
 }
 
+/** 手台位置调整中的提示条 */
+export function drawPadAdjustHint(ctx: Ctx2D, blinkOn: boolean): void {
+  const y = 4;
+  ctx.globalAlpha = 0.9;
+  ctx.fillStyle = '#05070a';
+  ctx.fillRect(0, y, VIEW_WIDTH, 26);
+  ctx.globalAlpha = 1;
+  ctx.strokeStyle = SCREEN_COLORS.gold;
+  ctx.lineWidth = 1;
+  ctx.strokeRect(0.5, y + 0.5, VIEW_WIDTH - 1, 25);
+  text(ctx, '拖动摇杆和按键调整位置', VIEW_WIDTH / 2, y + 6, 'center', 7, SCREEN_COLORS.gold);
+  if (blinkOn) text(ctx, '点画面任意处保存', VIEW_WIDTH / 2, y + 16, 'center', 6, SCREEN_COLORS.text);
+}
+
 /** 连招演示的浮标：左上角显示"正在演示第几步" */
 export function drawDemoLabel(ctx: Ctx2D, label: string, step: number, total: number): void {
   ctx.globalAlpha = 0.9;
@@ -492,6 +506,10 @@ export function drawMode(ctx: Ctx2D, flow: AppFlow, blinkOn: boolean): void {
   if (blinkOn) text(ctx, '点击选项 · A 确定', VIEW_WIDTH / 2, 194, 'center', 7, SCREEN_COLORS.dim);
 }
 
+/** 选项屏行距：10 项设置 + "按键设置"一行，224 高的画面里只有这么多空间 */
+const OPT_ROW_TOP = 44;
+const OPT_ROW_GAP = 15;
+
 export function drawOptions(ctx: Ctx2D, flow: AppFlow): void {
   ctx.fillStyle = SCREEN_COLORS.bg;
   ctx.fillRect(0, 0, VIEW_WIDTH, VIEW_HEIGHT);
@@ -499,22 +517,22 @@ export function drawOptions(ctx: Ctx2D, flow: AppFlow): void {
 
   const rows = flow.options;
   rows.forEach((row, i) => {
-    const y = 52 + i * 19;
+    const y = OPT_ROW_TOP + i * OPT_ROW_GAP;
     const active = flow.optionCursor === i;
     if (active) {
       ctx.fillStyle = 'rgba(255,91,61,0.22)';
-      ctx.fillRect(24, y - 4, VIEW_WIDTH - 48, 16);
+      ctx.fillRect(24, y - 4, VIEW_WIDTH - 48, 14);
     }
     text(ctx, row.label, 32, y, 'left', 7, active ? SCREEN_COLORS.text : SCREEN_COLORS.dim);
     text(ctx, `${active ? '◀ ' : ''}${row.value}${active ? ' ▶' : ''}`, VIEW_WIDTH - 32, y, 'right', 7, active ? SCREEN_COLORS.accent : SCREEN_COLORS.text);
   });
 
   // 最后一行：进"按键设置"
-  const y = 52 + rows.length * 19;
+  const y = OPT_ROW_TOP + rows.length * OPT_ROW_GAP;
   const active = flow.optionCursor >= rows.length;
   if (active) {
     ctx.fillStyle = 'rgba(255,91,61,0.22)';
-    ctx.fillRect(24, y - 4, VIEW_WIDTH - 48, 16);
+    ctx.fillRect(24, y - 4, VIEW_WIDTH - 48, 14);
   }
   text(ctx, '按键设置', 32, y, 'left', 7, active ? SCREEN_COLORS.text : SCREEN_COLORS.dim);
   text(ctx, '进入 ▶', VIEW_WIDTH - 32, y, 'right', 7, active ? SCREEN_COLORS.accent : SCREEN_COLORS.text);
@@ -609,7 +627,7 @@ export function hitTestModeItem(x: number, y: number): number {
 export function hitTestOptionRow(x: number, y: number, rowCount: number): number {
   if (x < 16 || x > VIEW_WIDTH - 16) return -1;
   for (let i = 0; i < rowCount; i++) {
-    const rowY = 52 + i * 19;
+    const rowY = OPT_ROW_TOP + i * OPT_ROW_GAP;
     if (y >= rowY - 6 && y < rowY + 13) return i;
   }
   return -1;

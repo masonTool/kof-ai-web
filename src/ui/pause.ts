@@ -5,7 +5,7 @@
  * 战斗冻结由外层负责——"暂停时世界不推进"是 main 的事，这里只表达状态。
  */
 
-export type PauseAction = 'resume' | 'restart' | 'options' | 'title';
+export type PauseAction = 'resume' | 'restart' | 'options' | 'pad' | 'title';
 
 export interface PauseItem {
   id: PauseAction;
@@ -16,6 +16,7 @@ export const PAUSE_ITEMS: readonly PauseItem[] = [
   { id: 'resume', label: '继续' },
   { id: 'restart', label: '重开本场' },
   { id: 'options', label: '选项' },
+  { id: 'pad', label: '手台位置' },
   { id: 'title', label: '回到标题' },
 ];
 

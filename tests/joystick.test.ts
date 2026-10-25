@@ -167,3 +167,36 @@ describe('手台布局（按屏幕短边取比例）', () => {
     expect(circlesOverlap(l.stick, l.buttons.B)).toBe(false);
   });
 });
+
+describe('手台自定义位置', () => {
+  it('自定义点覆盖默认圆心，半径不变（手感一致）', () => {
+    const base = padLayout(844, 390);
+    const moved = padLayout(844, 390, NO_PAD_INSETS, { A: { x: 0.2, y: 0.3 } });
+    expect(moved.buttons.A.cx).toBeCloseTo(844 * 0.2, 0);
+    expect(moved.buttons.A.cy).toBeCloseTo(390 * 0.3, 0);
+    expect(moved.buttons.A.r).toBeCloseTo(base.buttons.A.r, 5);
+    // 没被改的控件保持默认
+    expect(moved.stick).toEqual(base.stick);
+  });
+
+  it('拖到屏幕外会被夹回安全区内（不会变成点不到的按钮）', () => {
+    const l = padLayout(
+      844,
+      390,
+      { top: 0, right: 40, bottom: 20, left: 40 },
+      { stick: { x: 0, y: 0 }, D: { x: 1, y: 1 } },
+    );
+    expect(l.stick.cx - l.stick.r).toBeGreaterThanOrEqual(40 - 0.5);
+    expect(l.stick.cy - l.stick.r).toBeGreaterThanOrEqual(-0.5);
+    expect(l.buttons.D.cx + l.buttons.D.r).toBeLessThanOrEqual(844 - 40 + 0.5);
+    expect(l.buttons.D.cy + l.buttons.D.r).toBeLessThanOrEqual(390 - 20 + 0.5);
+  });
+
+  it('归一化坐标：同一份设置在手机和平板上都落在相同相对位置', () => {
+    const custom = { B: { x: 0.75, y: 0.8 } };
+    const phone = padLayout(844, 390, NO_PAD_INSETS, custom);
+    const pad = padLayout(2560, 1440, NO_PAD_INSETS, custom);
+    expect(phone.buttons.B.cx / 844).toBeCloseTo(pad.buttons.B.cx / 2560, 3);
+    expect(phone.buttons.B.cy / 390).toBeCloseTo(pad.buttons.B.cy / 1440, 3);
+  });
+});

@@ -9,7 +9,7 @@
  * 3. **按下即命中**：摇杆不要求先按在圆心，落在底盘内就以触点为起点。
  */
 import { dirButtons, Joystick } from './joystick';
-import { padLayout, type PadInsets } from './pad-layout';
+import { padLayout, type PadCustom, type PadControlId, type PadInsets } from './pad-layout';
 import type { VirtualPad } from './virtual-pad';
 
 export interface TouchAction {
@@ -24,6 +24,16 @@ export interface TouchControlsHandle {
   setBarVisible(visible: boolean): void;
   /** 窗口尺寸 / 安全区变化时重新摆位（比例布局，不是固定 px） */
   layout(width: number, height: number, insets: PadInsets): void;
+  /** 应用自定义位置（归一化坐标，空对象 = 默认布局） */
+  setCustom(custom: PadCustom): void;
+  /** 取当前的自定义位置（保存时用） */
+  getCustom(): PadCustom;
+  /**
+   * 进入/退出"调整位置"模式。
+   *
+   * 调整时控件变成可拖动，**按下不再产生攻击输入**——否则玩家一边拖一边挨打。
+   */
+  setAdjusting(on: boolean, onChange?: (custom: PadCustom) => void): void;
   dispose(): void;
 }
 
@@ -56,6 +66,13 @@ export function mountTouchControls(
   opts: TouchControlsOptions = {},
 ): TouchControlsHandle {
   let firstDone = false;
+  /** 自定义位置（只存被拖动过的控件）；空对象 = 默认布局 */
+  let custom: PadCustom = {};
+  /** 调整模式：控件可拖动，按下不出招 */
+  let adjusting = false;
+  let onChange: ((c: PadCustom) => void) | null = null;
+  /** 上一次的屏幕尺寸与安全区（拖动时要用它把 clientX/Y 换算成归一化坐标） */
+  let lastSize = { w: 1, h: 1, insets: { top: 0, right: 0, bottom: 0, left: 0 } as PadInsets };
   const firstInput = (): void => {
     if (firstDone) return;
     firstDone = true;
@@ -80,6 +97,7 @@ export function mountTouchControls(
 
   stick.addEventListener('pointerdown', (e) => {
     e.preventDefault();
+    if (adjusting) return; // 调整模式下只拖动，不产生方向
     firstInput();
     if (stickPointer !== null) return; // 摇杆只认第一根手指
     stickPointer = e.pointerId;
@@ -116,6 +134,7 @@ export function mountTouchControls(
     b.setAttribute('aria-label', `按键 ${key}`);
     const press = (e: PointerEvent): void => {
       e.preventDefault();
+      if (adjusting) return; // 调整模式下只拖动，不出招（否则一边拖一边挨打）
       firstInput();
       try {
         b.setPointerCapture(e.pointerId);
@@ -164,6 +183,44 @@ export function mountTouchControls(
     node.style.height = `${(r * 2).toFixed(1)}px`;
   };
 
+  // ---------- 调整模式：拖动控件改位置 ----------
+  let dragging: { id: PadControlId; pointerId: number } | null = null;
+
+  const dragMove = (e: PointerEvent): void => {
+    if (!dragging || e.pointerId !== dragging.pointerId) return;
+    const { w, h, insets } = lastSize;
+    // 归一化到 0~1：存 px 换台设备就会飞到屏幕外
+    const x = Math.min(1, Math.max(0, e.clientX / w));
+    const y = Math.min(1, Math.max(0, e.clientY / h));
+    custom = { ...custom, [dragging.id]: { x, y } };
+    onChange?.(custom);
+    handle.layout(w, h, insets);
+  };
+  const dragEnd = (e: PointerEvent): void => {
+    if (!dragging || e.pointerId !== dragging.pointerId) return;
+    dragging = null;
+  };
+
+  const makeDraggable = (node: HTMLElement, id: PadControlId): void => {
+    node.addEventListener('pointerdown', (e) => {
+      if (!adjusting) return;
+      e.preventDefault();
+      try {
+        node.setPointerCapture(e.pointerId);
+      } catch {
+        // 指针已释放时某些浏览器会抛，忽略
+      }
+      dragging = { id, pointerId: e.pointerId };
+    });
+    node.addEventListener('pointermove', dragMove);
+    node.addEventListener('pointerup', dragEnd);
+    node.addEventListener('pointercancel', dragEnd);
+    node.addEventListener('lostpointercapture', dragEnd);
+  };
+
+  makeDraggable(stick, 'stick');
+  for (const [key, node] of keys) makeDraggable(node, key);
+
   const handle: TouchControlsHandle = {
     refresh(): void {
       for (const action of actions) {
@@ -174,8 +231,26 @@ export function mountTouchControls(
     setBarVisible(visible: boolean): void {
       bar.style.display = visible ? 'flex' : 'none';
     },
+    setCustom(next: PadCustom): void {
+      custom = next;
+      handle.layout(lastSize.w, lastSize.h, lastSize.insets);
+    },
+    getCustom(): PadCustom {
+      return custom;
+    },
+    setAdjusting(on: boolean, cb?: (c: PadCustom) => void): void {
+      adjusting = on;
+      onChange = cb ?? null;
+      root.classList.toggle('adjusting', on);
+      // 退出调整时把可能残留的按下状态清掉
+      if (!on) {
+        pad.releaseAll();
+        stick.classList.remove('pressed');
+      }
+    },
     layout(width: number, height: number, insets: PadInsets): void {
-      const l = padLayout(width, height, insets);
+      lastSize = { w: width, h: height, insets };
+      const l = padLayout(width, height, insets, custom);
       place(stick, l.stick.cx, l.stick.cy, l.stick.r);
       for (const [key, node] of keys) {
         const c = l.buttons[key];

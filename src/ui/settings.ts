@@ -9,6 +9,7 @@
 import { CPU_LEVELS, type CpuLevel } from '../ai/cpu';
 import { Btn } from '../core/input';
 import { KEY_PRESETS, keyPresetAt, type KeyMap } from '../input/keyboard';
+import type { PadCustom } from './pad-layout';
 
 export interface GameSettings {
   /** 先赢几回合（1~3） */
@@ -32,6 +33,8 @@ export interface GameSettings {
   pixelSize: number;
   /** 逐键自定义（只存与预设不同的项） */
   customKeys: CustomKeys;
+  /** 手台自定义位置（归一化 0~1，只存被拖动过的控件；空 = 默认布局） */
+  padCustom: PadCustom;
 }
 
 export const DEFAULT_SETTINGS: GameSettings = {
@@ -45,6 +48,7 @@ export const DEFAULT_SETTINGS: GameSettings = {
   keyPreset: 0,
   pixelSize: 0.5,
   customKeys: { p1: {}, p2: {} },
+  padCustom: {},
 };
 
 /** 可选的像素粒度（越大越"马赛克"：1 = 每逻辑像素一块，4 = 4×4 一块） */
@@ -63,7 +67,11 @@ export type OptionKey =
   | 'showFrameData'
   | 'showBoxes'
   | 'keyPreset'
-  | 'pixelSize';
+  | 'pixelSize'
+  | 'padCustom';
+
+/** 可拖动的手台控件 */
+export const PAD_IDS = ['stick', 'A', 'B', 'C', 'D'] as const;
 
 /** 可以重绑的按键动作 */
 export type KeyAction = 'up' | 'down' | 'left' | 'right' | 'a' | 'b' | 'c' | 'd' | 'start';
@@ -193,7 +201,31 @@ export function sanitize(raw: unknown): GameSettings {
     keyPreset: Math.round(clampNumber(obj['keyPreset'], [0, KEY_PRESETS.length - 1], DEFAULT_SETTINGS.keyPreset)),
     pixelSize: PIXEL_SIZES.includes(Number(obj['pixelSize'])) ? Number(obj['pixelSize']) : DEFAULT_SETTINGS.pixelSize,
     customKeys: sanitizeCustom(obj['customKeys']),
+    padCustom: sanitizePad(obj['padCustom']),
   };
+}
+
+/**
+ * 手台位置的消毒：只认 5 个控件 id，坐标必须有限且在 0~1。
+ *
+ * 用户（或手滑的旧存档）塞进来任何东西都不能让手台飞到屏幕外，
+ * 所以超范围的点直接丢掉——丢掉就等于那个控件回默认位置，永远能玩。
+ */
+export function sanitizePad(raw: unknown): PadCustom {
+  if (raw === null || typeof raw !== 'object') return {};
+  const src = raw as Record<string, unknown>;
+  const out: PadCustom = {};
+  for (const id of PAD_IDS) {
+    const v = src[id];
+    if (v === null || typeof v !== 'object') continue;
+    const point = v as Record<string, unknown>;
+    const x = Number(point['x']);
+    const y = Number(point['y']);
+    if (!Number.isFinite(x) || !Number.isFinite(y)) continue;
+    if (x < 0 || x > 1 || y < 0 || y > 1) continue;
+    out[id] = { x, y };
+  }
+  return out;
 }
 
 /** 选项屏要显示的行（顺序即界面顺序） */
@@ -208,6 +240,7 @@ export function optionRows(s: GameSettings): OptionRow[] {
     { key: 'showBoxes', label: '判定框', value: s.showBoxes ? '开' : '关' },
     { key: 'keyPreset', label: '键盘布局', value: KEY_PRESETS[s.keyPreset]?.name ?? '默认' },
     { key: 'pixelSize', label: '像素粒度', value: `${s.pixelSize}×${s.pixelSize}` },
+    { key: 'padCustom', label: '手台位置', value: Object.keys(s.padCustom).length > 0 ? '自定义' : '默认' },
   ];
 }
 
@@ -279,6 +312,10 @@ export class SettingsStore {
         break;
       case 'keyPreset':
         s.keyPreset = ((s.keyPreset + dir) % KEY_PRESETS.length + KEY_PRESETS.length) % KEY_PRESETS.length;
+        break;
+      case 'padCustom':
+        // 不循环：按一下就恢复默认（真正的调整在暂停菜单里拖）
+        this.settings.padCustom = {};
         break;
       case 'pixelSize': {
         const i = PIXEL_SIZES.indexOf(s.pixelSize);

@@ -36,6 +36,7 @@ import {
   drawMoveList,
   drawMoveHint,
   drawDemoLabel,
+  drawPadAdjustHint,
   BACK_BUTTON,
   backButtonKey,
   drawBackButton,
@@ -58,11 +59,12 @@ import { AppFlow } from './ui/flow';
 import { afterStage, isCleared, newArcade, type ArcadeState } from './ui/arcade';
 import { arcadeResult } from './ui/arcade-result';
 import { moveListFor } from './ui/movelist';
+import type { PadCustom } from './ui/pad-layout';
 import { comboDemoFor, flattenSteps, stepAt } from './ui/combo-demo';
 import { arcadeRules, arcadeTeam } from './ui/arcade-roster';
 import { ChallengeBoard } from './ui/challenges';
 import { KeyBindMenu } from './ui/keybind';
-import { PauseMenu } from './ui/pause';
+import { PAUSE_ITEMS, PauseMenu } from './ui/pause';
 import { SettingsStore, keymapFor, type StorageLike } from './ui/settings';
 import { TrainingSession, drawTrainingOverlay } from './ui/training';
 import { mountTouchControls } from './ui/touch-controls';
@@ -87,6 +89,20 @@ let device = 1;
 /** 内容在画布内的偏移（铺满窗口后两侧留白，内容居中） */
 let deviceOffsetX = 0;
 let deviceOffsetY = 0;
+
+/** 进入手台位置调整（暂停菜单与选项屏共用） */
+function enterPadAdjust(): void {
+  padAdjusting = true;
+  padDraft = { ...settings.settings.padCustom };
+  controls.setAdjusting(true, (next) => {
+    padDraft = next;
+  });
+}
+
+/** 手台位置调整中（拖动改位置，画面冻结） */
+let padAdjusting = false;
+/** 调整中的草稿：取消就丢掉，确认才写进设置 */
+let padDraft: PadCustom = {};
 
 /**
  * 连招演示：脚本帧 / 当前帧 / 每步起始帧；null = 没在演示。
@@ -352,6 +368,7 @@ const controls = mountTouchControls(pad, [
   },
 });
 padHandle = controls;
+controls.setCustom(settings.settings.padCustom);
 resize();
 
 window.addEventListener('keydown', (e) => {
@@ -580,9 +597,13 @@ canvas.addEventListener('pointerdown', (e) => {
     helpAdvanceQueued = true;
     return;
   }
+  // 画布铺满窗口后，游戏内容只占中间一块：先换算成画布像素，再减去内容偏移。
+  // 直接按 canvas 的 CSS 宽高换算会整体偏移一个"留白宽度"，点菜单就会点空。
   const rect = canvas.getBoundingClientRect();
-  const x = ((e.clientX - rect.left) / rect.width) * VIEW_WIDTH;
-  const y = ((e.clientY - rect.top) / rect.height) * VIEW_HEIGHT;
+  const px = ((e.clientX - rect.left) * canvas.width) / Math.max(1, rect.width);
+  const py = ((e.clientY - rect.top) * canvas.height) / Math.max(1, rect.height);
+  const x = (px - deviceOffsetX) / device;
+  const y = (py - deviceOffsetY) / device;
 
   // 左上角「返回」：按各屏的返回键等于按一次对应按键
   if (
@@ -622,7 +643,7 @@ canvas.addEventListener('pointerdown', (e) => {
 
   // 暂停菜单盖在最上面，优先处理
   if (pause.open) {
-    const hit = hitTestPauseItem(x, y, 4);
+    const hit = hitTestPauseItem(x, y, PAUSE_ITEMS.length);
     if (hit >= 0) {
       pause.cursor = hit;
       pad.press('A');
@@ -643,6 +664,11 @@ canvas.addEventListener('pointerdown', (e) => {
     const rows = flow.options.length + 1; // 末行是"按键设置"
     const hit = hitTestOptionRow(x, y, rows);
     if (hit >= 0) {
+      // "手台位置"这一行点一下就直接进调整界面（不是循环改值）
+      if (flow.options[hit]?.key === 'padCustom') {
+        enterPadAdjust();
+        return;
+      }
       flow.optionCursor = hit;
       pad.press('A');
       return;
@@ -792,6 +818,20 @@ startAnimationLoop(
 
       const p1In = { held: (p1keys.sample.held | pad.sampleFrame().held) >>> 0 };
 
+      // 调整手台位置时冻结世界：只等玩家点画面确认，别让 CPU 趁机打你
+      if (padAdjusting) {
+        if (p1In.held !== 0) {
+          // 确认：草稿写进设置并落盘
+          settings.settings.padCustom = { ...padDraft };
+          settings.save();
+          padAdjusting = false;
+          controls.setAdjusting(false);
+          controls.setCustom(settings.settings.padCustom);
+        }
+        prevPauseHeld = p1In.held;
+        return;
+      }
+
       // 连招演示：用脚本按键盖掉玩家输入（走的是对局同一条输入通路）
       if (demoFrames) {
         if (demoIndex < demoFrames.length) {
@@ -840,6 +880,7 @@ startAnimationLoop(
             flow.optionsFrom = 'fight';
             flow.optionCursor = 0;
           }
+          if (action === 'pad') enterPadAdjust();
           if (action === 'title') {
             flow.reset();
             match = null;
@@ -1009,6 +1050,7 @@ startAnimationLoop(
           break;
       }
 
+      if (padAdjusting) drawPadAdjustHint(ctx, blink);
       if (pause.open) drawPause(ctx, pause.cursor, blink);
       // 招式清单：对局看 P1 当前角色，选人看光标角色
       if (moveListOpen && !pause.open) {

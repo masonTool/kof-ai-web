@@ -150,9 +150,9 @@ describe('选项屏', () => {
     tap(Btn.A);
     for (let i = 0; i < MODE_ITEMS.length - 1; i++) tap(Btn.Down);
     tap(Btn.A);
-    // 8 项设置 + 1 条"按键设置 →"
-    expect(flow.options.length).toBe(9);
-    expect(flow.optionCount).toBe(10);
+    // 9 项设置（含"手台位置"）+ 1 条"按键设置 →"
+    expect(flow.options.length).toBe(10);
+    expect(flow.optionCount).toBe(11);
     for (let i = 0; i < flow.optionCount; i++) tap(Btn.Down);
     expect(flow.optionCursor).toBe(0); // 转一圈回到第一行
   });
