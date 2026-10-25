@@ -58,6 +58,8 @@ if (!raw) throw new Error('无法创建 2D context');
 const ctx = raw as unknown as Ctx2D;
 
 let device = 1;
+/** 手台句柄：`resize()` 在模块初始化阶段就会跑，那时 `controls` 还没建好（TDZ），所以走可变引用 */
+let padHandle: { layout(w: number, h: number, insets: SafeInsets): void } | null = null;
 
 /** 从探针元素读刘海/圆角的安全区（拿不到就按 0 处理） */
 function safeInsets(): SafeInsets {
@@ -74,7 +76,10 @@ function safeInsets(): SafeInsets {
 function resize(): void {
   const w = window.innerWidth;
   const h = window.innerHeight;
-  device = applyViewport(canvas!, computeViewport(w, h, window.devicePixelRatio, safeInsets()));
+  const insets = safeInsets();
+  device = applyViewport(canvas!, computeViewport(w, h, window.devicePixelRatio, insets));
+  // 手台按屏幕短边比例重排（不是固定 px），旋转屏幕/切全屏都会走这里
+  padHandle?.layout(w, h, insets);
   // 竖屏时盖一层"请横屏"，否则画面只有拇指大小
   document.getElementById('rotate-hint')?.classList.toggle('show', shouldRotate(w, h));
 }
@@ -260,6 +265,8 @@ const controls = mountTouchControls(pad, [
     },
   },
 ]);
+padHandle = controls;
+resize();
 
 window.addEventListener('keydown', (e) => {
   // 按键设置屏要拿原始 event.code，自己处理完就不再往下传

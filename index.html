@@ -88,61 +88,74 @@
         background: rgba(120, 180, 255, 0.6);
         border-color: rgba(190, 225, 255, 0.9);
       }
-      #controls .pad {
-        left: 12px;
-        bottom: 12px;
-        width: 126px;
-        height: 126px;
-        display: grid;
-        grid-template: repeat(3, 1fr) / repeat(3, 1fr);
-        gap: 4px;
+      /* 摇杆：尺寸与位置由 JS 按屏幕短边比例设置（见 src/ui/pad-layout.ts） */
+      #controls .stick {
+        position: absolute;
+        pointer-events: auto;
+        border-radius: 50%;
+        border: 2px solid rgba(255, 255, 255, 0.26);
+        background: radial-gradient(circle at 50% 45%, rgba(40, 56, 82, 0.42), rgba(10, 14, 20, 0.5));
+        touch-action: none;
+        -webkit-tap-highlight-color: transparent;
       }
-      #controls .pad .up {
-        grid-area: 1 / 2;
+      #controls .stick.pressed {
+        border-color: rgba(190, 225, 255, 0.85);
+        background: radial-gradient(circle at 50% 45%, rgba(60, 90, 130, 0.5), rgba(10, 14, 20, 0.55));
       }
-      #controls .pad .left {
-        grid-area: 2 / 1;
+      #controls .knob {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: 44%;
+        height: 44%;
+        margin: -22% 0 0 -22%;
+        border-radius: 50%;
+        background: rgba(200, 226, 255, 0.34);
+        border: 1px solid rgba(255, 255, 255, 0.55);
+        box-shadow: 0 0 12px rgba(120, 180, 255, 0.35);
       }
-      #controls .pad .right {
-        grid-area: 2 / 3;
-      }
-      #controls .pad .dir-down {
-        grid-area: 3 / 2;
-      }
+      /* 攻击键容器不占位，四颗键各自绝对定位到菱形顶点 */
       #controls .atk {
-        right: 12px;
-        bottom: 12px;
-        display: grid;
-        grid-template: repeat(2, 52px) / repeat(2, 52px);
-        gap: 6px;
+        position: static;
+        pointer-events: none;
+      }
+      #controls .atk .btn {
+        position: absolute;
+        pointer-events: auto;
+        border-radius: 50%;
+        padding: 0;
+        font-weight: 600;
       }
       #controls .atk .kA,
       #controls .atk .kC {
-        background: rgba(70, 40, 40, 0.5);
+        background: rgba(150, 60, 60, 0.45);
+        border-color: rgba(255, 170, 160, 0.5);
       }
+      #controls .atk .kB,
+      #controls .atk .kD {
+        background: rgba(60, 90, 150, 0.42);
+        border-color: rgba(170, 200, 255, 0.5);
+      }
+      /* 底部功能条：位置与大小同样来自 padLayout */
       #controls .bar {
-        left: 50%;
-        bottom: 10px;
-        transform: translateX(-50%);
+        position: absolute;
         display: flex;
-        gap: 6px;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        pointer-events: auto;
+        overflow: hidden;
       }
       #controls .bar .btn {
+        flex: 1 1 auto;
+        min-width: 0;
+        height: 100%;
         border-radius: 8px;
-        padding: 0 8px;
-        height: 26px;
-        font-size: 11px;
-        background: rgba(18, 22, 30, 0.55);
+        padding: 0 4px;
         white-space: nowrap;
-      }
-      @media (max-height: 420px) {
-        #controls .pad {
-          width: 108px;
-          height: 108px;
-        }
-        #controls .atk {
-          grid-template: repeat(2, 44px) / repeat(2, 44px);
-        }
+        overflow: hidden;
+        text-overflow: ellipsis;
+        background: rgba(18, 22, 30, 0.55);
       }
     </style>
   </head>

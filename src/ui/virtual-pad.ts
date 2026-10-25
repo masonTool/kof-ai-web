@@ -10,6 +10,9 @@
 import { Btn, type InputSample } from '../core/input';
 
 export const PAD_BUTTONS = ['left', 'right', 'up', 'down', 'A', 'B', 'C', 'D'] as const;
+/** 四个方向键（摇杆管这一段，攻击键各管各的） */
+export const DIRECTION_BUTTONS = ['left', 'right', 'up', 'down'] as const;
+export type DirectionButton = (typeof DIRECTION_BUTTONS)[number];
 export type PadButton = (typeof PAD_BUTTONS)[number];
 
 const BITS: Record<PadButton, number> = {
@@ -43,6 +46,22 @@ export class VirtualPad {
       return;
     }
     this.down.delete(b);
+  }
+
+  /**
+   * 摇杆专用：**原子地**设置四个方向键的状态。
+   *
+   * 为什么不直接 press/release：摇杆每帧都可能给出一组新方向，
+   * 调用方不该关心"上一帧哪个方向开着"。这里做差量，只有变化的方向才走 press/release，
+   * 这样"快速右→左"的一瞬也不会因为复用同一个键而丢输入。
+   */
+  setDirections(next: readonly PadButton[]): void {
+    const want = new Set(next);
+    for (const b of DIRECTION_BUTTONS) {
+      const has = this.down.has(b);
+      if (want.has(b) && !has) this.press(b);
+      else if (!want.has(b) && has) this.release(b);
+    }
   }
 
   releaseAll(): void {
