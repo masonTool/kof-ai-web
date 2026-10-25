@@ -20,6 +20,7 @@ import { downloadCanvas, renderSheet, type SheetSpec } from './render/sheet-expo
 import { POSE_LIBRARY } from './render/poses';
 import { lookFor } from './render/looks';
 import { drawFrame } from './render/renderer';
+import { ensurePortraits } from './render/portraits';
 import { ensureCharSheets, installSheetProvider } from './render/sprite-loader';
 import { applyViewport, computeViewport, shouldRotate, type SafeInsets } from './render/scale';
 import {
@@ -110,6 +111,9 @@ if (new URLSearchParams(window.location.search).get('art') !== 'proc') {
   installSheetProvider();
   void ensureCharSheets(['kyo']);
 }
+
+// 头像很小（~25KB/张），选人屏要一次显示二十多个，所以开局一次性预载整套
+ensurePortraits(ROSTER.map((c) => c.id));
 
 const audio = new WebAudioSink();
 const bgm = new WebAudioBgm();

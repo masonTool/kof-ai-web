@@ -11,6 +11,7 @@ import type { KeyBindMenu } from '../ui/keybind';
 import { KEY_ACTIONS, keyLabelFor, type GameSettings } from '../ui/settings';
 import type { Ctx2D } from './ctx';
 import { drawFighter } from './fighter-draw';
+import { portraitFor } from './portraits';
 import { lookFor } from './looks';
 
 export const SCREEN_COLORS = {
@@ -100,12 +101,27 @@ export function drawSelect(ctx: Ctx2D, flow: AppFlow, blinkOn: boolean): void {
       return { label: `${name.slice(0, maxChars)}…`, size: 5 };
     };
 
-    ctx.fillStyle = char.palette.primary;
-    ctx.fillRect(r.x, r.y, r.w, r.h);
-    ctx.fillStyle = char.palette.secondary;
-    ctx.fillRect(r.x, r.y + r.h - 12, r.w, 12);
+    // 格子底色：有头像就贴头像（按格子长宽比做中心裁切，永远不溢出到邻居家），
+    // 没头像才用角色代表色——两条路各自完整，不做"半张脸"的叠加
+    const portrait = portraitFor(char.id);
+    if (portrait) {
+      const SRC = 128;
+      const aspect = r.w / Math.max(1, r.h);
+      // 宽格子裁掉上下、窄格子裁掉左右；纵向从头顶开始裁，保证脸在上半部
+      const sw = aspect >= 1 ? SRC : Math.round(SRC * aspect);
+      const sh = aspect >= 1 ? Math.round(SRC / aspect) : SRC;
+      ctx.drawImage(portrait, (SRC - sw) / 2, 0, sw, sh, r.x, r.y, r.w, r.h);
+    } else {
+      ctx.fillStyle = char.palette.primary;
+      ctx.fillRect(r.x, r.y, r.w, r.h);
+    }
+    // 没有头像时才有名字条（有头像时格子只有 20 多像素高，留 12px 给名字等于把脸砍掉一半）
+    if (!portrait) {
+      ctx.fillStyle = char.palette.secondary;
+      ctx.fillRect(r.x, r.y + r.h - 12, r.w, 12);
+    }
 
-    // 边框：P1 红、P2 蓝
+    // 边框：P1 红、P2 蓝（画在头像之后，不然会被盖住）
     if (p1Here) {
       ctx.strokeStyle = SCREEN_COLORS.accent;
       ctx.lineWidth = 2;
@@ -117,35 +133,41 @@ export function drawSelect(ctx: Ctx2D, flow: AppFlow, blinkOn: boolean): void {
       ctx.strokeRect(r.x - 4, r.y - 4, r.w + 8, r.h + 8);
     }
 
-    // 格子里放一个缩小版的待机姿势；格子太扁（人多时）就不画，
-    // 否则小人会顶在名字上，反而更难认。
-    if (r.h < 30) {
-      const fittedFlat = fitName(char.name, r.w);
-      text(ctx, fittedFlat.label, r.x + r.w / 2, r.y + r.h / 2 - fittedFlat.size / 2, 'center', fittedFlat.size, SCREEN_COLORS.text);
-      if (p1Here) text(ctx, 'P1', r.x + 2, r.y + 2, 'left', 5, '#ffd9cf');
-      if (p2Here) text(ctx, 'CPU', r.x + r.w - 2, r.y + 2, 'right', 5, '#cfe4ff');
-      return;
+    // 没有头像时：格子够高就补一个缩小版待机姿势（否则只有名字，太寡淡）
+    if (!portrait && r.h >= 30) {
+      ctx.save();
+      ctx.translate(r.x + r.w / 2, r.y + r.h - 9);
+      const figScale = Math.max(0.22, Math.min(0.42, Math.min(r.h / 105, r.w / 140)));
+      ctx.scale(figScale, figScale);
+      drawFighter(ctx, {
+        palette: char.palette,
+        facing: 1,
+        x: 0,
+        y: 0,
+        anim: 'idle',
+        elapsed: 0,
+        look: lookFor(char.id),
+      });
+      ctx.restore();
     }
-    ctx.save();
-    ctx.translate(r.x + r.w / 2, r.y + r.h - 9);
-    const figScale = Math.max(0.22, Math.min(0.42, Math.min(r.h / 105, r.w / 140)));
-    ctx.scale(figScale, figScale);
-    drawFighter(ctx, {
-      palette: char.palette,
-      facing: 1,
-      x: 0,
-      y: 0,
-      anim: 'idle',
-      elapsed: 0,
-      look: lookFor(char.id),
-    });
-    ctx.restore();
 
     const fitted = fitName(char.name, r.w);
-    text(ctx, fitted.label, r.x + r.w / 2, r.y + 4, 'center', fitted.size, SCREEN_COLORS.text);
+    if (!portrait) {
+      text(ctx, fitted.label, r.x + r.w / 2, r.y + 4, 'center', fitted.size, SCREEN_COLORS.text);
+    }
     if (p1Here) text(ctx, 'P1', r.x + 2, r.y + r.h - 11, 'left', 6, '#ffd9cf');
     if (p2Here) text(ctx, 'CPU', r.x + r.w - 2, r.y + r.h - 11, 'right', 6, '#cfe4ff');
   });
+
+  // 格子里不写名字了，名字统一在底部显示（光标所指 / 已锁定的两人）
+  const nameOf = (i: number): string => flow.roster[i]?.name ?? '';
+  const cursorIdx = flow.cursor[0];
+  const picked = flow.picks?.map((c) => c.name).join(' / ') ?? '';
+  if (picked) {
+    text(ctx, picked, VIEW_WIDTH / 2, 196, 'center', 8, SCREEN_COLORS.gold);
+  } else if (cursorIdx >= 0) {
+    text(ctx, nameOf(cursorIdx), VIEW_WIDTH / 2, 196, 'center', 9, SCREEN_COLORS.text);
+  }
 
   const label = flow.locked[0] ? '已确定 · B/D 重选' : 'A/C 确定 · 方向键选人';
   if (blinkOn || flow.locked[0]) text(ctx, label, VIEW_WIDTH / 2, 200, 'center', 7, SCREEN_COLORS.text);
@@ -157,10 +179,20 @@ export function drawVs(ctx: Ctx2D, flow: AppFlow): void {
   ctx.fillRect(0, 0, VIEW_WIDTH, VIEW_HEIGHT);
   const [a, b] = flow.picks ?? [flow.roster[0]!, flow.roster[flow.roster.length - 1]!];
 
-  ctx.fillStyle = a.palette.primary;
-  ctx.fillRect(24, 56, 100, 110);
-  ctx.fillStyle = b.palette.primary;
-  ctx.fillRect(VIEW_WIDTH - 124, 56, 100, 110);
+  // 头像对撞：有素材贴胸像，没有就用各自的代表色块兜底
+  const faces: [CharDef, number][] = [
+    [a, 24],
+    [b, VIEW_WIDTH - 124],
+  ];
+  for (const [char, x] of faces) {
+    ctx.fillStyle = char.palette.primary;
+    ctx.fillRect(x, 56, 100, 110);
+    const portrait = portraitFor(char.id);
+    if (portrait) {
+      // 胸像是正方形，按"填满宽度、垂直居中"放，多余上下留背景色
+      ctx.drawImage(portrait, 0, 0, 128, 128, x, 56, 100, 100);
+    }
+  }
 
   text(ctx, a.name, 74, 172, 'center', 10, SCREEN_COLORS.text);
   text(ctx, b.name, VIEW_WIDTH - 74, 172, 'center', 10, SCREEN_COLORS.text);

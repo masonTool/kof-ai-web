@@ -8,5 +8,7 @@ dist/
 *.png
 # 但游戏运行时用的图集要进仓库
 !public/sheets/*.png
+# 人物头像（选人/VS 用，从图集裁出来的）
+!public/portraits/*.png
 # AI 出的原始候选图（55MB，本地保留即可，用 node scripts/sprites/build-kyo.mjs 重新生成图集）
 art-source/
