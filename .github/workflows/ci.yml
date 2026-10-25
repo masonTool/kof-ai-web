@@ -1,0 +1,76 @@
+name: CI
+
+# 只在 main 的推送和 PR 上跑：这个仓库的素材有 60MB+，checkout 不便宜
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# 同一分支连推多次时，取消上一次没跑完的（省额度，也避免旧结果盖新结果）
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  # vite 7 要求 Node 20.19+ / 22.12+；锁 22 既满足要求又不会因为主版本漂移突然坏掉
+  NODE_VERSION: '22'
+
+jobs:
+  check:
+    name: 类型检查 · 单测 · 素材自检
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: 安装依赖
+        run: npm ci
+
+      # npm run check = tsc --noEmit && vitest run
+      # 分成两步跑，失败时一眼能看出是"类型报错"还是"用例挂了"
+      - name: 类型检查
+        run: npm run typecheck
+
+      - name: 单元测试
+        run: npm run test
+
+      # 素材自检：图集/头像/舞台的数量、尺寸、动画名、比例是否对得上
+      # 它读的是仓库里的 public/，不用重新出图
+      - name: 素材自检
+        run: npm run art:check
+
+  build:
+    name: 生产构建
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: check
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: 安装依赖
+        run: npm ci
+
+      # npm run build = tsc --noEmit && vite build
+      - name: 构建
+        run: npm run build
+
+      - name: 上传构建产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist
+          # 素材本来就大，产物没必要留太久
+          retention-days: 7

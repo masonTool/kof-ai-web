@@ -237,3 +237,4 @@
 - [x] T217 核心机制盘点：docs/FEATURES.md 列清 30+ 项已实现机制（含代码位置），确认唯一真缺口是投技
 - [x] T218 投技（←+C）：不可防御、只抓站立/蹲防的对手（空中/受击/无敌抓不到）
 - [x] T219 CPU 会用投技破防（C+D 与 ←+C 各 45%）+ 9 个主力角色配投技
+- [x] T220 GitHub Actions CI：typecheck → test → art:check → build（产物上传 artifact）
