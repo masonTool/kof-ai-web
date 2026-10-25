@@ -11,6 +11,7 @@ import type { KeyBindMenu } from '../ui/keybind';
 import { KEY_ACTIONS, keyLabelFor, type GameSettings } from '../ui/settings';
 import type { Ctx2D } from './ctx';
 import type { ArcadeResultModel } from '../ui/arcade-result';
+import type { MoveEntry } from '../ui/movelist';
 import { drawFighter } from './fighter-draw';
 import { portraitFor } from './portraits';
 import { titleArt } from './title-art';
@@ -120,6 +121,56 @@ export interface HelpPageView {
 export function helpPageText(page: number): HelpPageView {
   const p = HELP_PAGES[Math.max(0, Math.min(HELP_PAGES.length - 1, page))]!;
   return p;
+}
+
+/** 「招式」开关按钮（对局与选人屏左下角，触屏用） */
+export const MOVES_BUTTON = { x: 4, y: 204, w: 44, h: 15 } as const;
+
+/** 画「招式」小按钮 */
+export function drawMovesButton(ctx: Ctx2D, active: boolean): void {
+  ctx.globalAlpha = 0.9;
+  ctx.fillStyle = active ? 'rgba(255,91,61,0.28)' : 'rgba(10,14,20,0.72)';
+  ctx.fillRect(MOVES_BUTTON.x, MOVES_BUTTON.y, MOVES_BUTTON.w, MOVES_BUTTON.h);
+  ctx.strokeStyle = active ? SCREEN_COLORS.accent : SCREEN_COLORS.dim;
+  ctx.lineWidth = 1;
+  ctx.strokeRect(MOVES_BUTTON.x + 0.5, MOVES_BUTTON.y + 0.5, MOVES_BUTTON.w - 1, MOVES_BUTTON.h - 1);
+  ctx.globalAlpha = 1;
+  text(ctx, active ? '关招式' : '招式', MOVES_BUTTON.x + MOVES_BUTTON.w / 2, MOVES_BUTTON.y + 4, 'center', 6, active ? SCREEN_COLORS.accent : SCREEN_COLORS.text);
+}
+
+/**
+ * 招式清单面板：贴在右侧，不挡画面中间。
+ *
+ * 只列必杀与超必杀，组间加一行分隔标题——玩家真正记不住的是这几条。
+ */
+export function drawMoveList(ctx: Ctx2D, charName: string, entries: readonly MoveEntry[]): void {
+  const x = 150;
+  const w = VIEW_WIDTH - x - 6;
+  ctx.globalAlpha = 0.88;
+  ctx.fillStyle = '#05070a';
+  ctx.fillRect(x, 28, w, VIEW_HEIGHT - 56);
+  ctx.globalAlpha = 1;
+  ctx.strokeStyle = SCREEN_COLORS.gold;
+  ctx.lineWidth = 1;
+  ctx.strokeRect(x + 0.5, 28.5, w - 1, VIEW_HEIGHT - 57);
+
+  text(ctx, charName, x + w / 2, 34, 'center', 8, SCREEN_COLORS.gold);
+
+  let y = 48;
+  let lastKind = '';
+  for (const e of entries.slice(0, 11)) {
+    if (e.kind !== lastKind) {
+      lastKind = e.kind;
+      text(ctx, e.kind, x + 6, y, 'left', 6, SCREEN_COLORS.accent);
+      y += 12;
+    }
+    text(ctx, e.cmd || '（自动）', x + 6, y, 'left', 6, SCREEN_COLORS.text);
+    text(ctx, e.name, x + w - 6, y, 'right', 6, SCREEN_COLORS.dim);
+    y += 11;
+  }
+  if (entries.length === 0) text(ctx, '这个角色没有必杀技', x + w / 2, y, 'center', 6, SCREEN_COLORS.dim);
+
+  text(ctx, `${entries.length} 招 · L 或点按钮开关`, x + w / 2, VIEW_HEIGHT - 32, 'center', 5, SCREEN_COLORS.dim);
 }
 
 /** 说明浮层：盖在当前画面上，点一下翻页，最后一页关掉 */

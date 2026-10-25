@@ -33,6 +33,9 @@ import {
   drawPause,
   drawOptions,
   drawHelp,
+  drawMoveList,
+  MOVES_BUTTON,
+  drawMovesButton,
   drawResult,
   HELP_BUTTON,
   HELP_PAGE_COUNT,
@@ -49,6 +52,7 @@ import { Btn } from './core/input';
 import { AppFlow } from './ui/flow';
 import { afterStage, isCleared, newArcade, type ArcadeState } from './ui/arcade';
 import { arcadeResult } from './ui/arcade-result';
+import { moveListFor } from './ui/movelist';
 import { arcadeRules, arcadeTeam } from './ui/arcade-roster';
 import { ChallengeBoard } from './ui/challenges';
 import { KeyBindMenu } from './ui/keybind';
@@ -305,6 +309,11 @@ resize();
 
 window.addEventListener('keydown', (e) => {
   // H = 随时打开说明（触屏走标题右上角那个按钮）
+  if (e.code === 'KeyL' && helpPage < 0 && !pause.open) {
+    e.preventDefault();
+    moveListOpen = !moveListOpen;
+    return;
+  }
   if (e.code === 'KeyH' && helpPage < 0) {
     e.preventDefault();
     helpPage = 0;
@@ -492,6 +501,18 @@ canvas.addEventListener('pointerdown', (e) => {
   const x = ((e.clientX - rect.left) / rect.width) * VIEW_WIDTH;
   const y = ((e.clientY - rect.top) / rect.height) * VIEW_HEIGHT;
 
+  // 左下角「招式」开关
+  if (
+    (flow.screen === 'fight' || flow.screen === 'select') &&
+    x >= MOVES_BUTTON.x &&
+    x <= MOVES_BUTTON.x + MOVES_BUTTON.w &&
+    y >= MOVES_BUTTON.y &&
+    y <= MOVES_BUTTON.y + MOVES_BUTTON.h
+  ) {
+    moveListOpen = !moveListOpen;
+    return;
+  }
+
   // 标题屏右上角「怎么玩」
   if (flow.screen === 'title') {
     const inBox =
@@ -632,6 +653,8 @@ function cueMatchSounds(): void {
  * 而且打开时应该**冻结世界**（读说明时被打死很出戏）。
  */
 let helpPage = -1;
+/** 招式清单开关（对局中按 L 或点左下角按钮） */
+let moveListOpen = false;
 /** 点屏翻页：触屏没有"按下边沿"可读，用一次性标记 */
 let helpAdvanceQueued = false;
 /** 上一帧的按键状态（翻页需要边沿，不然按住会连翻） */
@@ -850,6 +873,18 @@ startAnimationLoop(
       }
 
       if (pause.open) drawPause(ctx, pause.cursor, blink);
+      // 招式清单：对局看 P1 当前角色，选人看光标角色
+      if (moveListOpen && !pause.open) {
+        const shown =
+          flow.screen === 'fight' && match
+            ? match.p1.char
+            : flow.screen === 'select'
+              ? flow.roster[flow.cursor[0] ?? 0]
+              : null;
+        if (shown) drawMoveList(ctx, shown.name, moveListFor(shown));
+      }
+      if (flow.screen === 'fight' || flow.screen === 'select') drawMovesButton(ctx, moveListOpen);
+
       // 说明浮层画在最上面（暂停之上），读说明时不该被别的 UI 盖住
       if (helpPage >= 0) drawHelp(ctx, helpPage, blink);
 
