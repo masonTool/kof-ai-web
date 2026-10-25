@@ -11,6 +11,7 @@ import {
   rulesFor,
   stageLabel,
 } from '../src/ui/arcade';
+import { arcadeResult } from '../src/ui/arcade-result';
 
 const ids = new Set(ROSTER.map((c) => c.id));
 
@@ -67,5 +68,35 @@ describe('单人街机推进', () => {
   it('难度规则直接给 CPU 等级与血量倍率', () => {
     expect(rulesFor(newArcade('easy')).cpuLevel).toBe('easy');
     expect(rulesFor(newArcade('hard')).hpScale).toBeGreaterThan(1);
+  });
+});
+
+describe('街机结算模型', () => {
+  it('进行中：显示下一场对手，可以继续', () => {
+    const r = arcadeResult(newArcade('normal'));
+    expect(r.title).toContain('1 / 8');
+    expect(r.nextName).toBe(ARCADE_ROUTE[0]!.name);
+    expect(r.canContinue).toBe(true);
+    expect(r.cleared).toBe(false);
+  });
+
+  it('通关：标题是通关，没有下一场', () => {
+    let s = newArcade('normal');
+    for (let i = 0; i < 8; i++) s = afterStage(s, true);
+    const r = arcadeResult(s);
+    expect(r.cleared).toBe(true);
+    expect(r.title).toBe('通关');
+    expect(r.nextName).toBeNull();
+    expect(r.canContinue).toBe(false);
+  });
+
+  it('中途失败：GAME OVER，并报出打到第几场', () => {
+    let s = newArcade('normal');
+    s = afterStage(s, true); // 赢 1 场
+    s = afterStage(s, false); // 第 2 场输
+    const r = arcadeResult(s);
+    expect(r.title).toBe('GAME OVER');
+    expect(r.subtitle).toContain('第 2 场');
+    expect(r.canContinue).toBe(false);
   });
 });
