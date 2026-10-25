@@ -686,10 +686,14 @@ canvas.addEventListener('pointerdown', (e) => {
   // 暂停菜单盖在最上面，优先处理
   if (pause.open) {
     const hit = hitTestPauseItem(x, y, pause.items.length);
-    if (hit >= 0 && hit !== pause.cursor) {
-      // 点击 = 选中（不再直接执行）：确认键是 A
-      pause.cursor = hit;
-      audio.play('menu');
+    if (hit >= 0) {
+      // 第一次点 = 选中；点已经选中的那一项 = 确认（手台藏起来后触屏没有 A 键）
+      if (hit !== pause.cursor) {
+        pause.cursor = hit;
+        audio.play('menu');
+      } else {
+        pad.press('A');
+      }
       return;
     }
   }
@@ -697,28 +701,40 @@ canvas.addEventListener('pointerdown', (e) => {
   // 菜单屏：点击只移动光标（确认一律走 A），避免误触直接进游戏
   if (flow.screen === 'mode') {
     const hit = hitTestModeItem(x, y);
-    if (hit >= 0 && hit !== flow.modeCursor) {
-      flow.modeCursor = hit;
-      audio.play('menu');
+    if (hit >= 0) {
+      if (hit !== flow.modeCursor) {
+        flow.modeCursor = hit;
+        audio.play('menu');
+      } else {
+        pad.press('A'); // 再点一次同一项 = 确认
+      }
       return;
     }
   }
   if (flow.screen === 'options') {
     const rows = flow.options.length + 1; // 末行是"按键设置"
     const hit = hitTestOptionRow(x, y, rows);
-    if (hit >= 0 && hit !== flow.optionCursor) {
-      // 只选中；"手台位置"这类行同样要再按 A 才进入
-      flow.optionCursor = hit;
-      audio.play('menu');
+    if (hit >= 0) {
+      // 只选中；再点同一项 = 确认（进入改值或进入「手台位置」）
+      if (hit !== flow.optionCursor) {
+        flow.optionCursor = hit;
+        audio.play('menu');
+      } else {
+        pad.press('A');
+      }
       return;
     }
   }
   if (flow.screen === 'select') {
     const cell = hitTestCell(x, y, flow.rosterSize, flow.cursor[0]);
-    if (cell >= 0 && cell !== flow.cursor[0]) {
-      // 点头像 = 选中该角色，锁定仍然按 A
-      flow.cursor[0] = cell;
-      audio.play('menu');
+    if (cell >= 0) {
+      // 点头像 = 选中；再点同一张 = 锁定（触屏没有 A 键）
+      if (cell !== flow.cursor[0]) {
+        flow.cursor[0] = cell;
+        audio.play('menu');
+      } else {
+        pad.press('A');
+      }
       return;
     }
   }
@@ -1251,6 +1267,9 @@ startAnimationLoop(
       uiTick++;
       if (uiTick % 20 === 0) {
         controls.refresh();
+        // 手台只在真正开打时显示：菜单/选人/结算屏用它操作会把画面盖住
+        // （画布铺满窗口后，摇杆和四键直接压在 canvas 内容上）
+        controls.setVisible(flow.screen === 'fight');
         // 调试条只在训练模式出现：街机/双人里摆一排"无限血/假人"按钮是错的
         controls.setBarVisible(
           flow.mode === 'training' &&

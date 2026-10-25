@@ -22,6 +22,14 @@ export interface TouchControlsHandle {
   refresh(): void;
   /** 底部功能条只在能用到的时候显示（菜单里藏起来） */
   setBarVisible(visible: boolean): void;
+  /**
+   * 整个手台显示/隐藏。
+   *
+   * 非对局界面（标题/选人/选项…）要藏起来：画布铺满窗口之后，手台的摇杆和四键
+   * 直接压在 canvas 内容上，选人屏的缩略条左端就被摇杆盖住了。
+   * 这些界面用「点击选中 + 再点一次确认」操作，不需要手台。
+   */
+  setVisible(visible: boolean): void;
   /** 窗口尺寸 / 安全区变化时重新摆位（比例布局，不是固定 px） */
   layout(width: number, height: number, insets: PadInsets): void;
   /** 应用自定义位置（归一化坐标，空对象 = 默认布局） */
@@ -230,6 +238,14 @@ export function mountTouchControls(
     },
     setBarVisible(visible: boolean): void {
       bar.style.display = visible ? 'flex' : 'none';
+    },
+    setVisible(visible: boolean): void {
+      root.style.display = visible ? '' : 'none';
+      // 藏起来时要松掉可能按住的键，否则回来还按着方向
+      if (!visible) {
+        pad.setDirections([]);
+        for (const b of ['A', 'B', 'C', 'D'] as const) pad.release(b);
+      }
     },
     setCustom(next: PadCustom): void {
       custom = next;
