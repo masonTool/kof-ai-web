@@ -152,7 +152,13 @@ export function drawPadAdjustHint(ctx: Ctx2D, blinkOn: boolean): void {
 }
 
 /** 连招演示的浮标：显示"正在演示第几步" */
-export function drawDemoLabel(ctx: Ctx2D, label: string, step: number, total: number): void {
+export function drawDemoLabel(
+  ctx: Ctx2D,
+  label: string,
+  step: number,
+  total: number,
+  damage = 0,
+): void {
   ctx.globalAlpha = 0.9;
   ctx.fillStyle = '#05070a';
   ctx.fillRect(4, 190, VIEW_WIDTH - 8, 16);
@@ -160,7 +166,8 @@ export function drawDemoLabel(ctx: Ctx2D, label: string, step: number, total: nu
   ctx.strokeStyle = SCREEN_COLORS.accent;
   ctx.lineWidth = 1;
   ctx.strokeRect(4.5, 190.5, VIEW_WIDTH - 9, 15);
-  text(ctx, `演示 ${step + 1}/${total} · ${label}`, VIEW_WIDTH / 2, 194, 'center', 6, SCREEN_COLORS.accent);
+  const dmg = damage > 0 ? ` · 累计 ${damage} 伤` : '';
+  text(ctx, `演示 ${step + 1}/${total} · ${label}${dmg}`, VIEW_WIDTH / 2, 194, 'center', 6, SCREEN_COLORS.accent);
 }
 
 /**

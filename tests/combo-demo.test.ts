@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { Btn } from '../src/core/input';
-import { comboDemoFor, flattenSteps, stepAt } from '../src/ui/combo-demo';
+import { comboDemoFor, flattenSteps, stepAt, totalDamage } from '../src/ui/combo-demo';
+import { KYO } from '../src/data/chars/kyo';
 
 describe('连招演示脚本', () => {
   it('三段由浅入深，最后一段用得上超必杀（两个攻击键同帧）', () => {
@@ -42,5 +43,35 @@ describe('连招演示脚本', () => {
     expect(stepAt(starts, starts[1]!)).toBe(1);
     expect(stepAt(starts, frames.length + 10)).toBe(2);
     expect(stepAt([], 0)).toBe(-1);
+  });
+});
+
+describe('连招演示的伤害（必须和真打出来的对得上）', () => {
+  it('给了角色就按招式数据求和，不是随手估的数字', () => {
+    const steps = comboDemoFor(KYO);
+    const wave = KYO.moves['236A']!;
+    const expectDmg = wave.hits.reduce((a, h) => a + h.damage, 0);
+    const step2 = steps[1]!;
+    expect(step2.damage).toBeGreaterThanOrEqual(expectDmg);
+  });
+
+  it('不带角色时不给伤害（不知道是谁，编一个数是骗人）', () => {
+    for (const s of comboDemoFor()) expect(s.damage).toBeUndefined();
+  });
+
+  it('总伤害随连段推进单调不减', () => {
+    const steps = comboDemoFor(KYO);
+    let prev = -1;
+    for (let i = 0; i < steps.length; i++) {
+      const sum = steps.slice(0, i + 1).reduce((a, s) => a + (s.damage ?? 0), 0);
+      expect(sum).toBeGreaterThanOrEqual(prev);
+      prev = sum;
+    }
+    expect(totalDamage(steps)).toBeGreaterThan(0);
+  });
+
+  it('查不到的招式算 0，不抛异常（新角色没写 236A 也不会崩）', () => {
+    const steps = comboDemoFor({ ...KYO, moves: {} } as typeof KYO);
+    expect(totalDamage(steps)).toBe(0);
   });
 });

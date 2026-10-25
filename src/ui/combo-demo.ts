@@ -6,6 +6,7 @@
  * 也顺便复用了对局完全相同的输入通路——演出来的连段一定是真能打出来的。
  */
 import { Btn } from '../core/input';
+import type { CharDef, MoveDef } from '../data/schema';
 
 /** 一步：一段方向/按键过程 + 这一步在界面上叫什么 */
 export interface DemoStep {
@@ -13,6 +14,10 @@ export interface DemoStep {
   label: string;
   /** 逐帧按住的位（每帧一个） */
   frames: number[];
+  /** 这一步用到的招式 id（用来查真实伤害，查不到就算 0） */
+  moves?: string[];
+  /** 这一步的理论伤害（由招式数据求和，不是估的） */
+  damage?: number;
 }
 
 const D = Btn.Down;
@@ -43,21 +48,38 @@ export function qcb(attack: number): number[] {
  * 三段预设连招：由浅入深（单招 → 取消 → 超必杀收尾），
  * 方向前缀固定朝右，实际演示时由对局按朝向处理。
  */
-export function comboDemoFor(): DemoStep[] {
-  return [
+export function comboDemoFor(char?: CharDef): DemoStep[] {
+  const steps: DemoStep[] = [
     {
       label: '① 站轻拳 → 站轻拳',
       frames: [...tap(Btn.A), ...tap(Btn.A)],
+      moves: ['5A', '5A'],
     },
     {
       label: '② 站轻拳 → 必杀（↓↘→ + A）',
       frames: [...tap(Btn.A), ...qcf(Btn.A)],
+      moves: ['5A', '236A'],
     },
     {
       label: '③ 蹲轻脚 → 必杀 → 超必杀',
       frames: [...tap(D | Btn.B), ...qcf(Btn.A), ...qcf(Btn.A | Btn.C)],
+      moves: ['2B', '236A', '236236AC'],
     },
   ];
+  if (!char) return steps;
+  // 伤害直接查招式数据求和：演示里报的数字必须和真打出来的对得上，不能随手估
+  for (const step of steps) {
+    step.damage = (step.moves ?? []).reduce((sum, id) => {
+      const mv = (char.moves as Record<string, MoveDef | undefined>)[id];
+      return sum + (mv ? mv.hits.reduce((a, h) => a + h.damage, 0) : 0);
+    }, 0);
+  }
+  return steps;
+}
+
+/** 一套连段的总伤害（只算查得到的招式） */
+export function totalDamage(steps: readonly DemoStep[]): number {
+  return steps.reduce((sum, s) => sum + (s.damage ?? 0), 0);
 }
 
 /** 把多步连成一串，返回总帧数与每步的起始帧（界面上高亮"正在打第几步"用） */

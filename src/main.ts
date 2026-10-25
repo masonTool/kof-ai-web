@@ -362,7 +362,7 @@ const controls = mountTouchControls(pad, [
         demoIndex = 0;
         return;
       }
-      const { frames, starts } = flattenSteps(comboDemoFor());
+      const { frames, starts } = flattenSteps(comboDemoFor(match?.p1.char));
       demoFrames = frames;
       demoStarts = starts;
       demoIndex = 0;
@@ -1096,9 +1096,13 @@ startAnimationLoop(
       if (flow.screen === 'fight' || flow.screen === 'select') drawMovesButton(ctx, moveListOpen);
       if (flow.screen !== 'title') drawMenuButton(ctx);
       if (demoFrames && flow.screen === 'fight') {
-        const steps = comboDemoFor();
+        const steps = comboDemoFor(match?.p1.char);
         const at = stepAt(demoStarts, Math.max(0, demoIndex - 1));
-        if (at >= 0) drawDemoLabel(ctx, steps[at]!.label, at, steps.length);
+        if (at >= 0) {
+          // 累计伤害：把到当前这一步为止的理论伤害加起来，演示时能看出这套连段值不值
+          const dmg = steps.slice(0, at + 1).reduce((sum, s) => sum + (s.damage ?? 0), 0);
+          drawDemoLabel(ctx, steps[at]!.label, at, steps.length, dmg);
+        }
       }
       // 训练场：顶部常驻状态条（不掉血 / 气无限 / 假人行为）
       if (flow.screen === 'fight' && flow.mode === 'training' && training && !moveListOpen) {
