@@ -20,7 +20,7 @@ import { downloadCanvas, renderSheet, type SheetSpec } from './render/sheet-expo
 import { POSE_LIBRARY } from './render/poses';
 import { lookFor } from './render/looks';
 import { drawFrame } from './render/renderer';
-import { ensurePortraits } from './render/portraits';
+import { ensureBigPortraits, ensurePortraits } from './render/portraits';
 import { ensureStageArt } from './render/stage-art';
 import { setWeatherEnabled, stageForIndex, stageForSeed } from './render/stage-draw';
 import { ensureTitleArt } from './render/title-art';
@@ -714,7 +714,7 @@ canvas.addEventListener('pointerdown', (e) => {
     }
   }
   if (flow.screen === 'select') {
-    const cell = hitTestCell(x, y, flow.rosterSize, flow.config.columns);
+    const cell = hitTestCell(x, y, flow.rosterSize, flow.cursor[0]);
     if (cell >= 0 && cell !== flow.cursor[0]) {
       // 点头像 = 选中该角色，锁定仍然按 A
       flow.cursor[0] = cell;
@@ -1214,6 +1214,14 @@ startAnimationLoop(
       if (flow.screen === 'fight' && match && !moveListOpen) {
         const stale = [match.p1, match.p2].filter((f) => !sheetReady(f.char.id));
         if (stale.length > 0) drawLoadingHint(ctx, blink);
+      }
+      // 选人屏：半身像只装"光标 ±1"这几张（单张 300KB，27 张一起装线上要等很久）
+      if (flow.screen === 'select') {
+        const c = flow.cursor[0];
+        const near = [flow.roster[c - 1], flow.roster[c], flow.roster[c + 1]]
+          .filter((x): x is NonNullable<typeof x> => Boolean(x))
+          .map((x) => x.id);
+        ensureBigPortraits(near);
       }
       // 街机：左上角报进度（第几场 / 对手队名）
       if (flow.screen === 'fight' && flow.mode === 'arcade' && arcade && match) {

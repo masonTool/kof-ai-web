@@ -13,7 +13,7 @@ import type { ArcadeResultModel } from '../ui/arcade-result';
 import type { SystemMenu } from '../ui/pause';
 import type { MoveEntry } from '../ui/movelist';
 import { drawFighter } from './fighter-draw';
-import { portraitFor } from './portraits';
+import { bigPortraitFor, portraitFor } from './portraits';
 import { titleArt } from './title-art';
 import { lookFor } from './looks';
 
@@ -435,63 +435,56 @@ export function drawTitle(ctx: Ctx2D, blinkOn: boolean): void {
   text(ctx, '方向键移动/跳蹲 · 236/623/214 出必杀', VIEW_WIDTH / 2, 200, 'center', 6, art ? SCREEN_COLORS.text : SCREEN_COLORS.dim);
 }
 
+/** 选人屏底部缩略条：格子边长 / 间距 / 一屏显示几个 */
+export const SEL_BAR = { y: 176, cell: 24, gap: 3, visible: 11 } as const;
+
+/** 缩略条要显示的第几个开始的索引（让光标尽量居中） */
+export function selectBarStart(count: number, cursor: number): number {
+  const vis = SEL_BAR.visible;
+  if (count <= vis) return 0;
+  return Math.max(0, Math.min(count - vis, cursor - Math.floor(vis / 2)));
+}
+
+/** 缩略条横向起点（居中） */
+export function selectBarX(count: number): number {
+  const n = Math.min(count, SEL_BAR.visible);
+  const total = n * SEL_BAR.cell + (n - 1) * SEL_BAR.gap;
+  return Math.round((VIEW_WIDTH - total) / 2);
+}
+
+/**
+ * 选人屏：左边大特写、右边资料、底部缩略条。
+ *
+ * 为什么改成这样：原来 29 个格子铺满一屏，每个只有 40×18 左右——
+ * 头像被压到看不清、名字要塞省略号，用户反馈"画面太拥挤、头像又小又糊"。
+ * 现在一屏只突出一个人，其余用底部缩略条浏览。
+ */
 export function drawSelect(ctx: Ctx2D, flow: AppFlow, blinkOn: boolean): void {
   ctx.fillStyle = SCREEN_COLORS.bg;
   ctx.fillRect(0, 0, VIEW_WIDTH, VIEW_HEIGHT);
-  text(ctx, 'SELECT YOUR FIGHTER', VIEW_WIDTH / 2, 22, 'center', 12, SCREEN_COLORS.gold);
 
   const count = flow.roster.length;
-  flow.roster.forEach((char: CharDef, i: number) => {
-    const r = cellRect(i, count, flow.columns);
-    const p1Here = flow.cursor[0] === i;
-    const p2Here = flow.cursor[1] === i;
-    // 名字要保证放得进格子：中文/假名在等宽字体里约等于 1 个字宽 = 字号，
-    // 所以按 (格宽 / 字数) 反推字号；小于 4px 就截断加省略号，宁可短也别糊成一团。
-    const fitName = (name: string, maxW: number): { label: string; size: number } => {
-      const size = Math.min(8, Math.floor((maxW - 2) / Math.max(1, name.length)));
-      if (size >= 4) return { label: name, size };
-      const maxChars = Math.max(2, Math.floor((maxW - 2) / 4) - 1);
-      return { label: `${name.slice(0, maxChars)}…`, size: 5 };
-    };
+  const cursor = flow.cursor[0];
+  const char = flow.roster[cursor] ?? flow.roster[0]!;
 
-    // 格子底色：有头像就贴头像（按格子长宽比做中心裁切，永远不溢出到邻居家），
-    // 没头像才用角色代表色——两条路各自完整，不做"半张脸"的叠加
-    const portrait = portraitFor(char.id);
-    if (portrait) {
-      const SRC = 128;
-      const aspect = r.w / Math.max(1, r.h);
-      // 宽格子裁掉上下、窄格子裁掉左右；纵向从头顶开始裁，保证脸在上半部
-      const sw = aspect >= 1 ? SRC : Math.round(SRC * aspect);
-      const sh = aspect >= 1 ? Math.round(SRC / aspect) : SRC;
-      ctx.drawImage(portrait, (SRC - sw) / 2, 0, sw, sh, r.x, r.y, r.w, r.h);
+  const ART = { x: 8, y: 30, w: 105, h: 140 }; // 3:4，和 480×640 的素材同比例
+
+  // 大特写：有半身像就贴，没有先贴小头像（拉伸会糊，但比空白强），再没有就画程序化小人
+  const big = bigPortraitFor(char.id);
+  ctx.fillStyle = '#0b0f16';
+  ctx.fillRect(ART.x, ART.y, ART.w, ART.h);
+  if (big) {
+    const bw = (big as { width?: number }).width ?? ART.w;
+    const bh = (big as { height?: number }).height ?? ART.h;
+    ctx.drawImage(big, 0, 0, bw, bh, ART.x, ART.y, ART.w, ART.h);
+  } else {
+    const small = portraitFor(char.id);
+    if (small) {
+      ctx.drawImage(small, 0, 0, 128, 128, ART.x, ART.y, ART.w, ART.h);
     } else {
-      ctx.fillStyle = char.palette.primary;
-      ctx.fillRect(r.x, r.y, r.w, r.h);
-    }
-    // 没有头像时才有名字条（有头像时格子只有 20 多像素高，留 12px 给名字等于把脸砍掉一半）
-    if (!portrait) {
-      ctx.fillStyle = char.palette.secondary;
-      ctx.fillRect(r.x, r.y + r.h - 12, r.w, 12);
-    }
-
-    // 边框：P1 红、P2 蓝（画在头像之后，不然会被盖住）
-    if (p1Here) {
-      ctx.strokeStyle = SCREEN_COLORS.accent;
-      ctx.lineWidth = 2;
-      ctx.strokeRect(r.x - 2, r.y - 2, r.w + 4, r.h + 4);
-    }
-    if (p2Here) {
-      ctx.strokeStyle = '#5aa9ff';
-      ctx.lineWidth = 2;
-      ctx.strokeRect(r.x - 4, r.y - 4, r.w + 8, r.h + 8);
-    }
-
-    // 没有头像时：格子够高就补一个缩小版待机姿势（否则只有名字，太寡淡）
-    if (!portrait && r.h >= 30) {
       ctx.save();
-      ctx.translate(r.x + r.w / 2, r.y + r.h - 9);
-      const figScale = Math.max(0.22, Math.min(0.42, Math.min(r.h / 105, r.w / 140)));
-      ctx.scale(figScale, figScale);
+      ctx.translate(ART.x + ART.w / 2, ART.y + ART.h - 10);
+      ctx.scale(0.85, 0.85);
       drawFighter(ctx, {
         palette: char.palette,
         facing: 1,
@@ -503,27 +496,64 @@ export function drawSelect(ctx: Ctx2D, flow: AppFlow, blinkOn: boolean): void {
       });
       ctx.restore();
     }
+  }
+  ctx.strokeStyle = SCREEN_COLORS.dim;
+  ctx.lineWidth = 1;
+  ctx.strokeRect(ART.x + 0.5, ART.y + 0.5, ART.w - 1, ART.h - 1);
 
-    const fitted = fitName(char.name, r.w);
-    if (!portrait) {
-      text(ctx, fitted.label, r.x + r.w / 2, r.y + 4, 'center', fitted.size, SCREEN_COLORS.text);
-    }
-    if (p1Here) text(ctx, 'P1', r.x + 2, r.y + r.h - 11, 'left', 6, '#ffd9cf');
-    if (p2Here) text(ctx, 'CPU', r.x + r.w - 2, r.y + r.h - 11, 'right', 6, '#cfe4ff');
+  // 右侧资料
+  const infoX = ART.x + ART.w + 10;
+  text(ctx, 'P1', infoX, 34, 'left', 7, '#ffd9cf');
+  text(ctx, char.name, infoX, 52, 'left', Math.min(14, Math.max(9, Math.floor(150 / Math.max(2, char.name.length)))), SCREEN_COLORS.gold);
+  const styleLabel: Record<string, string> = { fire: '炎', darkfire: '暗炎', thunder: '雷', ki: '气', none: '体术' };
+  const fx = (char as unknown as { fx?: string }).fx ?? 'none';
+  text(ctx, styleLabel[fx] ?? '体术', infoX, 72, 'left', 8, SCREEN_COLORS.text);
+
+  // 招式速览：只列必杀和超必杀，超出一屏就省略
+  const specials = Object.values(char.moves).filter((m) => m.kind === 'special' || m.kind === 'super');
+  text(ctx, '招式', infoX, 92, 'left', 7, SCREEN_COLORS.dim);
+  specials.slice(0, 4).forEach((m, i) => {
+    const name = m.name.length > 12 ? `${m.name.slice(0, 11)}…` : m.name;
+    text(ctx, name, infoX, 104 + i * 11, 'left', 6, m.kind === 'super' ? SCREEN_COLORS.gold : SCREEN_COLORS.text);
   });
 
-  // 格子里不写名字了，名字统一在底部显示（光标所指 / 已锁定的两人）
-  const nameOf = (i: number): string => flow.roster[i]?.name ?? '';
-  const cursorIdx = flow.cursor[0];
-  const picked = flow.picks?.map((c) => c.name).join(' / ') ?? '';
-  if (picked) {
-    text(ctx, picked, VIEW_WIDTH / 2, 191, 'center', 8, SCREEN_COLORS.gold);
-  } else if (cursorIdx >= 0) {
-    text(ctx, nameOf(cursorIdx), VIEW_WIDTH / 2, 190, 'center', 9, SCREEN_COLORS.text);
+  // 底部缩略条
+  const start = selectBarStart(count, cursor);
+  const barX = selectBarX(count);
+  const n = Math.min(count, SEL_BAR.visible);
+  for (let k = 0; k < n; k++) {
+    const i = start + k;
+    const c = flow.roster[i];
+    if (!c) break;
+    const x = barX + k * (SEL_BAR.cell + SEL_BAR.gap);
+    const y = SEL_BAR.y;
+    const face = portraitFor(c.id);
+    ctx.fillStyle = face ? '#0b0f16' : c.palette.primary;
+    ctx.fillRect(x, y, SEL_BAR.cell, SEL_BAR.cell);
+    if (face) ctx.drawImage(face, 0, 0, 128, 128, x, y, SEL_BAR.cell, SEL_BAR.cell);
+    // 光标 / 已选：P1 红框、P2 蓝框
+    if (flow.cursor[0] === i) {
+      ctx.strokeStyle = SCREEN_COLORS.accent;
+      ctx.lineWidth = 2;
+      ctx.strokeRect(x - 1, y - 1, SEL_BAR.cell + 2, SEL_BAR.cell + 2);
+    }
+    if (flow.locked[0] && flow.cursor[0] === i) {
+      ctx.fillStyle = SCREEN_COLORS.accent;
+      ctx.fillRect(x + SEL_BAR.cell - 5, y + 1, 4, 4);
+    }
+    if (flow.cursor[1] === i) {
+      ctx.strokeStyle = '#5aa9ff';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(x + 0.5, y + 0.5, SEL_BAR.cell - 1, SEL_BAR.cell - 1);
+    }
   }
+  // 缩略条两端的小箭头：暗示还有更多
+  if (start > 0) text(ctx, '‹', barX - 7, SEL_BAR.y + 7, 'center', 9, SCREEN_COLORS.dim);
+  if (start + n < count) text(ctx, '›', barX + n * (SEL_BAR.cell + SEL_BAR.gap) + 4, SEL_BAR.y + 7, 'center', 9, SCREEN_COLORS.dim);
 
-  const label = flow.locked[0] ? '已确定 · B/D 重选' : '点格子选人 · A 确认';
-  if (blinkOn || flow.locked[0]) text(ctx, label, VIEW_WIDTH / 2, 203, 'center', 7, SCREEN_COLORS.text);
+  // 底部状态
+  const label = flow.locked[0] ? '已确定 · B/D 重选' : 'A 确定 · 方向键换人';
+  if (blinkOn || flow.locked[0]) text(ctx, label, VIEW_WIDTH / 2, 210, 'center', 7, SCREEN_COLORS.text);
 }
 
 export function drawVs(ctx: Ctx2D, flow: AppFlow): void {
@@ -778,10 +808,19 @@ export function hitTestPauseItem(x: number, y: number, itemCount: number): numbe
 }
 
 /** 选人格子命中测试（鼠标/触屏点选） */
-export function hitTestCell(x: number, y: number, count: number, columns = gridColumns(count)): number {
-  for (let i = 0; i < count; i++) {
-    const r = cellRect(i, count, columns);
-    if (x >= r.x && x < r.x + r.w && y >= r.y && y < r.y + r.h) return i;
-  }
-  return -1;
+/**
+ * 选人屏点选：命中底部缩略条里的第几格。
+ *
+ * `cursor` 用来算滚动起点——条上只显示 11 个，光标在哪决定窗口从谁开始。
+ */
+export function hitTestCell(x: number, y: number, count: number, cursor = 0): number {
+  if (y < SEL_BAR.y || y >= SEL_BAR.y + SEL_BAR.cell) return -1;
+  const start = selectBarStart(count, cursor);
+  const barX = selectBarX(count);
+  const n = Math.min(count, SEL_BAR.visible);
+  const k = Math.floor((x - barX) / (SEL_BAR.cell + SEL_BAR.gap));
+  // 落在格间空隙上也算最近的那一格（手指点偏 1~2px 不该点空）
+  if (k < 0 || k >= n) return -1;
+  const idx = start + k;
+  return idx < count ? idx : -1;
 }

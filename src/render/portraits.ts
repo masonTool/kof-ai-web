@@ -54,3 +54,32 @@ export function resetPortraits(): void {
   cache.clear();
   pending.clear();
 }
+
+// ── 选人屏大特写（480×640 半身像） ─────────────────────────────────────────
+// 和 128×128 小头像分开缓存：大图单张 ~300KB，27 张一次装完是 10MB，
+// 线上 CDN 冷缓存会很慢，所以只按需装"当前光标 ±1"这几张。
+const bigCache = new Map<string, CanvasImageSource>();
+const bigPending = new Set<string>();
+
+/** 预载若干张半身像（重复调用无害；只需要传光标附近的几个） */
+export function ensureBigPortraits(ids: readonly string[]): void {
+  if (!canLoad()) return;
+  for (const id of ids) {
+    if (bigCache.has(id) || bigPending.has(id)) continue;
+    bigPending.add(id);
+    const img = new Image();
+    img.onload = () => {
+      bigPending.delete(id);
+      bigCache.set(id, img);
+    };
+    img.onerror = () => {
+      bigPending.delete(id); // 没有就回落小头像，不报错
+    };
+    img.src = `${baseUrl()}selportraits/${id}.png`;
+  }
+}
+
+/** 取半身像；还没加载好返回 null */
+export function bigPortraitFor(id: string): CanvasImageSource | null {
+  return bigCache.get(id) ?? null;
+}

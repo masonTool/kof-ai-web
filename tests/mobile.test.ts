@@ -10,6 +10,10 @@ import {
   VIEW_WIDTH_MIN,
 } from '../src/sim/constants';
 import {
+  hitTestCell,
+  SEL_BAR,
+  selectBarStart,
+  selectBarX,
   menuButtonRect,
   movesButtonRect,
   drawComboMeter,
@@ -339,5 +343,36 @@ describe('画面内按钮位置（从左上角挪到右上）', () => {
     const mb = movesButtonRect();
     expect(mb.y).toBeGreaterThan(HUD_LAYOUT.barY + HUD_LAYOUT.barH); // 血条之下
     expect(mb.y + mb.h).toBeLessThan(HUD_LAYOUT.meterY); // 气槽之上
+  });
+});
+
+describe('选人屏缩略条（大特写 + 底部条）', () => {
+  it('光标在中间时，窗口以光标为中心', () => {
+    expect(selectBarStart(29, 0)).toBe(0);
+    expect(selectBarStart(29, 14)).toBe(14 - Math.floor(SEL_BAR.visible / 2));
+    // 靠右时窗口贴住末尾，不会越界
+    expect(selectBarStart(29, 28)).toBe(29 - SEL_BAR.visible);
+  });
+
+  it('点缩略条能命中对应索引（含间距上的点）', () => {
+    const count = 29;
+    const cursor = 10;
+    const start = selectBarStart(count, cursor);
+    const barX = selectBarX(count);
+    for (let k = 0; k < Math.min(count, SEL_BAR.visible); k++) {
+      const x = barX + k * (SEL_BAR.cell + SEL_BAR.gap) + 3;
+      expect(hitTestCell(x, SEL_BAR.y + 5, count, cursor)).toBe(start + k);
+      // 格间空隙里的点也必须命中某一格（不点空），归到左邻或右邻都行
+      const gapX = barX + k * (SEL_BAR.cell + SEL_BAR.gap) + SEL_BAR.cell + 1;
+      if (k + 1 < Math.min(count, SEL_BAR.visible)) {
+        const hit = hitTestCell(gapX, SEL_BAR.y + 5, count, cursor);
+        expect(hit === start + k || hit === start + k + 1).toBe(true);
+      }
+    }
+  });
+
+  it('缩略条以外的位置不命中（避免误触上方大图区）', () => {
+    expect(hitTestCell(VIEW_WIDTH / 2, 60, 29, 10)).toBe(-1);
+    expect(hitTestCell(VIEW_WIDTH / 2, SEL_BAR.y - 5, 29, 10)).toBe(-1);
   });
 });
