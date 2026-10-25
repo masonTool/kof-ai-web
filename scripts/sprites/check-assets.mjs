@@ -79,6 +79,19 @@ for (const id of ids) {
     }
   }
 
+  // 站姿身高必须完全一致（同一个人出拳/挨打时不能比待机忽高忽低）
+  const STANDING = ['idle', 'walkF', 'walkB', 'guard', 'punchLight', 'punchHeavy', 'kickLight', 'kickHeavy', 'special', 'attack'];
+  const standHeights = STANDING.map((a) => json.anims?.[a]?.[0])
+    .filter(Boolean)
+    .map((f) => Number((f.h * json.scale).toFixed(2)));
+  if (standHeights.length > 1) {
+    const hMin = Math.min(...standHeights);
+    const hMax = Math.max(...standHeights);
+    if (hMax - hMin > 0.6) {
+      warn(`${id}: 站姿动画身高不一致（${hMin}~${hMax} 世界单位），同一个角色会忽高忽低`);
+    }
+  }
+
   // idle 身高
   const idle = json.anims?.idle?.[0];
   if (idle) {

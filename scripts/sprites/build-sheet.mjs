@@ -112,15 +112,6 @@ const LYING = new Set(['down']);
 const HEIGHT_OVERRIDE = {};
 
 /**
- * 身高上限（世界单位）：算出来的高度超过它就压到它。
- *
- * 头发归一已经能把"画大了"的姿势缩回来，但蹲姿还有第二层问题：
- * 蹲着出拳画得再标准，也可能比真蹲高一截（AI 画的蹲不够低），所以给个宽松的天花板兜底。
- * 值要留足余量：压得太狠会把头也压小，反而破坏"同一张脸"的观感。
- */
-const HEIGHT_CAP = { crouch: 66, crouchPunch: 72, crouchKick: 64 };
-
-/**
  * 姿势目录 → 抠好的图。
  *
  * 目录名就是姿势（idle / punchout / kickwindup …），里面放元宝出的候选图，
@@ -200,61 +191,6 @@ function quantize(img, palette) {
   return out;
 }
 
-/**
- * 头发尺寸：与姿势无关的"绝对尺度"。
- *
- * 包围盒会被甩出去的手脚撑大/缩水，所以不能拿它当缩放基准——
- * 蹲着的人被 AI 画满了画面高度，按包围盒缩放就会比站姿大一圈。
- * 头发是同一头黑发、面积远大于 1px 描边，腐蚀掉描边后取最大的暗色连通块即可稳定量到；
- * 用面积开根（而不是宽/高）是为了抗头部旋转。
- */
-function hairSize(img) {
-  const y1 = Math.min(img.height, Math.floor(img.height * 0.4)); // 只看上部 40%，深色裤子一定不在
-  const w = img.width;
-  const h = y1;
-  let mask = new Uint8Array(w * h);
-  for (let y = 0; y < h; y++) {
-    for (let x = 0; x < w; x++) {
-      const i = (y * w + x) * 4;
-      if (img.data[i + 3] < 200) continue;
-      const luma = 0.299 * img.data[i] + 0.587 * img.data[i + 1] + 0.114 * img.data[i + 2];
-      if (luma < 70) mask[y * w + x] = 1;
-    }
-  }
-  // 腐蚀 3 次，吃掉 1~2px 的描边
-  for (let t = 0; t < 3; t++) {
-    const next = new Uint8Array(mask.length);
-    for (let y = 1; y < h - 1; y++) {
-      for (let x = 1; x < w - 1; x++) {
-        const i = y * w + x;
-        if (mask[i] && mask[i - 1] && mask[i + 1] && mask[i - w] && mask[i + w]) next[i] = 1;
-      }
-    }
-    mask = next;
-  }
-  // 最大连通块
-  const seen = new Uint8Array(mask.length);
-  let bestArea = 0;
-  for (let i = 0; i < mask.length; i++) {
-    if (!mask[i] || seen[i]) continue;
-    let area = 0;
-    const stack = [i];
-    seen[i] = 1;
-    while (stack.length) {
-      const j = stack.pop();
-      area++;
-      const x = j % w;
-      const y = (j - x) / w;
-      if (x > 0 && mask[j - 1] && !seen[j - 1]) { seen[j - 1] = 1; stack.push(j - 1); }
-      if (x < w - 1 && mask[j + 1] && !seen[j + 1]) { seen[j + 1] = 1; stack.push(j + 1); }
-      if (y > 0 && mask[j - w] && !seen[j - w]) { seen[j - w] = 1; stack.push(j - w); }
-      if (y < h - 1 && mask[j + w] && !seen[j + w]) { seen[j + w] = 1; stack.push(j + w); }
-    }
-    if (area > bestArea) bestArea = area;
-  }
-  return bestArea > 0 ? Math.sqrt(bestArea) : null;
-}
-
 /** 腿部质心当水平锚点：出拳/踢腿时上身和手臂会甩出去，腿是唯一稳的参考 */
 function legAnchorX(img) {
   const yStart = Math.floor(img.height * 0.72);
@@ -317,24 +253,33 @@ for (const list of Object.values(ANIMS)) {
 const refPose = ANIMS.idle[0];
 const refH = raws.get(refPose).height;
 const scale = (CHAR_H * RES) / refH;
-/** 以 idle 的头发为 1.0，其它姿势按头发面积开根修正（头部大小一致 = 整张人一致） */
-const refHair = hairSize(raws.get(refPose)) ?? 1;
+/**
+ * 每个动画的目标身高（世界单位，脚底到包围盒顶部）。
+ *
+ * 为什么不再用"头发面积归一"：AI 出的同一角色各姿势大小并不一致（iori 的踢腿能画到
+ * 待机的 1.5 倍），按头发逐个修正会把**测量误差**（头发随头部转动变形）直接乘到整个人身上，
+ * 表现就是"同一个人一会儿高一会儿矮"。改成**按姿势类别给固定身高**最稳：
+ * 站姿一律 84（脚底到头顶），蹲姿另给，躺姿按宽度，胜负姿势含举起的手臂。
+ */
+const HEIGHT_TARGET = {
+  crouch: 64,
+  crouchPunch: 66,
+  crouchKick: 58,
+  win: 88,
+  win2: 88,
+  win3: 88,
+};
 
 const frames = {};
 for (const [anim, list] of Object.entries(ANIMS)) {
   const lying = LYING.has(anim);
-  const targetH = HEIGHT_OVERRIDE[anim];
-  const cap = HEIGHT_CAP[anim];
+  const targetH = HEIGHT_TARGET[anim];
   frames[anim] = list.map((pose) => {
     const raw = raws.get(pose);
-    // 躺姿的头发被身体挡住/转了 90°，量不准，仍按宽度归一
-    const hair = lying ? null : hairSize(raw);
-    // 头发比 idle 大说明这张图画得更大，按比例缩回来（不依赖包围盒）
-    const k = hair ? refHair / hair : 1;
-    const naturalH = Math.round(raw.height * scale * k);
+    // 站姿一律按目标身高缩放；蹲姿给更矮的目标；躺姿按宽度
     const sized = lying
       ? scaleToWidth(raw, Math.round(CHAR_H * RES * 1.05))
-      : scaleToHeight(raw, targetH !== undefined ? targetH * RES : cap !== undefined ? Math.min(naturalH, cap * RES) : naturalH);
+      : scaleToHeight(raw, Math.round((targetH ?? CHAR_H) * RES));
     const img = quantize(sized, framePalette(sized));
     const ox = -Math.round(lying ? img.width / 2 : legAnchorX(img));
     const rect = { w: img.width, h: img.height, ox, oy: -img.height };
