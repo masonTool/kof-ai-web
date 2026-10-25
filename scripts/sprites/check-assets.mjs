@@ -97,9 +97,38 @@ for (const id of ids) {
   }
 }
 
-// 变体角色：不要求图集，但必须有头像
-for (const variant of Object.keys(VARIANTS)) {
+/** 平均色（只算不透明像素），用来核对"染色有没有真的生效" */
+function meanColor(file) {
+  const img = decodePng(readFileSync(file));
+  let r = 0;
+  let g = 0;
+  let b = 0;
+  let n = 0;
+  for (let i = 0; i < img.data.length; i += 4) {
+    if (img.data[i + 3] < 128) continue;
+    r += img.data[i];
+    g += img.data[i + 1];
+    b += img.data[i + 2];
+    n += 1;
+  }
+  return n === 0 ? null : { r: r / n, g: g / n, b: b / n, n };
+}
+
+// 变体角色：必须有派生图集，且色调要和本体明显不同（否则选中了也看不出区别）
+for (const [variant, base] of Object.entries(VARIANTS)) {
   if (!existsSync(join(PORTRAITS, `${variant}.png`))) warn(`${variant}: 变体没有头像`);
+  const vSheet = join(SHEETS, `${variant}.png`);
+  const bSheet = join(SHEETS, `${base}.png`);
+  if (!existsSync(vSheet)) {
+    warn(`${variant}: 没有派生图集（跑 build-sheet --char ${variant} --from ${base} --tint r,g,b）`);
+    continue;
+  }
+  if (!existsSync(bSheet)) continue;
+  const mv = meanColor(vSheet);
+  const mb = meanColor(bSheet);
+  if (!mv || !mb) continue;
+  const dist = Math.hypot(mv.r - mb.r, mv.g - mb.g, mv.b - mb.b);
+  if (dist < 18) warn(`${variant}: 和本体 ${base} 的平均色只差 ${dist.toFixed(1)}，染色没生效？`);
 }
 
 // 舞台

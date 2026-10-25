@@ -23,6 +23,28 @@ const ALIAS = {
   orochi_iori: 'iori',
   orochi_leona: 'leona',
 };
+
+/**
+ * 变体头像的染色（和 `build-sheet.mjs --tint` 同一套公式，颜色才一致）：
+ * 只染中间调，纯黑描边和白高光保持原样。
+ */
+const TINT = {
+  orochi_iori: [255, 50, 40],
+  orochi_leona: [150, 70, 255],
+};
+
+function tintPixels(img, tint) {
+  const out = { width: img.width, height: img.height, data: new Uint8Array(img.data) };
+  for (let i = 0; i < out.data.length; i += 4) {
+    if (out.data[i + 3] === 0) continue;
+    const lum = (0.299 * out.data[i] + 0.587 * out.data[i + 1] + 0.114 * out.data[i + 2]) / 255;
+    const k = 0.62 * Math.max(0, 1 - Math.abs(lum - 0.45) * 2.1);
+    out.data[i] = Math.round(out.data[i] * (1 - k) + tint[0] * k);
+    out.data[i + 1] = Math.round(out.data[i + 1] * (1 - k) + tint[1] * k);
+    out.data[i + 2] = Math.round(out.data[i + 2] * (1 - k) + tint[2] * k);
+  }
+  return out;
+}
 const OUT = 'public/portraits';
 /** 头像边长（源像素缩放到这个尺寸） */
 const SIZE = 128;
@@ -129,10 +151,12 @@ for (const id of sheets) {
   done += 1;
 }
 
-// 变体：复制本体的头像
+// 变体：借本体的头像，再按同一套公式染色
 for (const [variant, base] of Object.entries(ALIAS)) {
   try {
-    writeFileSync(join(OUT, `${variant}.png`), readFileSync(join(OUT, `${base}.png`)));
+    const src = decodePng(readFileSync(join(OUT, `${base}.png`)));
+    const tinted = TINT[variant] ? tintPixels(src, TINT[variant]) : src;
+    writeFileSync(join(OUT, `${variant}.png`), encodePng(tinted));
     done += 1;
   } catch {
     skipped.push(`${variant}:本体 ${base} 的头像还没生成`);

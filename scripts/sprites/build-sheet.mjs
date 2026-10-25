@@ -22,6 +22,11 @@ const CHAR_ID = (() => {
   const i = process.argv.indexOf('--char');
   return i >= 0 && process.argv[i + 1] ? process.argv[i + 1] : 'kyo';
 })();
+const argVal = (name) => {
+  const i = process.argv.indexOf(`--${name}`);
+  return i >= 0 && process.argv[i + 1] ? process.argv[i + 1] : undefined;
+};
+
 const RAW = `art-source/${CHAR_ID}-raw-${STYLE}`;
 const OUT_IMAGE = `public/sheets/${CHAR_ID}.png`;
 const OUT_JSON = `public/sheets/${CHAR_ID}.json`;
@@ -263,6 +268,44 @@ function legAnchorX(img) {
     }
   }
   return n === 0 ? img.width / 2 : sum / n;
+}
+
+// ---------- 变体：从本体图集派生一份染色图集 ----------
+/**
+ * 暴走八神 / 暴走莉安娜 是同一个人的异色形态，姿势完全一样、只差颜色。
+ * 与其重新出 26 个姿势（18 分钟且脸会对不上），不如把本体图集按颜色「乘」一遍：
+ * 逐像素 `rgb × tint / 255`，明暗关系保留，色调整体偏移。
+ *
+ * 为什么放在打包阶段而不是运行时：运行时染色要动合成模式、还要给 Ctx2D 加接口，
+ * 而这里纯像素运算，node 里就能验证，导出的图和普通图集完全一样——
+ * 加载、LRU、闪白剪影全都不用改。
+ */
+const FROM = argVal('from');
+if (FROM) {
+  const tint = (argVal('tint') ?? '255,255,255').split(',').map((v) => Number(v.trim()));
+  if (tint.length !== 3 || tint.some((v) => !Number.isFinite(v) || v < 0 || v > 255)) {
+    console.error('--tint 要写成 "r,g,b"（0~255）');
+    process.exit(1);
+  }
+  const srcPng = decodePng(readFileSync(`public/sheets/${FROM}.png`));
+  const out = { width: srcPng.width, height: srcPng.height, data: new Uint8Array(srcPng.data) };
+  // 只染**中间调**：纯黑描边保持黑、白衬衫保持白，中间调（皮肤/裤子/衣褶）整体偏移。
+  // 试过整体相乘（白衣服变粉）和只染暗部（黑夹克变红、衣服细节全丢），都不如按亮度取中间。
+  const STRENGTH = 0.62;
+  for (let i = 0; i < out.data.length; i += 4) {
+    if (out.data[i + 3] === 0) continue;
+    const lum = (0.299 * out.data[i] + 0.587 * out.data[i + 1] + 0.114 * out.data[i + 2]) / 255;
+    const k = STRENGTH * Math.max(0, 1 - Math.abs(lum - 0.45) * 2.1);
+    out.data[i] = Math.round(out.data[i] * (1 - k) + tint[0] * k);
+    out.data[i + 1] = Math.round(out.data[i + 1] * (1 - k) + tint[1] * k);
+    out.data[i + 2] = Math.round(out.data[i + 2] * (1 - k) + tint[2] * k);
+  }
+  writeFileSync(OUT_IMAGE, encodePng(out));
+  const json = JSON.parse(readFileSync(`public/sheets/${FROM}.json`, 'utf8'));
+  json.image = `${CHAR_ID}.png`;
+  writeFileSync(OUT_JSON, `${JSON.stringify(json, null, 1)}\n`);
+  console.log(`${CHAR_ID}：由 ${FROM} 染色派生（tint ${tint.join(',')}）· 图集 ${out.width}×${out.height}`);
+  process.exit(0);
 }
 
 // ---------- 主流程 ----------
