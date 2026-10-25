@@ -19,6 +19,11 @@ export const LEONA: CharDef = {
   push: { w: 33 },
   moves: {
     ...buildNormals({ power: 0.97, speed: 0.94, reach: 1.02, cancels: CANCELS }),
+    // 投技：← + C（不可防，只抓站立/蹲防的对手）
+    '4C': mv('4C', '重力摔', 'throwStart', 34, 'throw', [
+      hit('h1', { box: { x: 4, y: -66, w: 24, h: 36 }, frames: [3, 7], damage: 105, hitStun: 30, blockStun: 0, hitstop: 14, pushback: 0, knockdown: 'slam' }),
+    ], { input: { motion: '4', buttons: ['C'] } }),
+
 
     // ---------------------------------------------------------------- 必杀技
     // ボルテックランチャー：长距气刃（近身判定很长）

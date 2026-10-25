@@ -229,3 +229,26 @@ describe('CPU 的攻防手段', () => {
     expect(easy).toBeGreaterThan(0);
   });
 });
+
+describe('CPU 会用投技破防', () => {
+  it('对手一直防御时，除了 C+D 还会用 ←+C（投技不可防）', () => {
+    let throws = 0;
+    let crushes = 0;
+    for (let seed = 1; seed <= 40; seed++) {
+      const me = new Fighter(KYO, { x: 100, facing: 1 });
+      const foe = new Fighter(IORI, { x: 130, facing: -1 });
+      foe.state = FighterState.Block;
+      const brain = new CpuBrain(me, foe, 'hard', seed);
+      for (let i = 0; i < 60; i++) {
+        const h = brain.step().held;
+        // 投技 = 后退方向 + C（不同时按 D）
+        if (h === (Btn.Left | Btn.C) && (h & Btn.D) === 0) throws++;
+        if ((h & Btn.C) !== 0 && (h & Btn.D) !== 0) crushes++;
+      }
+    }
+    expect(throws).toBeGreaterThan(0);
+    expect(crushes).toBeGreaterThan(0);
+    // 两条路都要走，不能只用一种（只用吹飞的话玩家一直蹲防就能全挡）
+    expect(throws + crushes).toBeGreaterThan(throws);
+  });
+});

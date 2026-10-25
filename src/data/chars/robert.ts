@@ -19,6 +19,11 @@ export const ROBERT: CharDef = {
   push: { w: 34 },
   moves: {
     ...buildNormals({ power: 0.99, speed: 0.95, reach: 1.05, cancels: CANCELS }),
+    // 投技：← + C（不可防，只抓站立/蹲防的对手）
+    '4C': mv('4C', '龙虎投', 'throwStart', 34, 'throw', [
+      hit('h1', { box: { x: 4, y: -66, w: 24, h: 36 }, frames: [3, 7], damage: 105, hitStun: 30, blockStun: 0, hitstop: 14, pushback: 0, knockdown: 'slam' }),
+    ], { input: { motion: '4', buttons: ['C'] } }),
+
 
     // 指令技：幻影脚（中段）
     '6B': mv('6B', '幻影脚', 'kickLight', 28, 'command', [

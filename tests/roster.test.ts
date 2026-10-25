@@ -21,6 +21,7 @@ const MOTION_FRAMES: Record<string, number[]> = {
   '63214': [R, D | R, D, D | L, L],
   '236236': [D, D | R, R, D, D | R, R],
   '6': [R],
+  '4': [L],
 };
 
 function parserFor(motion: string, buttons: readonly ('A' | 'B' | 'C' | 'D')[]): CommandParser {
@@ -141,5 +142,28 @@ describe('大门五郎', () => {
     const a = arena(DAIMON, 40);
     for (const held of [R, D | R, D, D | L, L | Btn.B]) a.step(held);
     expect(a.p1.move?.id).toBe('63214B');
+  });
+});
+
+describe('投技覆盖', () => {
+  const THROWERS = ['kyo', 'iori', 'terry', 'ryo', 'robert', 'leona', 'ralf', 'clark', 'athena'];
+
+  it('主力角色都有投技（←+C），且类型是 throw', () => {
+    for (const id of THROWERS) {
+      const c = ROSTER.find((x) => x.id === id);
+      expect(c, id).toBeTruthy();
+      const mv = (c!.moves as Record<string, { kind?: string; input?: { motion?: string } } | undefined>)['4C'];
+      expect(mv, `${id} 没有 4C`).toBeTruthy();
+      expect(mv!.kind, `${id} 的 4C 不是 throw`).toBe('throw');
+      expect(mv!.input?.motion, `${id} 的 4C 指令`).toBe('4');
+    }
+  });
+
+  it('投技都不消耗气（是基础手段，不是必杀）', () => {
+    for (const id of THROWERS) {
+      const c = ROSTER.find((x) => x.id === id)!;
+      const mv = (c.moves as Record<string, { meterCost?: number } | undefined>)['4C'];
+      expect(mv?.meterCost ?? 0, id).toBe(0);
+    }
   });
 });

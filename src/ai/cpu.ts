@@ -208,7 +208,10 @@ export class CpuBrain {
     // 对手一直缩着防 → 用 C+D 吹飞破防（普通拳脚会被一直挡住）
     if (dist <= ATTACK_RANGE && foe.state === FighterState.Block && this.cooldown === 0 && this.rand() < this.profile.crushChance) {
       this.cooldown = this.between(this.profile.attackGap[0], this.profile.attackGap[1]) + 12;
-      this.queue.push(Btn.C | Btn.D); // C+D = 吹飞攻击
+      // 破防有两条路：吹飞（C+D，硬直大但伤害高）和投技（←+C，不可防且更快）。
+      // 只会吹飞的话，玩家一直蹲着防就能全挡下来
+      if (this.rand() < 0.45) this.queue.push(this.back | Btn.C);
+      else this.queue.push(Btn.C | Btn.D);
       return { held: this.queue.shift()! };
     }
 

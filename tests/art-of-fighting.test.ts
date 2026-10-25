@@ -27,6 +27,7 @@ const MOTION_FRAMES: Record<string, number[]> = {
   '214214': [D, D | L, L, D, D | L, L],
   '2363214': [D, D | R, R, D | R, D, D | L, L],
   '6': [R],
+  '4': [L],
 };
 
 function parserFor(motion: string, buttons: readonly ('A' | 'B' | 'C' | 'D')[]): CommandParser {

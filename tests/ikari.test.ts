@@ -19,6 +19,7 @@ const L = Btn.Left;
 const R = Btn.Right;
 
 const MOTION_FRAMES: Record<string, number[]> = {
+  '4': [L],
   '236': [D, D | R, R],
   '214': [D, D | L, L],
   '623': [R, D, D | R],
