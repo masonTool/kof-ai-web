@@ -105,3 +105,18 @@ docs/        ARCHITECTURE.md（技术口径，改架构先改它）
 
 - `docs/ARCHITECTURE.md` — 技术栈、模拟内核口径、帧数据格式、KOF97 系统对照表
 - `AGENTS.md` — 协作与工作流约定
+
+## 持续集成
+
+`.github/workflows/ci.yml` 在 push 到 `main` 和所有 PR 上跑：
+
+| 步骤 | 命令 | 防的是什么 |
+|---|---|---|
+| 类型检查 | `npm run typecheck` | 类型错（和用例失败分开报，好定位） |
+| 单元测试 | `npm run test` | 926 条用例，含模拟/判定/素材结构 |
+| 素材自检 | `npm run art:check` | 图集数量、动画名、身高极差、舞台比例对不上 |
+| 生产构建 | `npm run build` | 能出 dist（产物上传成 artifact，留 7 天） |
+
+本地等价命令：`npm run check && npm run art:check && npm run build`
+
+`.continue/hooks/check.mjs` 不进 CI —— 它依赖本地队列与 git 历史状态，不是通用门禁。
