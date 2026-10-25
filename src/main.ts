@@ -35,6 +35,7 @@ import {
   drawHelp,
   drawMoveList,
   drawMoveHint,
+  drawDemoLabel,
   BACK_BUTTON,
   backButtonKey,
   drawBackButton,
@@ -57,6 +58,7 @@ import { AppFlow } from './ui/flow';
 import { afterStage, isCleared, newArcade, type ArcadeState } from './ui/arcade';
 import { arcadeResult } from './ui/arcade-result';
 import { moveListFor } from './ui/movelist';
+import { comboDemoFor, flattenSteps, stepAt } from './ui/combo-demo';
 import { arcadeRules, arcadeTeam } from './ui/arcade-roster';
 import { ChallengeBoard } from './ui/challenges';
 import { KeyBindMenu } from './ui/keybind';
@@ -85,6 +87,16 @@ let device = 1;
 /** 内容在画布内的偏移（铺满窗口后两侧留白，内容居中） */
 let deviceOffsetX = 0;
 let deviceOffsetY = 0;
+
+/**
+ * 连招演示：脚本帧 / 当前帧 / 每步起始帧；null = 没在演示。
+ *
+ * 必须**在 mountTouchControls 之前**声明：手台的功能条 label 是惰性闭包，
+ * 挂载时就会读一次，声明在后面会 TDZ 报错直接黑屏（踩过两次）。
+ */
+let demoFrames: number[] | null = null;
+let demoIndex = 0;
+let demoStarts: number[] = [];
 /** 手台句柄：`resize()` 在模块初始化阶段就会跑，那时 `controls` 还没建好（TDZ），所以走可变引用 */
 let padHandle: { layout(w: number, h: number, insets: SafeInsets): void } | null = null;
 
@@ -307,6 +319,22 @@ const controls = mountTouchControls(pad, [
   },
   { id: 'dummy', label: dummyLabel, run: () => void training?.cycleDummy() },
   { id: 'level', label: () => `难度:${CPU_LEVEL_LABEL[training?.settings.cpuLevel ?? 'normal']}`, run: () => void training?.cycleCpuLevel() },
+  {
+    id: 'demo',
+    label: () => (demoFrames ? '演示中…' : '演示连招'),
+    run: () => {
+      if (demoFrames) {
+        demoFrames = null;
+        demoIndex = 0;
+        return;
+      }
+      const { frames, starts } = flattenSteps(comboDemoFor());
+      demoFrames = frames;
+      demoStarts = starts;
+      demoIndex = 0;
+      if (match) match.softReset();
+    },
+  },
   {
     id: 'reset',
     label: () => (match?.phase === 'over' ? '再来一场' : '重开'),
@@ -763,6 +791,17 @@ startAnimationLoop(
       bgm.update(performance.now());
 
       const p1In = { held: (p1keys.sample.held | pad.sampleFrame().held) >>> 0 };
+
+      // 连招演示：用脚本按键盖掉玩家输入（走的是对局同一条输入通路）
+      if (demoFrames) {
+        if (demoIndex < demoFrames.length) {
+          p1In.held = demoFrames[demoIndex]!;
+          demoIndex++;
+        } else {
+          demoFrames = null;
+          demoIndex = 0;
+        }
+      }
       const p2In = p2keys.sample;
 
       // 说明浮层打开时冻结一切：任意键/点屏 = 翻页，最后一页关掉
@@ -983,6 +1022,11 @@ startAnimationLoop(
       }
       if (flow.screen === 'fight' || flow.screen === 'select') drawMovesButton(ctx, moveListOpen);
       if (backButtonKey(flow.screen)) drawBackButton(ctx);
+      if (demoFrames && flow.screen === 'fight') {
+        const steps = comboDemoFor();
+        const at = stepAt(demoStarts, Math.max(0, demoIndex - 1));
+        if (at >= 0) drawDemoLabel(ctx, steps[at]!.label, at, steps.length);
+      }
       if (moveHintFrames > 0 && flow.screen === 'fight' && !moveListOpen) {
         drawMoveHint(ctx, Math.min(1, moveHintFrames / 40));
       }

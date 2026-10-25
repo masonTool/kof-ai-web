@@ -150,6 +150,18 @@ export function drawBackButton(ctx: Ctx2D): void {
   text(ctx, '‹ 返回', BACK_BUTTON.x + BACK_BUTTON.w / 2, BACK_BUTTON.y + 4, 'center', 6, SCREEN_COLORS.text);
 }
 
+/** 连招演示的浮标：左上角显示"正在演示第几步" */
+export function drawDemoLabel(ctx: Ctx2D, label: string, step: number, total: number): void {
+  ctx.globalAlpha = 0.9;
+  ctx.fillStyle = '#05070a';
+  ctx.fillRect(4, 190, VIEW_WIDTH - 8, 16);
+  ctx.globalAlpha = 1;
+  ctx.strokeStyle = SCREEN_COLORS.accent;
+  ctx.lineWidth = 1;
+  ctx.strokeRect(4.5, 190.5, VIEW_WIDTH - 9, 15);
+  text(ctx, `演示 ${step + 1}/${total} · ${label}`, VIEW_WIDTH / 2, 194, 'center', 6, SCREEN_COLORS.accent);
+}
+
 /** 首次进对局时的必杀提示（只弹一次，之后靠左下角「招式」按钮） */
 export const MOVE_HINT_TEXT = '必杀技怎么放？按 L 或点左下角「招式」看本角色招式表';
 
