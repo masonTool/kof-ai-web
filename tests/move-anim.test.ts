@@ -15,10 +15,10 @@ describe('必杀技专属动作', () => {
     expect(dp).not.toBe(superMove);
   });
 
-  it('波动用推手、升龙用重脚、超必杀用 special', () => {
-    expect(poseForMotion('236')).toBe('punchHeavy');
-    expect(poseForMotion('623')).toBe('kickHeavy');
-    expect(poseForMove(KYO.moves['236236AC']!)).toBe('special');
+  it('波动用推手、升龙用上挑、超必杀用蓄力（各有专属姿势）', () => {
+    expect(poseForMotion('236')).toBe('specialProjectile');
+    expect(poseForMotion('623')).toBe('specialUppercut');
+    expect(poseForMove(KYO.moves['236236AC']!)).toBe('superCharge');
   });
 
   it('映射出来的姿势必须真的存在（否则有贴图的角色会回落到程序化绘制）', () => {

@@ -75,6 +75,11 @@ const ANIMS = {
   jumpAttack: ['jumpattack'],
   // 必杀技：所有必杀/超必杀共用一个起手姿势
   special: ['special'],
+  // 必杀专属动作（T200 出图）：波动推手 / 升龙上挑 / 前冲肩撞 / 超必杀蓄力
+  specialProjectile: ['specialprojectile'],
+  specialUppercut: ['specialuppercut'],
+  specialRush: ['specialrush'],
+  superCharge: ['supercharge'],
   // 躺在地上：按"宽度"归一，锚点用包围盒中心（横躺的人没有"脚底"这个概念）
   down: ['down'],
 };

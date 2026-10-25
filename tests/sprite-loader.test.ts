@@ -81,7 +81,7 @@ describe('贴图 JSON', () => {
  * 贴图还在生成中的新姿势：缺失时回落到程序化版本，不算失败。
  * 出完图把它们从这里删掉，测试会重新变成"一个都不能少"。
  */
-const OPTIONAL_POSES = new Set(['specialProjectile', 'specialUppercut', 'specialRush', 'superCharge']);
+const OPTIONAL_POSES = new Set<string>([]);
 
 describe('京的贴图产物（build-kyo.mjs 的输出）', () => {
   const raw: unknown = sheetJson;

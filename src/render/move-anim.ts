@@ -12,25 +12,25 @@ import type { MoveDef } from '../data/schema';
 
 /** 指令 → 姿势。键是 motion，值是姿势库里的名字（贴图图集里都有） */
 const MOTION_POSE: Record<string, string> = {
-  // 波动 / 旋风：手上发力
-  '236': 'punchHeavy',
-  '214': 'punchHeavy',
-  '41236': 'punchHeavy',
-  '63214': 'punchHeavy',
-  // 升龙 / 逆向升龙：向上踢
-  '623': 'kickHeavy',
-  '421': 'kickHeavy',
+  // 波动 / 旋风：双手前推（京已出图，其它角色回落程序化版本）
+  '236': 'specialProjectile',
+  '214': 'specialProjectile',
+  '41236': 'specialProjectile',
+  '63214': 'specialProjectile',
+  // 升龙 / 逆向升龙：向上冲
+  '623': 'specialUppercut',
+  '421': 'specialUppercut',
   // 单方向突进（6B 一类）与双击冲刺：整个人撞出去
-  '6': 'jumpAttack',
-  doubleTapF: 'jumpAttack',
-  doubleTapB: 'jumpAttack',
+  '6': 'specialRush',
+  doubleTapF: 'specialRush',
+  doubleTapB: 'specialRush',
   // 蓄力招：先摆架势，用通用攻击姿势
   chargeBack: 'attack',
   chargeDown: 'attack',
 };
 
 /** 超必杀一律用 `special`（贴图里那一套是为大招画的，最有气势） */
-const SUPER_POSE = 'special';
+const SUPER_POSE = 'superCharge';
 
 /**
  * 取招式该用的姿势名。
