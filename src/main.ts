@@ -60,7 +60,7 @@ import { afterStage, isCleared, newArcade, type ArcadeState } from './ui/arcade'
 import { arcadeResult } from './ui/arcade-result';
 import { moveListFor } from './ui/movelist';
 import type { PadCustom } from './ui/pad-layout';
-import { comboDemoFor, flattenSteps, stepAt } from './ui/combo-demo';
+import { comboSets, flattenSteps, stepAt } from './ui/combo-demo';
 import { arcadeRules, arcadeTeam } from './ui/arcade-roster';
 import { ChallengeBoard } from './ui/challenges';
 import { KeyBindMenu } from './ui/keybind';
@@ -129,6 +129,8 @@ let padDraft: PadCustom = {};
 let demoFrames: number[] | null = null;
 let demoIndex = 0;
 let demoStarts: number[] = [];
+/** 当前选中的连段套数（0 入门 / 1 标准 / 2 高伤） */
+let demoSegment = 0;
 /** 手台句柄：`resize()` 在模块初始化阶段就会跑，那时 `controls` 还没建好（TDZ），所以走可变引用 */
 let padHandle: { layout(w: number, h: number, insets: SafeInsets): void } | null = null;
 
@@ -354,6 +356,16 @@ const controls = mountTouchControls(pad, [
   { id: 'dummy', label: dummyLabel, run: () => void training?.cycleDummy() },
   { id: 'level', label: () => `难度:${CPU_LEVEL_LABEL[training?.settings.cpuLevel ?? 'normal']}`, run: () => void training?.cycleCpuLevel() },
   {
+    id: 'combo',
+    label: () => (comboSets()[demoSegment] ?? comboSets()[0]!).name,
+    run: () => {
+      demoSegment = (demoSegment + 1) % comboSets().length;
+      demoFrames = null; // 换套时停掉正在播的那套，避免半截串味
+      demoIndex = 0;
+      audio.play('menu');
+    },
+  },
+  {
     id: 'demo',
     label: () => (demoFrames ? '演示中…' : '演示连招'),
     run: () => {
@@ -362,7 +374,8 @@ const controls = mountTouchControls(pad, [
         demoIndex = 0;
         return;
       }
-      const { frames, starts } = flattenSteps(comboDemoFor(match?.p1.char));
+      const set = comboSets(match?.p1.char)[demoSegment] ?? comboSets()[0]!;
+      const { frames, starts } = flattenSteps(set.steps);
       demoFrames = frames;
       demoStarts = starts;
       demoIndex = 0;
@@ -1096,7 +1109,7 @@ startAnimationLoop(
       if (flow.screen === 'fight' || flow.screen === 'select') drawMovesButton(ctx, moveListOpen);
       if (flow.screen !== 'title') drawMenuButton(ctx);
       if (demoFrames && flow.screen === 'fight') {
-        const steps = comboDemoFor(match?.p1.char);
+        const steps = (comboSets(match?.p1.char)[demoSegment] ?? comboSets()[0]!).steps;
         const at = stepAt(demoStarts, Math.max(0, demoIndex - 1));
         if (at >= 0) {
           // 累计伤害：把到当前这一步为止的理论伤害加起来，演示时能看出这套连段值不值

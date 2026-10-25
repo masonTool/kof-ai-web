@@ -77,6 +77,54 @@ export function comboDemoFor(char?: CharDef): DemoStep[] {
   return steps;
 }
 
+/** 一套连段：同一个角色可以有好几套，从入门到高伤 */
+export interface ComboSet {
+  id: string;
+  /** 界面显示的名字，带难度标签 */
+  name: string;
+  steps: DemoStep[];
+}
+
+/**
+ * 一个角色的多套连招。
+ *
+ * 为什么分三套而不是只留最好的一套：新手照着"蹲轻脚→必杀→超必杀"练不出来，
+ * 得先有只用轻拳的两段；而熟练玩家要看上限。三档刚好覆盖"能打出来 / 打得顺 / 打得疼"。
+ */
+export function comboSets(char?: CharDef): ComboSet[] {
+  const make = (steps: DemoStep[]): DemoStep[] => {
+    if (!char) return steps;
+    for (const step of steps) {
+      step.damage = (step.moves ?? []).reduce((sum, id) => {
+        const mv = (char.moves as Record<string, MoveDef | undefined>)[id];
+        return sum + (mv ? mv.hits.reduce((a, h) => a + h.damage, 0) : 0);
+      }, 0);
+    }
+    return steps;
+  };
+
+  return [
+    {
+      id: 'basic',
+      name: '入门 · 轻拳两段',
+      steps: make([
+        { label: '站轻拳', frames: [...tap(Btn.A)], moves: ['5A'] },
+        { label: '站轻拳 → 站重拳', frames: [...tap(Btn.A), ...tap(Btn.C)], moves: ['5A', '5C'] },
+      ]),
+    },
+    {
+      id: 'standard',
+      name: '标准 · 轻拳接必杀',
+      steps: make(comboDemoFor(char).slice(0, 2)),
+    },
+    {
+      id: 'advanced',
+      name: '高伤 · 必杀接超必杀',
+      steps: make(comboDemoFor(char).slice(1, 3)),
+    },
+  ];
+}
+
 /** 一套连段的总伤害（只算查得到的招式） */
 export function totalDamage(steps: readonly DemoStep[]): number {
   return steps.reduce((sum, s) => sum + (s.damage ?? 0), 0);

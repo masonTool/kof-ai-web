@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Btn } from '../src/core/input';
-import { comboDemoFor, flattenSteps, stepAt, totalDamage } from '../src/ui/combo-demo';
+import { comboSets, comboDemoFor, flattenSteps, stepAt, totalDamage } from '../src/ui/combo-demo';
 import { KYO } from '../src/data/chars/kyo';
 
 describe('连招演示脚本', () => {
@@ -73,5 +73,37 @@ describe('连招演示的伤害（必须和真打出来的对得上）', () => {
   it('查不到的招式算 0，不抛异常（新角色没写 236A 也不会崩）', () => {
     const steps = comboDemoFor({ ...KYO, moves: {} } as typeof KYO);
     expect(totalDamage(steps)).toBe(0);
+  });
+});
+
+describe('多套连招', () => {
+  it('三套：入门 / 标准 / 高伤，难度依次递增', () => {
+    const sets = comboSets(KYO);
+    expect(sets.map((s) => s.id)).toEqual(['basic', 'standard', 'advanced']);
+    expect(sets[0]!.name).toContain('入门');
+    expect(sets[2]!.name).toContain('高伤');
+  });
+
+  it('入门套只用普通技（没有指令输入），新手照着能按出来', () => {
+    const basic = comboSets(KYO)[0]!;
+    expect(basic.steps.every((s) => (s.moves ?? []).every((m) => !m.includes('236') && !m.includes('623')))).toBe(true);
+  });
+
+  it('高伤套一定包含超必杀（不然不配叫高伤）', () => {
+    const adv = comboSets(KYO)[2]!;
+    expect(adv.steps.some((s) => (s.moves ?? []).some((m) => m.includes('236236')))).toBe(true);
+  });
+
+  it('每套都能算出伤害，且高伤 ≥ 入门', () => {
+    const sets = comboSets(KYO);
+    const d = sets.map((s) => totalDamage(s.steps));
+    expect(d[0]!).toBeGreaterThan(0);
+    expect(d[2]!).toBeGreaterThanOrEqual(d[0]!);
+  });
+
+  it('不给角色也能拿到三套（只是不带伤害），不会崩', () => {
+    const sets = comboSets();
+    expect(sets).toHaveLength(3);
+    expect(totalDamage(sets[0]!.steps)).toBe(0);
   });
 });
