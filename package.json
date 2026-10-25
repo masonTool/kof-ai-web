@@ -20,7 +20,8 @@
     "art:check": "node scripts/sprites/check-assets.mjs",
     "art:stages": "node scripts/sprites/gen-stages.mjs",
     "art:stages:build": "node scripts/sprites/build-stages.mjs",
-    "art:portraits": "node scripts/sprites/build-portraits.mjs"
+    "art:portraits": "node scripts/sprites/build-portraits.mjs",
+    "art:special": "node scripts/sprites/gen-special-all.mjs"
   },
   "devDependencies": {
     "typescript": "^5.9.3",
