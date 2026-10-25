@@ -123,6 +123,24 @@ export function helpPageText(page: number): HelpPageView {
   return p;
 }
 
+/** 首次进对局时的必杀提示（只弹一次，之后靠左下角「招式」按钮） */
+export const MOVE_HINT_TEXT = '必杀技怎么放？按 L 或点左下角「招式」看本角色招式表';
+
+/** 画首次必杀提示：底部一条窄横幅，不挡血条也不挡站位 */
+export function drawMoveHint(ctx: Ctx2D, alpha = 1): void {
+  const y = 186;
+  const w = 288;
+  ctx.globalAlpha = alpha * 0.88;
+  ctx.fillStyle = '#05070a';
+  ctx.fillRect((VIEW_WIDTH - w) / 2, y, w, 16);
+  ctx.globalAlpha = alpha;
+  ctx.strokeStyle = SCREEN_COLORS.gold;
+  ctx.lineWidth = 1;
+  ctx.strokeRect((VIEW_WIDTH - w) / 2 + 0.5, y + 0.5, w - 1, 15);
+  text(ctx, MOVE_HINT_TEXT, VIEW_WIDTH / 2, y + 4, 'center', 6, SCREEN_COLORS.gold);
+  ctx.globalAlpha = 1;
+}
+
 /** 「招式」开关按钮（对局与选人屏左下角，触屏用） */
 export const MOVES_BUTTON = { x: 4, y: 204, w: 44, h: 15 } as const;
 

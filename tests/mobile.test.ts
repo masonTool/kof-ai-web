@@ -1,6 +1,9 @@
+import { FakeCtx } from './helpers/fake-ctx';
 import { describe, expect, it } from 'vitest';
 import { LOGICAL_HEIGHT, LOGICAL_WIDTH, computeViewport } from '../src/render/scale';
 import {
+  MOVE_HINT_TEXT,
+  drawMoveHint,
   HELP_BUTTON,
   HELP_PAGE_COUNT,
   helpPageText,
@@ -95,5 +98,20 @@ describe('说明浮层', () => {
   it('「怎么玩」按钮在屏幕内', () => {
     expect(HELP_BUTTON.x + HELP_BUTTON.w).toBeLessThanOrEqual(320);
     expect(HELP_BUTTON.y + HELP_BUTTON.h).toBeLessThanOrEqual(224);
+  });
+});
+
+describe('首次必杀提示', () => {
+  it('提示文案点名了「招式」入口，玩家知道去哪儿看', () => {
+    expect(MOVE_HINT_TEXT).toContain('招式');
+    expect(MOVE_HINT_TEXT).toMatch(/L|点/);
+  });
+
+  it('能画出来（底板 + 文字），且会把 globalAlpha 还原', () => {
+    const ctx = new FakeCtx();
+    drawMoveHint(ctx, 1);
+    expect(ctx.texts.some((t) => String(t.text).includes('招式'))).toBe(true);
+    expect(ctx.rects.length).toBeGreaterThanOrEqual(1);
+    expect(ctx.globalAlpha).toBe(1);
   });
 });

@@ -34,6 +34,7 @@ import {
   drawOptions,
   drawHelp,
   drawMoveList,
+  drawMoveHint,
   MOVES_BUTTON,
   drawMovesButton,
   drawResult,
@@ -699,6 +700,9 @@ function cueMatchSounds(): void {
 let helpPage = -1;
 /** 招式清单开关（对局中按 L 或点左下角按钮） */
 let moveListOpen = false;
+/** 首次必杀提示剩余帧（0 = 不显示）；只弹一次，记在 localStorage */
+let moveHintFrames = 0;
+const MOVE_HINT_SEEN_KEY = 'kof97.seenMoveHint';
 /** 点屏翻页：触屏没有"按下边沿"可读，用一次性标记 */
 let helpAdvanceQueued = false;
 /** 上一帧的按键状态（翻页需要边沿，不然按住会连翻） */
@@ -718,6 +722,13 @@ try {
   if (localStorage.getItem(HELP_SEEN_KEY) !== '1') helpPage = 0;
 } catch {
   // 隐私模式读不到 localStorage：当成"没看过"，弹一次，不写盘
+}
+
+let hintSeen = false;
+try {
+  hintSeen = localStorage.getItem(MOVE_HINT_SEEN_KEY) === '1';
+} catch {
+  hintSeen = false;
 }
 
 startAnimationLoop(
@@ -778,6 +789,21 @@ startAnimationLoop(
       const matchOver = match !== null && match.phase === 'over';
       // 街机打赢这一场：由我们自己推进（不走 flow 的结算屏），否则每场都要点一次"回标题"
       const arcadeWin = matchOver && flow.mode === 'arcade' && arcade !== null && match?.matchWinner === 1;
+
+      // 首次进对局：弹一次"必杀怎么放"提示（读完自动淡出）
+      if (flow.screen === 'fight' && match?.phase === 'fight') {
+        if (moveHintFrames === 0 && !hintSeen) {
+          moveHintFrames = 300;
+          hintSeen = true;
+          try {
+            localStorage.setItem(MOVE_HINT_SEEN_KEY, '1');
+          } catch {
+            /* 隐私模式：本次会话内只弹一次就够了 */
+          }
+        } else if (moveHintFrames > 0) {
+          moveHintFrames--;
+        }
+      }
       // 按键设置屏由 raw keydown 独占输入：再喂给 flow 会"一套按键两处消费"
       // （实测按 B 从按键屏返回时，flow 在同一帧又把 B 当成"退出选项屏"）。
       // 关掉 mute 的时机是"所有键都松开"，否则那个按键的按住状态还会被当成新的一次边沿。
@@ -928,6 +954,9 @@ startAnimationLoop(
         if (shown) drawMoveList(ctx, shown.name, moveListFor(shown));
       }
       if (flow.screen === 'fight' || flow.screen === 'select') drawMovesButton(ctx, moveListOpen);
+      if (moveHintFrames > 0 && flow.screen === 'fight' && !moveListOpen) {
+        drawMoveHint(ctx, Math.min(1, moveHintFrames / 40));
+      }
 
       // 说明浮层画在最上面（暂停之上），读说明时不该被别的 UI 盖住
       if (helpPage >= 0) drawHelp(ctx, helpPage, blink);
