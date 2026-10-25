@@ -1126,7 +1126,7 @@ startAnimationLoop(
               name,
               winQuoteFor(winner.char.id, match.wins[side - 1] ?? 0),
               blink,
-              arcade ? arcadeResult(arcade) : null,
+              arcade ? arcadeResult(arcade, match?.p1.char) : null,
             );
           }
           break;

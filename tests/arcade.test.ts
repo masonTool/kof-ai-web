@@ -14,6 +14,8 @@ import {
   stageLabel,
 } from '../src/ui/arcade';
 import { arcadeResult } from '../src/ui/arcade-result';
+import { endingFor, genericEnding } from '../src/ui/arcade-ending';
+import type { ArcadeState } from '../src/ui/arcade';
 import { arcadeRules, arcadeTeam, arcadeTeamName } from '../src/ui/arcade-roster';
 
 const ids = new Set(ROSTER.map((c) => c.id));
@@ -180,5 +182,50 @@ describe('街机流程（flow 层，不需要真打）', () => {
     const flow2 = mkFlow();
     flow2.step([{ held: 0 }, { held: 0 }], { matchOver: true, matchWinner: 2 });
     expect(flow2.screen).toBe('continue');
+  });
+});
+
+describe('通关专属结局', () => {
+  const cleared = (): ArcadeState => {
+    let s = newArcade('normal');
+    for (let i = 0; i < 8; i++) s = afterStage(s, true);
+    return s;
+  };
+
+  it('每个角色都能拿到自己的结局（不是所有人共用一句）', () => {
+    const seen = new Set<string>();
+    for (const c of ROSTER) {
+      const e = endingFor(c.id, c.name);
+      expect(e.headline.length, c.id).toBeGreaterThan(0);
+      expect(e.line.length, c.id).toBeGreaterThan(10);
+      seen.add(e.headline + '|' + e.line);
+    }
+    // 29 个角色不该只有零星几种结局
+    expect(seen.size).toBeGreaterThanOrEqual(25);
+  });
+
+  it('花名册里的角色都有专属结局，没有落到通用兜底', () => {
+    const generic = new Set(ROSTER.map((c) => genericEnding(c.name).line));
+    for (const c of ROSTER) {
+      expect(generic.has(endingFor(c.id, c.name).line), `${c.id} 落到了兜底`).toBe(false);
+    }
+  });
+
+  it('通关才给结局，中途失败不给（还没打完）', () => {
+    expect(arcadeResult(cleared(), { id: 'kyo', name: '草薙京' }).ending).not.toBeNull();
+    let s = newArcade('normal');
+    s = afterStage(s, true);
+    s = afterStage(s, false);
+    expect(arcadeResult(s, { id: 'kyo', name: '草薙京' }).ending).toBeNull();
+  });
+
+  it('不同角色通关拿到不同结局', () => {
+    const a = arcadeResult(cleared(), { id: 'kyo', name: '草薙京' }).ending!;
+    const b = arcadeResult(cleared(), { id: 'iori', name: '八神庵' }).ending!;
+    expect(a.line).not.toBe(b.line);
+  });
+
+  it('没传角色时给 null（不知道谁通的关，就别编一个）', () => {
+    expect(arcadeResult(cleared()).ending).toBeNull();
   });
 });

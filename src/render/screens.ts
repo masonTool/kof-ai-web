@@ -556,6 +556,16 @@ export function drawResult(
     );
     text(ctx, arcade.subtitle, VIEW_WIDTH / 2, 92, 'center', 8, SCREEN_COLORS.text);
     if (arcade.nextName) text(ctx, `下一场：${arcade.nextName}`, VIEW_WIDTH / 2, 108, 'center', 7, SCREEN_COLORS.dim);
+    // 通关专属结局：小标题 + 一句正文（打完 8 场才看得到的那一屏，不能只是"通关"两个字）
+    if (arcade.ending) {
+      text(ctx, arcade.ending.headline, VIEW_WIDTH / 2, 112, 'center', 8, SCREEN_COLORS.gold);
+      // 正文按宽度折行：一句话太长会直接冲出屏幕
+      const line = arcade.ending.line;
+      const per = 46;
+      for (let i = 0; i * per < line.length && i < 3; i++) {
+        text(ctx, line.slice(i * per, (i + 1) * per), VIEW_WIDTH / 2, 126 + i * 11, 'center', 6, SCREEN_COLORS.text);
+      }
+    }
   }
 
   if (blinkOn) text(ctx, '点击 / 按 A 回到标题', VIEW_WIDTH / 2, boxY + 58, 'center', 7, SCREEN_COLORS.dim);
