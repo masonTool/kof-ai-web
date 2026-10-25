@@ -12,6 +12,7 @@ import type { Ctx2D } from './ctx';
 import { drawFighter } from './fighter-draw';
 import { STYLE_COLORS } from './fx';
 import { lookFor } from './looks';
+import { poseForMove } from './move-anim';
 import { drawHud, text } from './hud';
 import { STATE_ANIM, winPoseFor } from './poses';
 import { STAGES, drawStage, type StageDef } from './stage-draw';
@@ -46,7 +47,8 @@ function animFor(f: Fighter, match: Match): { anim: string; elapsed: number; dur
   const intro = introAnimFor(match);
   if (intro) return { anim: intro, elapsed: f.stateFrame };
   if (f.isAttacking && f.move) {
-    return { anim: f.move.anim, elapsed: f.moveFrame, duration: f.move.total };
+    // 必杀的姿势按指令形状分开（数据里都是 'special'，否则四种必杀长得一样）
+    return { anim: poseForMove(f.move), elapsed: f.moveFrame, duration: f.move.total };
   }
   return { anim: STATE_ANIM[f.state] ?? 'idle', elapsed: f.stateFrame };
 }
