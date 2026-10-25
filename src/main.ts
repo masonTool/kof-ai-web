@@ -35,6 +35,9 @@ import {
   drawHelp,
   drawMoveList,
   drawMoveHint,
+  BACK_BUTTON,
+  backButtonKey,
+  drawBackButton,
   MOVES_BUTTON,
   drawMovesButton,
   drawResult,
@@ -546,6 +549,20 @@ canvas.addEventListener('pointerdown', (e) => {
   const x = ((e.clientX - rect.left) / rect.width) * VIEW_WIDTH;
   const y = ((e.clientY - rect.top) / rect.height) * VIEW_HEIGHT;
 
+  // 左上角「返回」：按各屏的返回键等于按一次对应按键
+  if (
+    x >= BACK_BUTTON.x &&
+    x <= BACK_BUTTON.x + BACK_BUTTON.w &&
+    y >= BACK_BUTTON.y &&
+    y <= BACK_BUTTON.y + BACK_BUTTON.h
+  ) {
+    const key = backButtonKey(flow.screen);
+    if (key) {
+      pad.press(key);
+      return;
+    }
+  }
+
   // 左下角「招式」开关
   if (
     (flow.screen === 'fight' || flow.screen === 'select') &&
@@ -954,6 +971,7 @@ startAnimationLoop(
         if (shown) drawMoveList(ctx, shown.name, moveListFor(shown));
       }
       if (flow.screen === 'fight' || flow.screen === 'select') drawMovesButton(ctx, moveListOpen);
+      if (backButtonKey(flow.screen)) drawBackButton(ctx);
       if (moveHintFrames > 0 && flow.screen === 'fight' && !moveListOpen) {
         drawMoveHint(ctx, Math.min(1, moveHintFrames / 40));
       }

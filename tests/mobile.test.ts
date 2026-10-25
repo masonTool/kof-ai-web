@@ -2,6 +2,9 @@ import { FakeCtx } from './helpers/fake-ctx';
 import { describe, expect, it } from 'vitest';
 import { LOGICAL_HEIGHT, LOGICAL_WIDTH, computeViewport } from '../src/render/scale';
 import {
+  BACK_BUTTON,
+  backButtonKey,
+  drawBackButton,
   MOVE_HINT_TEXT,
   drawMoveHint,
   HELP_BUTTON,
@@ -112,6 +115,31 @@ describe('首次必杀提示', () => {
     drawMoveHint(ctx, 1);
     expect(ctx.texts.some((t) => String(t.text).includes('招式'))).toBe(true);
     expect(ctx.rects.length).toBeGreaterThanOrEqual(1);
+    expect(ctx.globalAlpha).toBe(1);
+  });
+});
+
+describe('返回按钮', () => {
+  it('每个需要返回的屏都有对应的键，对局/标题没有（那里不该出现返回）', () => {
+    expect(backButtonKey('mode')).toBe('B');
+    expect(backButtonKey('select')).toBe('B');
+    expect(backButtonKey('options')).toBe('B');
+    expect(backButtonKey('result')).toBe('A'); // 结算屏是"回标题"
+    expect(backButtonKey('fight')).toBeNull();
+    expect(backButtonKey('title')).toBeNull();
+  });
+
+  it('按钮在左上角且不越界', () => {
+    expect(BACK_BUTTON.x).toBeLessThan(60);
+    expect(BACK_BUTTON.y).toBeLessThan(20);
+    expect(BACK_BUTTON.x + BACK_BUTTON.w).toBeLessThanOrEqual(320);
+    expect(BACK_BUTTON.y + BACK_BUTTON.h).toBeLessThanOrEqual(224);
+  });
+
+  it('画出来带「返回」字样，且 alpha 还原', () => {
+    const ctx = new FakeCtx();
+    drawBackButton(ctx);
+    expect(ctx.texts.some((t) => String(t.text).includes('返回'))).toBe(true);
     expect(ctx.globalAlpha).toBe(1);
   });
 });

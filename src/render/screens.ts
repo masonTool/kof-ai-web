@@ -123,6 +123,33 @@ export function helpPageText(page: number): HelpPageView {
   return p;
 }
 
+/** 左上角「返回」按钮的命中区域（逻辑坐标） */
+export const BACK_BUTTON = { x: 4, y: 4, w: 40, h: 16 } as const;
+
+/**
+ * 「返回」按钮按下去等于按哪个键。
+ *
+ * 各屏的返回键本来就不统一（选人/模式/选项是 B，结算屏是 A 回标题），
+ * 所以这里把映射收成一张表，而不是在点击处写一串 if。
+ */
+export function backButtonKey(screen: string): 'A' | 'B' | null {
+  if (screen === 'mode' || screen === 'select' || screen === 'options' || screen === 'keybind') return 'B';
+  if (screen === 'result' || screen === 'continue') return 'A';
+  return null;
+}
+
+/** 画左上角「返回」（只在需要它的屏上调用） */
+export function drawBackButton(ctx: Ctx2D): void {
+  ctx.globalAlpha = 0.9;
+  ctx.fillStyle = 'rgba(10,14,20,0.72)';
+  ctx.fillRect(BACK_BUTTON.x, BACK_BUTTON.y, BACK_BUTTON.w, BACK_BUTTON.h);
+  ctx.strokeStyle = SCREEN_COLORS.dim;
+  ctx.lineWidth = 1;
+  ctx.strokeRect(BACK_BUTTON.x + 0.5, BACK_BUTTON.y + 0.5, BACK_BUTTON.w - 1, BACK_BUTTON.h - 1);
+  ctx.globalAlpha = 1;
+  text(ctx, '‹ 返回', BACK_BUTTON.x + BACK_BUTTON.w / 2, BACK_BUTTON.y + 4, 'center', 6, SCREEN_COLORS.text);
+}
+
 /** 首次进对局时的必杀提示（只弹一次，之后靠左下角「招式」按钮） */
 export const MOVE_HINT_TEXT = '必杀技怎么放？按 L 或点左下角「招式」看本角色招式表';
 
