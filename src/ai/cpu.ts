@@ -31,6 +31,8 @@ export interface CpuProfile {
   moveGap: [number, number];
   /** 进攻时选择必杀技（而不是通常技）的概率 */
   specialChance: number;
+  /** 气满时选择超必杀的概率（越高越凶，但空放也很蠢，所以给得保守） */
+  superChance: number;
   /** 玩家在空中时跳起对空的概率 */
   antiAirChance: number;
 }
@@ -43,6 +45,7 @@ export const CPU_PROFILES: Record<CpuLevel, CpuProfile> = {
     attackGap: [30, 55],
     moveGap: [18, 30],
     specialChance: 0.1,
+    superChance: 0.3,
     antiAirChance: 0.05,
   },
   normal: {
@@ -52,6 +55,7 @@ export const CPU_PROFILES: Record<CpuLevel, CpuProfile> = {
     attackGap: [18, 34],
     moveGap: [12, 22],
     specialChance: 0.3,
+    superChance: 0.5,
     antiAirChance: 0.2,
   },
   hard: {
@@ -61,6 +65,7 @@ export const CPU_PROFILES: Record<CpuLevel, CpuProfile> = {
     attackGap: [10, 20],
     moveGap: [6, 12],
     specialChance: 0.5,
+    superChance: 0.7,
     antiAirChance: 0.45,
   },
 };
@@ -69,6 +74,9 @@ export const CPU_PROFILES: Record<CpuLevel, CpuProfile> = {
 const ATTACK_RANGE = 46;
 /** 太近了往回退一点，别贴死 */
 const MIN_RANGE = 26;
+
+/** 超必杀的气槽门槛（和角色数据的 meterCost 保持一致：100） */
+const SUPER_METER = 100;
 
 export class CpuBrain {
   /** 待执行的"按键帧"队列，一帧弹一个 */
@@ -113,9 +121,13 @@ export class CpuBrain {
   }
 
   /** 排队一串指令（每帧一个），末尾那帧带按键 */
-  private queueMotion(motion: 'qcf' | 'qcb' | 'dp' | 'duck', button: number): void {
+  private queueMotion(
+    motion: 'qcf' | 'qcb' | 'dp' | 'duck' | 'super',
+    button: number,
+  ): void {
     const f = this.forward;
     const d = Btn.Down;
+    // 超必杀是 236236 + A+C：方向要走两遍，最后一帧同时按两个拳键
     const frames =
       motion === 'qcf'
         ? [d, d | f, f | button]
@@ -123,7 +135,9 @@ export class CpuBrain {
           ? [d, d | this.back, this.back | button]
           : motion === 'dp'
             ? [f, d, d | f | button]
-            : [d, d | this.back, d | button];
+            : motion === 'super'
+              ? [d, d | f, f, d, d | f, f | Btn.A | Btn.C]
+              : [d, d | this.back, d | button];
     this.queue.push(...frames);
   }
 
@@ -178,9 +192,15 @@ export class CpuBrain {
     // 在攻击距离内且冷却好了 → 出招
     if (dist <= ATTACK_RANGE && this.cooldown === 0 && this.rand() < this.profile.aggression) {
       this.cooldown = this.between(this.profile.attackGap[0], this.profile.attackGap[1]);
-      if (this.rand() < this.profile.specialChance) {
+      // 气满了先考虑超必杀：原来 CPU 攒满气也只会普通必杀，等于把资源浪费掉
+      const canSuper = this.me.meter >= SUPER_METER && this.rand() < this.profile.superChance;
+      if (canSuper) {
+        this.queueMotion('super', Btn.A);
+      } else if (this.rand() < this.profile.specialChance) {
+        // 距离决定招式：远了发波、近了升龙（原来纯随机，远了还搓升龙等于空挥）
+        const far = dist > ATTACK_RANGE * 0.7;
         const roll = this.rand();
-        const motion = roll < 0.45 ? 'qcf' : roll < 0.75 ? 'dp' : 'qcb';
+        const motion = far ? (roll < 0.75 ? 'qcf' : 'qcb') : roll < 0.35 ? 'dp' : roll < 0.7 ? 'qcf' : 'qcb';
         const button = this.rand() < 0.5 ? Btn.A : Btn.C;
         this.queueMotion(motion, button);
       } else {

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { Btn } from '../src/core/input';
 import { CpuBrain, CPU_LEVELS, CPU_PROFILES, type CpuLevel } from '../src/ai/cpu';
 import { KYO } from '../src/data/chars/kyo';
+import { IORI } from '../src/data/chars/iori';
 import { Fighter } from '../src/sim/fighter';
 import { resolveCombat } from '../src/sim/hit';
 import { resolvePushAll } from '../src/sim/physics';
@@ -123,5 +124,53 @@ describe('CPU 行为', () => {
       return out.join(',');
     };
     expect(run()).toBe(run());
+  });
+});
+
+describe('CPU 会用自己的资源', () => {
+  const mk = (meter: number, dist: number) => {
+    const me = new Fighter(KYO, { x: 100, facing: 1 });
+    const foe = new Fighter(IORI, { x: 100 + dist, facing: -1 });
+    me.meter = meter;
+    return { me, foe };
+  };
+
+  it('气满了会放超必杀（原来攒满气也只会普通必杀，等于浪费资源）', () => {
+    let supers = 0;
+    for (let seed = 1; seed <= 40; seed++) {
+      const { me, foe } = mk(100, 40);
+      const brain = new CpuBrain(me, foe, 'hard', seed);
+      const seen: number[] = [];
+      for (let i = 0; i < 240; i++) seen.push(brain.step().held);
+      // 236236 的最后一下是 A+C 同按，用这个特征判断放了大招
+      if (seen.some((h) => (h & Btn.A) !== 0 && (h & Btn.C) !== 0)) supers++;
+    }
+    expect(supers).toBeGreaterThan(0);
+  });
+
+  it('没气的时候绝不会放超必杀（不然就是作弊）', () => {
+    for (let seed = 1; seed <= 20; seed++) {
+      const { me, foe } = mk(0, 40);
+      const brain = new CpuBrain(me, foe, 'hard', seed);
+      for (let i = 0; i < 240; i++) {
+        const h = brain.step().held;
+        expect((h & Btn.A) !== 0 && (h & Btn.C) !== 0).toBe(false);
+      }
+    }
+  });
+
+  it('远距离不会搓升龙（升龙是贴脸对空用的）', () => {
+    let dpFrames = 0;
+    for (let seed = 1; seed <= 30; seed++) {
+      const { me, foe } = mk(0, 150);
+      const brain = new CpuBrain(me, foe, 'hard', seed);
+      const seq: number[] = [];
+      for (let i = 0; i < 120; i++) seq.push(brain.step().held);
+      // 升龙的形状：先按前，再按下，再按下+前+按键
+      for (let i = 0; i < seq.length - 2; i++) {
+        if (seq[i] === Btn.Right && seq[i + 1] === Btn.Down && (seq[i + 2]! & Btn.Down) !== 0) dpFrames++;
+      }
+    }
+    expect(dpFrames).toBeLessThan(20);
   });
 });

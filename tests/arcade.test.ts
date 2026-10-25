@@ -122,10 +122,22 @@ describe('路线 → 队伍', () => {
     expect(arcadeTeamName(newArcade('normal'))).toBe(ARCADE_ROUTE[0]!.name);
   });
 
-  it('难度规则透传给对局（CPU 等级 + 血量倍率）', () => {
-    expect(arcadeRules(newArcade('easy'))).toEqual({ cpuLevel: 'easy', hpScale: 0.85 });
-    expect(arcadeRules(newArcade('hard'))).toEqual({ cpuLevel: 'hard', hpScale: 1.15 });
-    expect(arcadeRules(newArcade('normal')).hpScale).toBe(1);
+  it('第 1 场放水：整条路线从简单起步（不是一上来就 hardest）', () => {
+    expect(arcadeRules(newArcade('normal')).cpuLevel).toBe('easy');
+    expect(arcadeRules(newArcade('easy')).hpScale).toBeLessThan(0.85);
+  });
+
+  it('难度随场次爬坡：第 8 场明显强于第 1 场', () => {
+    let s = newArcade('normal');
+    const first = arcadeRules(s);
+    for (let i = 0; i < 7; i++) s = afterStage(s, true);
+    const last = arcadeRules(s);
+    expect(last.cpuLevel).toBe('hard');
+    expect(last.hpScale).toBeGreaterThan(first.hpScale);
+  });
+
+  it('玩家选的难度仍然起作用（同场次下 hard 血量更高）', () => {
+    expect(arcadeRules(newArcade('hard')).hpScale).toBeGreaterThan(arcadeRules(newArcade('easy')).hpScale);
   });
 });
 
