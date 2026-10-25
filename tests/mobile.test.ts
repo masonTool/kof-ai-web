@@ -11,6 +11,7 @@ import {
 import {
   drawComboMeter,
   drawDemoResult,
+  drawLoadingHint,
   drawStageBadge,
   drawTrainingBadge,
   MOVE_HINT_TEXT,
@@ -304,5 +305,15 @@ describe('街机进度显示', () => {
     const panel = ctx.rects[0]!;
     expect(panel.x).toBeLessThan(VIEW_WIDTH / 2);
     expect(panel.x + panel.w).toBeLessThanOrEqual(VIEW_WIDTH);
+  });
+});
+
+describe('贴图加载提示', () => {
+  it('画一条"加载中"提示，且 alpha 还原（不让整屏半透明）', () => {
+    const ctx = new FakeCtx();
+    drawLoadingHint(ctx, true);
+    const all = ctx.texts.map((t) => String(t.text)).join('|');
+    expect(all).toContain('加载中');
+    expect(ctx.globalAlpha).toBe(1);
   });
 });

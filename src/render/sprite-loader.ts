@@ -180,6 +180,26 @@ export function loadedSheetCount(): number {
  * 只加载场上这 6 个人，而且失败静默（没有素材的角色继续走程序化）。
  * 返回的 Promise 在本批全部结束（成功或失败）后 resolve。
  */
+/** 同时在飞的图集请求上限（线上实测 6 路并发会互相拖慢，单张从 2 秒变成 20~30 秒） */
+const MAX_PARALLEL = 2;
+
+/** 简单信号量：限制并发，避免大文件互抢带宽 */
+async function withSlot<T>(fn: () => Promise<T>): Promise<T> {
+  while (inFlight >= MAX_PARALLEL) await new Promise((r) => setTimeout(r, 30));
+  inFlight++;
+  try {
+    return await fn();
+  } finally {
+    inFlight--;
+  }
+}
+let inFlight = 0;
+
+/** 某个角色的贴图是不是已经可用（渲染层用来决定画不画"加载中"） */
+export function sheetReady(charId: string): boolean {
+  return sheets.has(charId);
+}
+
 export async function ensureCharSheets(charIds: readonly string[]): Promise<void> {
   const jobs = charIds.map(async (charId) => {
     if (sheets.has(charId)) {
@@ -189,7 +209,7 @@ export async function ensureCharSheets(charIds: readonly string[]): Promise<void
     const running = pending.get(charId);
     if (running) return running;
     const job = (async () => {
-      const provider = await loadCharSheet(charId, `${baseUrl()}sheets/${charId}.json`);
+      const provider = await withSlot(() => loadCharSheet(charId, `${baseUrl()}sheets/${charId}.json`));
       if (provider) {
         sheets.set(charId, provider);
         touch(charId);

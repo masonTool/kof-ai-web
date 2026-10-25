@@ -24,7 +24,7 @@ import { ensurePortraits } from './render/portraits';
 import { ensureStageArt } from './render/stage-art';
 import { setWeatherEnabled, stageForIndex, stageForSeed } from './render/stage-draw';
 import { ensureTitleArt } from './render/title-art';
-import { ensureCharSheets, installSheetProvider } from './render/sprite-loader';
+import { ensureCharSheets, installSheetProvider, sheetReady } from './render/sprite-loader';
 import { applyViewport, computeViewport, shouldRotate, type SafeInsets } from './render/scale';
 import {
   drawContinue,
@@ -39,6 +39,7 @@ import {
   drawTrainingBadge,
   drawComboMeter,
   drawStageBadge,
+  drawLoadingHint,
   drawDemoResult,
   drawDemoLabel,
   drawPadAdjustHint,
@@ -297,8 +298,13 @@ function startMatch(): void {
   const rules = inArcade ? arcadeRules(arcade!) : { cpuLevel: cfg.cpuLevel, hpScale: 1 };
   cpuHpScaledFor = -1;
 
-  // 把这 6 个人的图集装进来（没有素材的角色静默回落程序化）
-  void ensureCharSheets([...playerTeam, ...enemyTeam].map((c) => c.id));
+  // 图集加载分两批：**先装场上两个人**，画面才能尽快出贴图；其余 4 人后台补。
+  // 线上（GitHub Pages）单张图集 2MB、冷缓存要 20~30 秒，6 个一起请求会互相拖慢，
+  // 结果就是玩家进场先看到程序化像素人。
+  const firstTwo = [playerTeam[0]!, enemyTeam[0]!].map((c) => c.id);
+  void ensureCharSheets(firstTwo).then(() =>
+    ensureCharSheets([...playerTeam, ...enemyTeam].map((c) => c.id)),
+  );
   match = new Match(playerTeam, enemyTeam, {
     roundsToWin: cfg.roundsToWin,
     roundSeconds: cfg.roundSeconds,
@@ -1206,6 +1212,11 @@ startAnimationLoop(
       if (demoResultLeft > 0) {
         demoResultLeft--;
         if (flow.screen === 'fight') drawDemoResult(ctx, demoResultHits, demoResultDamage);
+      }
+      // 贴图还没到位：明确告诉玩家在加载（线上冷缓存要 20~30 秒，不是"画风就这样"）
+      if (flow.screen === 'fight' && match && !moveListOpen) {
+        const stale = [match.p1, match.p2].filter((f) => !sheetReady(f.char.id));
+        if (stale.length > 0) drawLoadingHint(ctx, blink);
       }
       // 街机：左上角报进度（第几场 / 对手队名）
       if (flow.screen === 'fight' && flow.mode === 'arcade' && arcade && match) {

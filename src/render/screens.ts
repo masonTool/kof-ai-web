@@ -192,6 +192,23 @@ export function drawDemoLabel(
 }
 
 /**
+ * 贴图还在下载时的提示。
+ *
+ * 线上（GitHub Pages）单张图集 2MB、冷缓存 20~30 秒，这段时间角色会回落成程序化像素人。
+ * 与其让玩家以为"这游戏画风就这样"，不如明确告诉他"正在加载"。
+ */
+export function drawLoadingHint(ctx: Ctx2D, blinkOn: boolean): void {
+  const w = 120;
+  const x = (VIEW_WIDTH - w) / 2;
+  const y = VIEW_HEIGHT - 28;
+  ctx.globalAlpha = 0.8;
+  ctx.fillStyle = '#05070a';
+  ctx.fillRect(x, y, w, 13);
+  ctx.globalAlpha = 1;
+  text(ctx, blinkOn ? '角色贴图加载中…' : '角色贴图加载中', VIEW_WIDTH / 2, y + 3, 'center', 6, SCREEN_COLORS.gold);
+}
+
+/**
  * 街机进度：左上角常驻「STAGE 3/8 · 队伍名」。
  *
  * 街机 8 场打下来，玩家需要知道"打到哪了、还剩几场"——原来只能靠记。

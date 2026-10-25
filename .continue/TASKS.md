@@ -240,3 +240,4 @@
 - [x] T220 GitHub Actions CI：typecheck → test → art:check → build（产物上传 artifact）
 - [x] T221 修 GitHub Pages 白屏：发布仓库根目录的开发版 HTML → 改用 Actions 部署 dist/
 - [x] T222 合并 CI 与部署为单 workflow（npm ci / build 只跑一次，PR 不发布）
+- [x] T223 线上贴图加载优化：并发限 2 + 先装场上 2 人 + 「加载中」提示（根因：CDN 冷缓存单张 20~30 秒）
