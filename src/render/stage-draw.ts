@@ -42,6 +42,13 @@ export interface StageDef {
   distant?: readonly StageBuilding[];
   /** 天空里有没有月亮/光源 */
   hasMoon?: boolean;
+  /**
+   * 天气：决定叠在场景上的粒子层。
+   *
+   * 静止的背景再精细也像一张贴图；一层会动的粒子（雨丝/落花/浮尘）是最便宜的"活起来"，
+   * 而且不依赖任何素材、不吃生成时间。
+   */
+  weather?: 'rain' | 'petals' | 'dust';
 }
 
 function skyline(seed: number, count: number, minH: number, maxH: number): StageBuilding[] {
@@ -72,6 +79,7 @@ export const STAGES: readonly StageDef[] = [
     horizon: 150,
     buildings: skyline(0x97a1, 14, 30, 86),
     distant: skyline(0x3c0f, 18, 46, 104),
+    weather: 'rain',
   },
   {
     id: 'valley',
@@ -88,6 +96,7 @@ export const STAGES: readonly StageDef[] = [
     horizon: 146,
     buildings: skyline(0x5eed, 12, 18, 58),
     distant: skyline(0x77a1, 16, 30, 76),
+    weather: 'petals',
   },
   {
     id: 'arena',
@@ -104,6 +113,7 @@ export const STAGES: readonly StageDef[] = [
     horizon: 152,
     buildings: skyline(0xa11ce, 10, 14, 44),
     distant: skyline(0x5a1c, 14, 26, 62),
+    weather: 'dust',
   },
 ];
 
@@ -118,6 +128,7 @@ export function drawStage(ctx: Ctx2D, cam: Camera, stage: StageDef = STAGES[0]!)
   const art = stageArtFor(stage.id);
   if (art) {
     drawStageArt(ctx, cam, stage, art);
+    drawWeather(ctx, cam, stage);
     return;
   }
 
@@ -236,6 +247,9 @@ export function drawStage(ctx: Ctx2D, cam: Camera, stage: StageDef = STAGES[0]!)
   // 地平线高光
   ctx.fillStyle = stage.groundLine;
   ctx.fillRect(0, GROUND_Y, VIEW_WIDTH, 1);
+
+  // 程序化背景同样要天气（有底图那条分支已经在 drawStageArt 之后调了）
+  drawWeather(ctx, cam, stage);
 }
 
 /**
@@ -290,6 +304,90 @@ function drawStageArt(ctx: Ctx2D, cam: Camera, stage: StageDef, art: StageArt): 
 
   ctx.fillStyle = stage.groundLine;
   ctx.fillRect(0, GROUND_Y, VIEW_WIDTH, 1);
+}
+
+/** 天气层的帧计数：渲染层自增即可（不参与模拟，回放一致性不受影响） */
+let weatherTick = 0;
+
+/** 测试用：把天气的帧计数归零（保证断言可重复） */
+export function resetWeatherTick(): void {
+  weatherTick = 0;
+}
+
+/** 基于索引的确定性哈希（0~1），用来撒粒子位置，避免随机数破坏可重复性 */
+function hash01(i: number, salt: number): number {
+  const x = Math.sin(i * 12.9898 + salt * 78.233) * 43758.5453;
+  return x - Math.floor(x);
+}
+
+/**
+ * 天气层：雨 / 落花 / 浮尘。
+ *
+ * 三种都用同一套"按索引哈希撒点 + 按帧数下落"的做法，所以：
+ * - 没有 `Math.random()`，同一帧数的画面完全一致（回放、截图对比都不漂）
+ * - 粒子数固定（雨 40 / 花 14 / 尘 18），手机上也几乎不花时间
+ */
+export function drawWeather(ctx: Ctx2D, cam: Camera, stage: StageDef): void {
+  const kind = stage.weather;
+  if (!kind) return;
+  weatherTick++;
+  const t = weatherTick;
+  const shift = cam.x * PARALLAX_MID;
+
+  if (kind === 'rain') {
+    // 雨丝：细长斜线，落地在屏幕下缘
+    // 雨丝要能压在 AI 底图的亮窗户上看得见，所以用高亮白蓝 + 更长 + 两档粗细
+    ctx.strokeStyle = 'rgba(225,240,255,0.72)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (let i = 0; i < 46; i++) {
+      const speed = 6 + (i % 5);
+      const x = (hash01(i, 1) * (VIEW_WIDTH + 80) - shift * 0.6 - t * 1.6) % (VIEW_WIDTH + 80);
+      const y = (hash01(i, 2) * VIEW_HEIGHT + t * speed) % VIEW_HEIGHT;
+      const sx = x < 0 ? x + VIEW_WIDTH + 80 : x;
+      const len = 10 + (i % 3) * 5;
+      ctx.moveTo(sx, y);
+      ctx.lineTo(sx - 3, y + len);
+    }
+    ctx.stroke();
+    // 地面溅射：几颗小亮点，暗示"雨打在台面上"
+    ctx.fillStyle = 'rgba(225,240,255,0.5)';
+    for (let i = 0; i < 10; i++) {
+      const sx = (hash01(i, 9) * VIEW_WIDTH - shift * 0.6 + t * 0.7) % VIEW_WIDTH;
+      ctx.fillRect(sx < 0 ? sx + VIEW_WIDTH : sx, GROUND_SCREEN_Y + 2 + (i % 4) * 3, 1, 1);
+    }
+    return;
+  }
+
+  if (kind === 'petals') {
+    // 落花：小方块边飘边转，靠 sin 做左右摆动
+    for (let i = 0; i < 18; i++) {
+      const speed = 0.7 + (i % 3) * 0.35;
+      const drift = Math.sin((t + i * 30) * 0.02) * 14;
+      const x = (hash01(i, 3) * (VIEW_WIDTH + 100) - shift * 0.5 - t * 0.35 + drift) % (VIEW_WIDTH + 100);
+      const y = (hash01(i, 4) * VIEW_HEIGHT + t * speed) % VIEW_HEIGHT;
+      const sx = x < 0 ? x + VIEW_WIDTH + 100 : x;
+      ctx.globalAlpha = 0.75 + hash01(i, 5) * 0.25;
+      ctx.fillStyle = i % 3 === 0 ? '#fff0f5' : '#ff8fb0';
+      // 3×3 + 错位 1px 的第二个方块 = 花瓣的"翻面"感，比单点明显得多
+      ctx.fillRect(sx, y, 3, 2);
+      ctx.fillRect(sx + 1, y + 1, 2, 2);
+    }
+    ctx.globalAlpha = 1;
+    return;
+  }
+
+  // 浮尘：缓慢上升的亮点，靠近地面更密
+  for (let i = 0; i < 18; i++) {
+    const speed = 0.25 + (i % 3) * 0.15;
+    const x = (hash01(i, 6) * (VIEW_WIDTH + 60) - shift * 0.4 + Math.sin((t + i * 20) * 0.03) * 6) % (VIEW_WIDTH + 60);
+    const y = GROUND_SCREEN_Y - ((hash01(i, 7) * 120 + t * speed) % 120);
+    const sx = x < 0 ? x + VIEW_WIDTH + 60 : x;
+    ctx.globalAlpha = 0.35 + hash01(i, 8) * 0.35;
+    ctx.fillStyle = '#ffe6b8';
+    ctx.fillRect(sx, y, 2, 2);
+  }
+  ctx.globalAlpha = 1;
 }
 
 export function stageById(id: string): StageDef {

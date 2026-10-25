@@ -10,7 +10,16 @@ import {
   ZOOM_MIN,
   ZOOM_NEAR_DIST,
 } from '../src/sim/camera';
-import { PARALLAX_DISTANT, PARALLAX_FAR, STAGES, TILE_SPACING, drawStage, stageById } from '../src/render/stage-draw';
+import {
+  PARALLAX_DISTANT,
+  PARALLAX_FAR,
+  STAGES,
+  TILE_SPACING,
+  drawStage,
+  drawWeather,
+  resetWeatherTick,
+  stageById,
+} from '../src/render/stage-draw';
 import { FakeCtx } from './helpers/fake-ctx';
 
 const at = (x: number): { x: number } => ({ x });
@@ -303,5 +312,56 @@ describe('运镜焦点', () => {
     cam.focusX = null;
     for (let i = 0; i < 200; i++) cam.update(a, b);
     expect(Math.abs(cam.x - 210)).toBeLessThan(2);
+  });
+});
+
+describe('天气层', () => {
+  const draw = (id: string): FakeCtx => {
+    const ctx = new FakeCtx();
+    drawWeather(ctx, new Camera({ x: 120, zoom: 1 }), stageById(id));
+    return ctx;
+  };
+
+  it('三条舞台各有自己的天气（雨 / 落花 / 浮尘）', () => {
+    expect(STAGES.map((s) => s.weather)).toEqual(['rain', 'petals', 'dust']);
+  });
+
+  it('下雨以线为主（雨丝）+ 少量地面溅射；落花和浮尘只有点', () => {
+    resetWeatherTick();
+    const rain = draw('skyline');
+    expect(rain.calls.filter((c) => c === 'stroke').length).toBeGreaterThan(0);
+    // 溅射点比雨丝少得多：雨的主体必须是线，否则就成了"下雪"
+    expect(rain.rects.length).toBeLessThan(20);
+
+    resetWeatherTick();
+    const petals = draw('valley');
+    expect(petals.rects.length).toBeGreaterThan(10);
+    expect(petals.calls).not.toContain('stroke');
+
+    resetWeatherTick();
+    const dust = draw('arena');
+    expect(dust.rects.length).toBeGreaterThan(10);
+    expect(dust.calls).not.toContain('stroke');
+  });
+
+  it('确定性：同样的帧数画两次完全一样（回放/截图对比不会漂）', () => {
+    resetWeatherTick();
+    const a = draw('skyline');
+    resetWeatherTick();
+    const b = draw('skyline');
+    expect(a.calls).toEqual(b.calls);
+    expect(a.rects).toEqual(b.rects);
+  });
+
+  it('会动：推进一帧后位置变化（不是一张静态贴图）', () => {
+    resetWeatherTick();
+    const first = draw('valley');
+    const second = draw('valley');
+    expect(second.rects).not.toEqual(first.rects);
+  });
+
+  it('画完把 globalAlpha 还原（否则后面整屏半透明）', () => {
+    resetWeatherTick();
+    for (const id of ['skyline', 'valley', 'arena']) expect(draw(id).globalAlpha).toBe(1);
   });
 });
