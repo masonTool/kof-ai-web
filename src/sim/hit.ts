@@ -51,6 +51,9 @@ export function guardDirection(f: Fighter): number {
  * 规则：空中不能防（KOF97 没有空中防御）；必须按住后退方向；
  * low 必须蹲防、overhead 必须站防、unblockable 谁都不能防。
  */
+/** 浮空追击的伤害倍率（打飞起来的目标多打一点） */
+export const AERIAL_DAMAGE_MULT = 1.15;
+
 export function isGuarding(defender: Fighter, hit: HitDef): boolean {
   if (defender.airborne) return false;
   if (!isNeutral(defender.state) && defender.state !== 'guard' && defender.state !== 'block') return false;
@@ -148,6 +151,8 @@ function moveWeight(attacker: Fighter): { stun: number; push: number; launch: nu
 }
 
 export function applyHit(world: World, c: HitCandidate): HitResolution {
+  // 受击会改 state，所以"挨打前是不是在空中"必须现在就记下来
+  const wasAirborne = c.defender.airborne;
   const { attacker, defender, hit } = c;
   // 近身命中的风格来自招式；道具命中由调用方从道具身上带过来（主人可能已经收招了）
   const style: FxStyle = c.style ?? styleOfMove(attacker.char.id, attacker.move);
@@ -195,7 +200,11 @@ export function applyHit(world: World, c: HitCandidate): HitResolution {
   const base = c.counter ? Math.round(hit.damage * COUNTER_DAMAGE_MULT) : hit.damage;
   // MAX 模式期间伤害提升
   const raw = Math.round(base * (attacker.maxMode > 0 ? MAX_MODE_DAMAGE : 1));
-  const damage = scaledDamage(raw, comboBefore);
+  // 浮空追击奖励：空中不能防御（见 isGuarding），所以打浮空目标给一点加成，
+  // 让"超必杀打飞 → 落地前再补一段"成为有收益的路线，而不是白忙
+  // 注意用函数开头记下的 wasAirborne——走到这里 defender 已经被 enterHitstun，
+  // 那时 state 是 Hit、airborne 已经变 false，现读一定是 false
+  const damage = Math.round(scaledDamage(raw, comboBefore) * (wasAirborne ? AERIAL_DAMAGE_MULT : 1));
 
   // 命中了才开取消窗口（没打中不能取消，这是连段成立的前提）
   const onHit = attacker.move?.cancel?.onHit;
@@ -234,6 +243,7 @@ export function applyHit(world: World, c: HitCandidate): HitResolution {
     style,
     counter: c.counter,
     combo: defender.combo.hits,
+    aerial: wasAirborne,
     sfx: hit.sfx ?? 'hit',
   });
 

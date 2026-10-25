@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { Btn, makeInput } from '../src/core/input';
 import { IORI } from '../src/data/chars/iori';
 import { KYO } from '../src/data/chars/kyo';
+import { AERIAL_DAMAGE_MULT, isGuarding } from '../src/sim/hit';
 import {
   DEFAULT_MATCH,
   Match,
@@ -529,5 +530,40 @@ describe('打击顿帧分级', () => {
     m.p1.startMove(KYO.moves['236A']!);
     for (let i = 0; i < 40; i++) m.step([{ held: 0 }, { held: 0 }]);
     expect(KYO.moves['236A']!.hits[0]!.hitstop).toBe(before);
+  });
+});
+
+describe('浮空追击', () => {
+  it('空中不能防御（KOF97 没有空中防御）——所以追打一定命中', () => {
+    const m = new Match(KYO, IORI, { introFrames: 1 }, 52);
+    while (m.phase === 'intro') m.step([{ held: 0 }, { held: 0 }]);
+    const hit = KYO.moves['5C']!.hits[0]!;
+    m.p2.airborne = true;
+    // 按住后退也不行
+    expect(isGuarding(m.p2, hit)).toBe(false);
+    // 落地且在防御姿态、按住正确的后退方向时才可能挡住
+    // （p2 朝左，后退是"右"）
+    m.p2.airborne = false;
+    m.p2.setState(FighterState.Block);
+    m.p2.input.held = m.p2.facing === 1 ? Btn.Left : Btn.Right;
+    expect(isGuarding(m.p2, hit)).toBe(true);
+  });
+
+  it('追打有伤害加成（倍率 > 1，且只在空中生效）', () => {
+    expect(AERIAL_DAMAGE_MULT).toBeGreaterThan(1);
+    // 地面命中不会吃到这个倍率：倍率只在 `wasAirborne` 为真时参与计算
+    const m = new Match(KYO, IORI, { introFrames: 1, roundEndFrames: 3 }, 53);
+    while (m.phase === 'intro') m.step([{ held: 0 }, { held: 0 }]);
+    m.p2.x = m.p1.x + 20;
+    const before = m.p2.hp;
+    m.p1.startMove(KYO.moves['5C']!);
+    for (let i = 0; i < 30; i++) {
+      m.step([{ held: 0 }, { held: 0 }]);
+      if (m.lastHits.length > 0) break;
+    }
+    const dealt = before - m.p2.hp;
+    const raw = KYO.moves['5C']!.hits[0]!.damage;
+    // 地面：不会超过基础伤害 × 倍率
+    expect(dealt).toBeLessThanOrEqual(Math.round(raw * AERIAL_DAMAGE_MULT));
   });
 });
