@@ -460,3 +460,42 @@ describe('必杀技的特效存在感', () => {
     expect(heavy).toBe(true);
   });
 });
+
+describe('必杀技对对手的影响', () => {
+  const mk2 = (): Match => new Match(KYO, IORI, { introFrames: 1, roundEndFrames: 3 }, 31);
+  const run = (m: Match, moveId: '5A' | '236A' | '236236AC', meter = 0): { stun: number; dx: number } => {
+    while (m.phase === 'intro') m.step([{ held: 0 }, { held: 0 }]);
+    m.p1.meter = meter;
+    m.p2.x = m.p1.x + 20;
+    const before = m.p2.x;
+    m.p1.startMove(KYO.moves[moveId]!);
+    let stun = 0;
+    for (let i = 0; i < 60; i++) {
+      m.step([{ held: 0 }, { held: 0 }]);
+      stun = Math.max(stun, m.p2.state === 'hit' ? m.p2.stateFrame : 0);
+      if (m.lastHits.length > 0) break;
+    }
+    return { stun, dx: m.p2.x - before };
+  };
+
+  it('必杀命中让对手退得更远、硬直更长（普通技打不出这个反应）', () => {
+    const plain = run(mk2(), '5A');
+    const special = run(mk2(), '236A');
+    expect(special.dx).toBeGreaterThan(plain.dx);
+  });
+
+  it('超必杀命中把对手打浮空（数据没写 launch 也要飞起来）', () => {
+    const m = mk2();
+    while (m.phase === 'intro') m.step([{ held: 0 }, { held: 0 }]);
+    m.p1.meter = 100;
+    m.p2.x = m.p1.x + 18;
+    m.p1.startMove(KYO.moves['236236AC']!);
+    let airborne = false;
+    for (let i = 0; i < 90; i++) {
+      m.step([{ held: 0 }, { held: 0 }]);
+      if (m.p2.state === 'hit' && m.p2.vy < 0) airborne = true;
+      if (m.lastHits.length > 0 && i > 30) break;
+    }
+    expect(airborne).toBe(true);
+  });
+});

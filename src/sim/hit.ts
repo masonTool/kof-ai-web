@@ -133,6 +133,20 @@ export interface HitCandidate {
 }
 
 /** 结算一次撞击：伤害 / 硬直 / 削防 / 气槽 / 连段 / 事件 */
+/**
+ * 招式强度加成：必杀打出去要比普通技"有反应"。
+ *
+ * 数据里每个 HitDef 都写死了 hitStun / pushback / launch，但这些是**按普通技的尺度**
+ * 填的；必杀技用同一套数值，打在身上和普通拳没区别——用户反馈"技能对对手没有影响"。
+ * 所以按招式类型在结算处加成，而不是去改 29 个角色的上百条 HitDef。
+ */
+function moveWeight(attacker: Fighter): { stun: number; push: number; launch: number } {
+  const kind = attacker.move?.kind;
+  if (kind === 'super') return { stun: 8, push: 1.55, launch: -3.4 };
+  if (kind === 'special') return { stun: 4, push: 1.3, launch: 0 };
+  return { stun: 0, push: 1, launch: 0 };
+}
+
 export function applyHit(world: World, c: HitCandidate): HitResolution {
   const { attacker, defender, hit } = c;
   // 近身命中的风格来自招式；道具命中由调用方从道具身上带过来（主人可能已经收招了）
@@ -187,8 +201,10 @@ export function applyHit(world: World, c: HitCandidate): HitResolution {
   defender.takeDamage(damage);
   addComboHit(defender.combo, damage);
   if (!defender.isDead) {
-    defender.enterHitstun(hit.hitStun + (c.counter ? COUNTER_EXTRA_STUN : 0), {
-      launch: hit.launch,
+    const weight = moveWeight(attacker);
+    defender.enterHitstun(hit.hitStun + (c.counter ? COUNTER_EXTRA_STUN : 0) + weight.stun, {
+      // 超必杀即使在数据里没写 launch，也把对手打浮空（必杀要有"被打飞"的观感）
+      launch: hit.launch ?? (weight.launch !== 0 ? weight.launch : undefined),
       knockdown: hit.knockdown !== undefined && hit.knockdown !== 'none',
     });
 
@@ -202,7 +218,7 @@ export function applyHit(world: World, c: HitCandidate): HitResolution {
       }
     }
   }
-  defender.push(attacker.facing * hit.pushback);
+  defender.push(attacker.facing * hit.pushback * moveWeight(attacker).push);
 
   attacker.addMeter(hit.meterGain ?? Math.floor(damage * 0.6));
   defender.addMeter(Math.floor(damage * 0.2));
