@@ -168,3 +168,34 @@ describe('坂崎百合', () => {
     expect(YURI.moves['236236C']!.hits).toHaveLength(4);
   });
 });
+
+describe('升龙指令的两种搓法', () => {
+  /** 按指定方向帧序列喂给解析器，看 623A 是否成立 */
+  const tryMotion = (frames: number[]): boolean => {
+    const parser = new CommandParser(1);
+    const seq = [...frames];
+    seq[seq.length - 1] = seq[seq.length - 1]! | Btn.A;
+    let prev = 0;
+    for (const held of seq) {
+      parser.push(edges(held, prev));
+      prev = held;
+    }
+    return parser.match({ motion: '623', buttons: ['A'] });
+  };
+
+  it('标准搓法 前 → 下 → 前下 成立', () => {
+    expect(tryMotion([R, D, D | R])).toBe(true);
+  });
+
+  it('「前 → 前下 → 下」**故意不认**：试过加容忍写法，但它会抢走 214（葵花）的输入', () => {
+    // 反向容忍：[6,3,2] 在朝向翻转后等价于 [2,3,6]，正好是 236 的形状，
+    // 实测会让 "离得远同一个指令" 的用例从 214A 误判成 623A，所以放弃宽松匹配，
+    // 改为在说明里写清正确搓法（见 HELP_PAGES 第 3 页）。
+    expect(tryMotion([R, D | R, D])).toBe(false);
+  });
+
+  it('乱按不算：缺了"前"或方向顺序不对都不成立', () => {
+    expect(tryMotion([D, D | R])).toBe(false);
+    expect(tryMotion([R, D | L])).toBe(false);
+  });
+});
