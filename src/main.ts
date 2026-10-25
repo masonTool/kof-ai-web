@@ -32,7 +32,10 @@ import {
   drawMode,
   drawPause,
   drawOptions,
+  drawHelp,
   drawResult,
+  HELP_BUTTON,
+  HELP_PAGE_COUNT,
   drawSelect,
   drawTitle,
   drawVs,
@@ -301,6 +304,12 @@ padHandle = controls;
 resize();
 
 window.addEventListener('keydown', (e) => {
+  // H = 随时打开说明（触屏走标题右上角那个按钮）
+  if (e.code === 'KeyH' && helpPage < 0) {
+    e.preventDefault();
+    helpPage = 0;
+    return;
+  }
   // 按键设置屏要拿原始 event.code，自己处理完就不再往下传
   if (flow.screen === 'keybind') {
     e.preventDefault();
@@ -473,9 +482,25 @@ function enterFullscreenOnce(): void {
 canvas.addEventListener('pointerdown', (e) => {
   audio.resume();
   enterFullscreenOnce();
+
+  // 说明浮层打开时，点哪都算翻页
+  if (helpPage >= 0) {
+    helpAdvanceQueued = true;
+    return;
+  }
   const rect = canvas.getBoundingClientRect();
   const x = ((e.clientX - rect.left) / rect.width) * VIEW_WIDTH;
   const y = ((e.clientY - rect.top) / rect.height) * VIEW_HEIGHT;
+
+  // 标题屏右上角「怎么玩」
+  if (flow.screen === 'title') {
+    const inBox =
+      x >= HELP_BUTTON.x && x <= HELP_BUTTON.x + HELP_BUTTON.w && y >= HELP_BUTTON.y && y <= HELP_BUTTON.y + HELP_BUTTON.h;
+    if (inBox) {
+      helpPage = 0;
+      return;
+    }
+  }
 
   // 暂停菜单盖在最上面，优先处理
   if (pause.open) {
@@ -600,6 +625,19 @@ function cueMatchSounds(): void {
   }
 }
 
+/**
+ * 说明浮层当前页（-1 = 关闭）。
+ *
+ * 做成浮层而不是新屏幕：它要在标题/选人/对战中都能随时打开，
+ * 而且打开时应该**冻结世界**（读说明时被打死很出戏）。
+ */
+let helpPage = -1;
+/** 点屏翻页：触屏没有"按下边沿"可读，用一次性标记 */
+let helpAdvanceQueued = false;
+/** 上一帧的按键状态（翻页需要边沿，不然按住会连翻） */
+let prevHelpHeld = 0;
+const HELP_SEEN_KEY = 'kof97.seenHelp';
+
 /** 街机进度：null = 不在街机模式（双人/训练/观战都不用它） */
 let arcade: ArcadeState | null = null;
 /** CPU 血量倍率已经作用到哪个角色身上（-1 = 还没作用），避免同一人反复缩放 */
@@ -607,6 +645,13 @@ let cpuHpScaledFor = -1;
 
 /** 上一次喊的时间（人声冷却，避免连段里连喊） */
 let lastVoiceAt = 0;
+
+// 第一次进游戏自动弹一次说明；之后从标题右上角「怎么玩」进
+try {
+  if (localStorage.getItem(HELP_SEEN_KEY) !== '1') helpPage = 0;
+} catch {
+  // 隐私模式读不到 localStorage：当成"没看过"，弹一次，不写盘
+}
 
 startAnimationLoop(
   {
@@ -617,6 +662,27 @@ startAnimationLoop(
 
       const p1In = { held: (p1keys.sample.held | pad.sampleFrame().held) >>> 0 };
       const p2In = p2keys.sample;
+
+      // 说明浮层打开时冻结一切：任意键/点屏 = 翻页，最后一页关掉
+      if (helpPage >= 0) {
+        const pressed = p1In.held & ~prevHelpHeld;
+        prevHelpHeld = p1In.held;
+        if (pressed !== 0 || helpAdvanceQueued) {
+          helpAdvanceQueued = false;
+          if (helpPage >= HELP_PAGE_COUNT - 1) {
+            helpPage = -1;
+            try {
+              localStorage.setItem(HELP_SEEN_KEY, '1');
+            } catch {
+              /* 存不了就算了，下次再弹一次 */
+            }
+          } else {
+            helpPage += 1;
+          }
+        }
+        return;
+      }
+      prevHelpHeld = p1In.held;
 
       // 暂停：世界完全冻结，只处理菜单输入
       if (pause.open) {
@@ -784,6 +850,8 @@ startAnimationLoop(
       }
 
       if (pause.open) drawPause(ctx, pause.cursor, blink);
+      // 说明浮层画在最上面（暂停之上），读说明时不该被别的 UI 盖住
+      if (helpPage >= 0) drawHelp(ctx, helpPage, blink);
 
       uiTick++;
       if (uiTick % 20 === 0) {

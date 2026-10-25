@@ -66,6 +66,92 @@ export function cellRect(index: number, count: number, columns = gridColumns(cou
   return { x: left + col * (w + gapX), y: top + row * (h + gapY), w, h };
 }
 
+/** 标题屏右上角「怎么玩」按钮的命中区域（逻辑坐标） */
+export const HELP_BUTTON = { x: VIEW_WIDTH - 62, y: 6, w: 54, h: 18 } as const;
+
+/** 说明页数 */
+export const HELP_PAGE_COUNT = 4;
+
+/** 说明文案：一页一个主题，手机小屏也读得清 */
+const HELP_PAGES: readonly { title: string; lines: readonly string[] }[] = [
+  {
+    title: '这是怎么玩的',
+    lines: [
+      '3 打 3 的队伍战：把对面 3 个人全部打倒就赢下这一场。',
+      '先赢 2 局拿下一场；街机模式一共 8 场。',
+      '被KO的人物不会复活，换人自动上场。',
+    ],
+  },
+  {
+    title: '操作',
+    lines: [
+      '手机：左手摇杆移动 / 跳 / 蹲，右手菱形四键出招。',
+      'A 轻拳 · B 轻脚 · C 重拳 · D 重脚',
+      'A+B 回避（翻滚无敌）· C+D 吹飞攻击',
+      '键盘：方向键 + J K L U（可在选项里改）',
+    ],
+  },
+  {
+    title: '必杀技怎么放',
+    lines: [
+      '方向 + 攻击键，和街机一样：',
+      '↓↘→ + 拳 = 波动系（远距离）',
+      '→↓↘ + 拳 = 升龙系（对空 / 起手无敌）',
+      '↓↙← + 脚 = 突进系',
+      '按不准就看「招式」清单，对局中随时能查。',
+    ],
+  },
+  {
+    title: '气槽与超必杀',
+    lines: [
+      '打人、被打都会攒气，攒满可以放超必杀。',
+      '超必杀伤害更高，命中还有定格演出。',
+      '防御会掉一点点血，别一直缩着。',
+      '点击任意位置 / 按 A 继续。',
+    ],
+  },
+];
+
+export interface HelpPageView {
+  title: string;
+  lines: readonly string[];
+}
+
+export function helpPageText(page: number): HelpPageView {
+  const p = HELP_PAGES[Math.max(0, Math.min(HELP_PAGES.length - 1, page))]!;
+  return p;
+}
+
+/** 说明浮层：盖在当前画面上，点一下翻页，最后一页关掉 */
+export function drawHelp(ctx: Ctx2D, page: number, blinkOn: boolean): void {
+  const view = helpPageText(page);
+  // 不透明：半透明会让标题插画透上来，小字直接糊掉
+  ctx.fillStyle = '#05070a';
+  ctx.fillRect(0, 0, VIEW_WIDTH, VIEW_HEIGHT);
+
+  ctx.strokeStyle = SCREEN_COLORS.gold;
+  ctx.lineWidth = 1;
+  ctx.strokeRect(10.5, 10.5, VIEW_WIDTH - 21, VIEW_HEIGHT - 21);
+
+  text(ctx, view.title, VIEW_WIDTH / 2, 28, 'center', 12, SCREEN_COLORS.gold);
+  view.lines.forEach((line, i) => {
+    text(ctx, line, 20, 58 + i * 16, 'left', 7, SCREEN_COLORS.text);
+  });
+
+  const last = page >= HELP_PAGE_COUNT - 1;
+  if (blinkOn) {
+    text(
+      ctx,
+      `${last ? '点击关闭' : '点击继续'} · ${page + 1}/${HELP_PAGE_COUNT}`,
+      VIEW_WIDTH / 2,
+      VIEW_HEIGHT - 26,
+      'center',
+      6,
+      SCREEN_COLORS.dim,
+    );
+  }
+}
+
 export function drawTitle(ctx: Ctx2D, blinkOn: boolean): void {
   ctx.fillStyle = SCREEN_COLORS.bg;
   ctx.fillRect(0, 0, VIEW_WIDTH, VIEW_HEIGHT);
@@ -93,6 +179,16 @@ export function drawTitle(ctx: Ctx2D, blinkOn: boolean): void {
   if (blinkOn) {
     text(ctx, '点击屏幕开始', VIEW_WIDTH / 2, 132, 'center', 9, SCREEN_COLORS.text);
   }
+
+  // 右上角「怎么玩」：点一下就开说明（第一次进游戏也会自动弹一次）
+  ctx.globalAlpha = 0.85;
+  ctx.fillStyle = 'rgba(10,14,20,0.72)';
+  ctx.fillRect(HELP_BUTTON.x, HELP_BUTTON.y, HELP_BUTTON.w, HELP_BUTTON.h);
+  ctx.strokeStyle = SCREEN_COLORS.gold;
+  ctx.lineWidth = 1;
+  ctx.strokeRect(HELP_BUTTON.x + 0.5, HELP_BUTTON.y + 0.5, HELP_BUTTON.w - 1, HELP_BUTTON.h - 1);
+  ctx.globalAlpha = 1;
+  text(ctx, '怎么玩', HELP_BUTTON.x + HELP_BUTTON.w / 2, HELP_BUTTON.y + 5, 'center', 6, SCREEN_COLORS.gold);
   // 底部操作说明压在火焰上会看不清，垫一条半透明暗带（有插图时才需要）
   if (art) {
     ctx.globalAlpha = 0.68;

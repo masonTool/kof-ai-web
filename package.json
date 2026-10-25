@@ -5,7 +5,7 @@
   "type": "module",
   "description": "拳皇'97 的 Web 复刻（程序化美术，60Hz 逐帧模拟）",
   "scripts": {
-    "dev": "vite",
+    "dev": "node scripts/dev.mjs",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",

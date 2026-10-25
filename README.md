@@ -18,6 +18,10 @@ npm run dev      # 启动开发服务器，默认 http://localhost:5171
 
 打开浏览器后直接就能开打：目前入口是「训练模式 + 京 vs 京」的一局对战。
 
+端口固定为 `5171`（`scripts/selftest-*.mjs` 硬编码这个地址，所以没开 `strictPort` 自动 +1）。
+如果上一轮的 dev server 没退干净，`npm run dev` 会先回收占用该端口的 node/vite 进程再启动；
+占用者是别的程序时它不会擅自杀，会提示你改用 `DEV_KILL_ANY=1 npm run dev`。
+
 ## 常用命令
 
 | 命令 | 作用 |

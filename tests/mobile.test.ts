@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { LOGICAL_HEIGHT, LOGICAL_WIDTH, computeViewport } from '../src/render/scale';
-import { hitTestModeItem, hitTestOptionRow, hitTestPauseItem } from '../src/render/screens';
+import {
+  HELP_BUTTON,
+  HELP_PAGE_COUNT,
+  helpPageText,
+  hitTestModeItem,
+  hitTestOptionRow,
+  hitTestPauseItem,
+} from '../src/render/screens';
 import { MODE_ITEMS } from '../src/ui/flow';
 import { PAUSE_ITEMS } from '../src/ui/pause';
 
@@ -63,5 +70,30 @@ describe('菜单点选（触屏）', () => {
         expect(hit === i || hit === i + 1).toBe(true);
       }
     }
+  });
+});
+
+describe('说明浮层', () => {
+  it('页数与文案齐全，越界也能取到合法页（不会因为索引越界画空白）', () => {
+    expect(HELP_PAGE_COUNT).toBeGreaterThanOrEqual(3);
+    for (let i = 0; i < HELP_PAGE_COUNT; i++) {
+      const p = helpPageText(i);
+      expect(p.title.length, String(i)).toBeGreaterThan(0);
+      expect(p.lines.length, String(i)).toBeGreaterThan(0);
+    }
+    expect(helpPageText(-5)).toEqual(helpPageText(0));
+    expect(helpPageText(99)).toEqual(helpPageText(HELP_PAGE_COUNT - 1));
+  });
+
+  it('说明内容覆盖用户要的四件事：目标 / 操作 / 必杀 / 气槽', () => {
+    const all = Array.from({ length: HELP_PAGE_COUNT }, (_, i) => helpPageText(i).title + helpPageText(i).lines.join('')).join('');
+    for (const kw of ['3 打 3', 'A 轻拳', '↓↘→', '气']) {
+      expect(all, kw).toContain(kw);
+    }
+  });
+
+  it('「怎么玩」按钮在屏幕内', () => {
+    expect(HELP_BUTTON.x + HELP_BUTTON.w).toBeLessThanOrEqual(320);
+    expect(HELP_BUTTON.y + HELP_BUTTON.h).toBeLessThanOrEqual(224);
   });
 });
