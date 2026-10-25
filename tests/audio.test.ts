@@ -99,3 +99,25 @@ describe('混音总线', () => {
     expect(SFX.whiff.presence ?? 0).toBe(0);
   });
 });
+
+describe('界面与流程音效覆盖', () => {
+  it('菜单移动/确认/取消、选人锁定、回合开始、换人、读秒、胜负都有音', () => {
+    const needed = ['menu', 'confirm', 'cancel', 'select', 'roundStart', 'swap', 'tick', 'win', 'lose'] as const;
+    for (const name of needed) {
+      expect(SFX[name], name).toBeTruthy();
+      expect(SFX[name].ms, name).toBeGreaterThan(0);
+      expect(SFX[name].gain, name).toBeGreaterThan(0);
+    }
+  });
+
+  it('读秒音很短很轻（每秒一声，不能盖住打击音）', () => {
+    expect(SFX.tick.ms).toBeLessThan(60);
+    expect(SFX.tick.gain).toBeLessThan(SFX.hitLight.gain);
+  });
+
+  it('胜负是两个不同的音（不能赢了和输了同一个声）', () => {
+    expect(SFX.win.wave).not.toBe(SFX.lose.wave);
+    expect(SFX.win.to).toBeGreaterThan(SFX.win.from); // 上行 = 赢
+    expect(SFX.lose.to).toBeLessThan(SFX.lose.from); // 下行 = 输
+  });
+});

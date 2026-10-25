@@ -141,8 +141,8 @@ const pause = new PauseMenu();
 const keybind = new KeyBindMenu();
 const challenges = new ChallengeBoard();
 const settings = new SettingsStore(browserStorage());
-audio.setVolume(settings.settings.volume);
-bgm.setVolume(settings.settings.volume);
+audio.setVolume(settings.settings.sfxVolume);
+bgm.setVolume(settings.settings.bgmVolume);
 const flow = new AppFlow(ROSTER, undefined, settings);
 const pad = new VirtualPad();
 
@@ -217,7 +217,7 @@ function startMatch(): void {
     dummy: flow.mode === 'training' ? 'stand' : flow.mode === 'versus' ? 'human' : 'cpu',
     cpuP1: flow.mode === 'watch',
   });
-  audio.setVolume(cfg.volume);
+  audio.setVolume(cfg.sfxVolume);
 }
 
 /** 这一场是不是 BOSS 战（任一方带 boss 属性） */
@@ -506,6 +506,66 @@ canvas.addEventListener('pointerup', () => pad.release('A'));
 
 const stepper = new FixedStepper();
 let uiTick = 0;
+/**
+ * 界面/流程音效：靠**前后状态差**触发。
+ *
+ * 为什么不给 flow/match 加回调：那要改两个模块的接口和全部测试；
+ * 而这些提示只关心"变了没有"，一次状态对比就够，还不会漏。
+ */
+const sfxCue = {
+  screen: '',
+  modeCursor: -1,
+  optionCursor: -1,
+  cell: -1,
+  locked: false,
+  phase: '',
+  indexes: '',
+  tickAt: -1,
+};
+
+function cueInterfaceSounds(): void {
+  const c = sfxCue;
+  if (flow.screen !== c.screen) {
+    if (c.screen !== '') audio.play(flow.screen === 'title' ? 'cancel' : 'confirm');
+    c.screen = flow.screen;
+  }
+  if (flow.modeCursor !== c.modeCursor || flow.optionCursor !== c.optionCursor || flow.cursor[0] !== c.cell) {
+    if (c.modeCursor >= 0 || c.optionCursor >= 0 || c.cell >= 0) audio.play('menu');
+    c.modeCursor = flow.modeCursor;
+    c.optionCursor = flow.optionCursor;
+    c.cell = flow.cursor[0];
+  }
+  const locked = flow.locked[0] === true;
+  if (locked && !c.locked) audio.play('select');
+  c.locked = locked;
+}
+
+function cueMatchSounds(): void {
+  if (!match) return;
+  const c = sfxCue;
+  const phase = match.phase;
+  if (phase !== c.phase) {
+    if (phase === 'fight') audio.play('roundStart');
+    if (phase === 'over') audio.play(match.matchWinner === 1 ? 'win' : 'lose');
+    c.phase = phase;
+  }
+  const idx = match.indexes.join(',');
+  if (idx !== c.indexes) {
+    if (c.indexes !== '') audio.play('swap');
+    c.indexes = idx;
+  }
+  // 读秒：最后 5 秒每秒一声（用整秒边界去重）
+  if (phase === 'fight') {
+    const sec = Math.ceil(match.timerFrames / 60);
+    if (sec <= 5 && sec !== c.tickAt) {
+      c.tickAt = sec;
+      audio.play('tick');
+    }
+  } else {
+    c.tickAt = -1;
+  }
+}
+
 /** 上一次喊的时间（人声冷却，避免连段里连喊） */
 let lastVoiceAt = 0;
 
@@ -513,7 +573,7 @@ startAnimationLoop(
   {
     step: () => {
       syncKeys();
-      bgm.setVolume(settings.settings.volume);
+      bgm.setVolume(settings.settings.bgmVolume);
       bgm.update(performance.now());
 
       const p1In = { held: (p1keys.sample.held | pad.sampleFrame().held) >>> 0 };
@@ -553,6 +613,7 @@ startAnimationLoop(
         matchOver,
         matchWinner: match?.matchWinner ?? 0,
       });
+      cueInterfaceSounds();
       bgm.setTrack(trackFor(flow.screen));
       if (flow.screen !== 'fight') bgm.setMood('calm');
       if (flow.screen === 'keybind' && flow.timer === 1) keybind.show(1);
@@ -609,6 +670,7 @@ startAnimationLoop(
             lastVoiceAt = nowMs;
           }
         }
+        cueMatchSounds();
         // 残血变奏：任意一方血量低于 30% 就给 BGM 加底鼓
         const lowHp = match.p1.hp / match.p1.maxHp < 0.3 || match.p2.hp / match.p2.maxHp < 0.3;
         bgm.setMood(lowHp ? 'urgent' : 'calm');

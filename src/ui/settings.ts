@@ -18,7 +18,10 @@ export interface GameSettings {
   /** CPU 难度 */
   cpuLevel: CpuLevel;
   /** 音量 0~1（0 = 静音） */
-  volume: number;
+  /** 音效音量（打击/菜单/人声） */
+  sfxVolume: number;
+  /** BGM 音量 */
+  bgmVolume: number;
   /** 显示帧数/输入面板 */
   showFrameData: boolean;
   /** 显示判定框 */
@@ -35,7 +38,8 @@ export const DEFAULT_SETTINGS: GameSettings = {
   roundsToWin: 2,
   roundSeconds: 99,
   cpuLevel: 'normal',
-  volume: 0.25,
+  sfxVolume: 0.25,
+  bgmVolume: 0.25,
   showFrameData: false,
   showBoxes: false,
   keyPreset: 0,
@@ -54,7 +58,8 @@ export type OptionKey =
   | 'roundsToWin'
   | 'roundSeconds'
   | 'cpuLevel'
-  | 'volume'
+  | 'sfxVolume'
+  | 'bgmVolume'
   | 'showFrameData'
   | 'showBoxes'
   | 'keyPreset'
@@ -168,7 +173,21 @@ export function sanitize(raw: unknown): GameSettings {
     roundsToWin: Math.round(clampNumber(obj['roundsToWin'], ROUNDS_CHOICES, DEFAULT_SETTINGS.roundsToWin)),
     roundSeconds: Math.round(clampNumber(obj['roundSeconds'], TIME_CHOICES, DEFAULT_SETTINGS.roundSeconds)),
     cpuLevel: level,
-    volume: Math.min(1, Math.max(0, clampNumber(obj['volume'], VOLUME_CHOICES, DEFAULT_SETTINGS.volume))),
+    // 老存档只有单个 volume：迁移成两条总线都用它，不丢用户设置
+    sfxVolume: Math.min(
+      1,
+      Math.max(
+        0,
+        clampNumber(obj['sfxVolume'] ?? obj['volume'], VOLUME_CHOICES, DEFAULT_SETTINGS.sfxVolume),
+      ),
+    ),
+    bgmVolume: Math.min(
+      1,
+      Math.max(
+        0,
+        clampNumber(obj['bgmVolume'] ?? obj['volume'], VOLUME_CHOICES, DEFAULT_SETTINGS.bgmVolume),
+      ),
+    ),
     showFrameData: typeof obj['showFrameData'] === 'boolean' ? obj['showFrameData'] : DEFAULT_SETTINGS.showFrameData,
     showBoxes: typeof obj['showBoxes'] === 'boolean' ? obj['showBoxes'] : DEFAULT_SETTINGS.showBoxes,
     keyPreset: Math.round(clampNumber(obj['keyPreset'], [0, KEY_PRESETS.length - 1], DEFAULT_SETTINGS.keyPreset)),
@@ -183,12 +202,18 @@ export function optionRows(s: GameSettings): OptionRow[] {
     { key: 'roundsToWin', label: '回合数（先赢几局）', value: `${s.roundsToWin}` },
     { key: 'roundSeconds', label: '回合时间（秒）', value: `${s.roundSeconds}` },
     { key: 'cpuLevel', label: 'CPU 难度', value: { easy: '简单', normal: '普通', hard: '困难' }[s.cpuLevel] },
-    { key: 'volume', label: '音量', value: s.volume === 0 ? '静音' : `${Math.round(s.volume * 100)}%` },
+    { key: 'sfxVolume', label: '音量·音效', value: pct(s.sfxVolume) },
+    { key: 'bgmVolume', label: '音量·音乐', value: pct(s.bgmVolume) },
     { key: 'showFrameData', label: '帧数面板', value: s.showFrameData ? '开' : '关' },
     { key: 'showBoxes', label: '判定框', value: s.showBoxes ? '开' : '关' },
     { key: 'keyPreset', label: '键盘布局', value: KEY_PRESETS[s.keyPreset]?.name ?? '默认' },
     { key: 'pixelSize', label: '像素粒度', value: `${s.pixelSize}×${s.pixelSize}` },
   ];
+}
+
+/** 音量显示：0 就叫静音，别让玩家对着一堆百分比猜 */
+function pct(v: number): string {
+  return v === 0 ? '静音' : `${Math.round(v * 100)}%`;
 }
 
 function cycleIn<T>(choices: readonly T[], current: T, dir: number): T {
@@ -240,8 +265,11 @@ export class SettingsStore {
       case 'cpuLevel':
         s.cpuLevel = cycleIn(CPU_LEVELS, s.cpuLevel, dir);
         break;
-      case 'volume':
-        s.volume = cycleIn(VOLUME_CHOICES, s.volume, dir);
+      case 'sfxVolume':
+        s.sfxVolume = cycleIn(VOLUME_CHOICES, s.sfxVolume, dir);
+        break;
+      case 'bgmVolume':
+        s.bgmVolume = cycleIn(VOLUME_CHOICES, s.bgmVolume, dir);
         break;
       case 'showFrameData':
         s.showFrameData = !s.showFrameData;

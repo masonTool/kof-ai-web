@@ -21,6 +21,13 @@ export type SfxName =
   | 'whiff'
   | 'superStart'
   | 'proj'
+  | 'cancel'
+  | 'select'
+  | 'roundStart'
+  | 'swap'
+  | 'tick'
+  | 'win'
+  | 'lose'
   | 'voiceHit'
   | 'voiceSuper'
   | 'voiceKo'
@@ -79,6 +86,13 @@ export const SFX: Record<SfxName, SfxSpec> = {
   voiceSuper: { wave: 'sawtooth', from: 240, to: 640, ms: 460, gain: 0.15, noise: 0.1, filter: { type: 'bandpass', freq: 1100, q: 2.2 } },
   voiceKo: { wave: 'sawtooth', from: 320, to: 90, ms: 520, gain: 0.16, noise: 0.1, filter: { type: 'bandpass', freq: 700, q: 1.4 } },
   menu: { wave: 'square', from: 520, to: 520, ms: 40, gain: 0.1 },
+  cancel: { wave: 'square', from: 420, to: 220, ms: 80, gain: 0.12 },
+  select: { wave: 'square', from: 700, to: 1100, ms: 90, gain: 0.16 },
+  roundStart: { wave: 'square', from: 520, to: 790, ms: 240, gain: 0.2 },
+  swap: { wave: 'triangle', from: 300, to: 640, ms: 170, gain: 0.14 },
+  tick: { wave: 'square', from: 1200, to: 1200, ms: 35, gain: 0.09 },
+  win: { wave: 'triangle', from: 660, to: 990, ms: 300, gain: 0.2 },
+  lose: { wave: 'sawtooth', from: 300, to: 110, ms: 420, gain: 0.18 },
   confirm: { wave: 'square', from: 660, to: 990, ms: 90, gain: 0.15 },
   start: { wave: 'square', from: 440, to: 880, ms: 180, gain: 0.2 },
 };

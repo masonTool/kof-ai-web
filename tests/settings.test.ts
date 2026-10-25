@@ -41,7 +41,8 @@ describe('消毒（读盘必过）', () => {
     const s = sanitize({ roundsToWin: 99, roundSeconds: -5, volume: 7 });
     expect(s.roundsToWin).toBe(3);
     expect(s.roundSeconds).toBe(30);
-    expect(s.volume).toBe(1);
+    expect(s.sfxVolume).toBe(1);
+    expect(s.bgmVolume).toBe(1);
   });
 
   it('类型不对回落默认而不是崩', () => {
@@ -52,12 +53,13 @@ describe('消毒（读盘必过）', () => {
   });
 
   it('合法值原样保留', () => {
-    const s = sanitize({ roundsToWin: 3, roundSeconds: 30, cpuLevel: 'hard', volume: 0.5, showFrameData: true });
+    const s = sanitize({ roundsToWin: 3, roundSeconds: 30, cpuLevel: 'hard', sfxVolume: 0.5, bgmVolume: 0.5, showFrameData: true });
     expect(s).toEqual({
       roundsToWin: 3,
       roundSeconds: 30,
       cpuLevel: 'hard',
-      volume: 0.5,
+      sfxVolume: 0.5,
+      bgmVolume: 0.5,
       showFrameData: true,
       showBoxes: false,
       keyPreset: 0,
@@ -72,11 +74,12 @@ describe('存盘与读盘', () => {
     const storage = new FakeStorage();
     const a = new SettingsStore(storage);
     a.cycle('roundsToWin'); // 2 → 3
-    a.cycle('volume'); // 0.25 → 0.5
+    a.cycle('sfxVolume'); // 0.25 → 0.5
 
     const b = new SettingsStore(storage);
     expect(b.settings.roundsToWin).toBe(3);
-    expect(b.settings.volume).toBe(0.5);
+    expect(b.settings.sfxVolume).toBe(0.5);
+    expect(b.settings.bgmVolume).toBe(0.25); // 两条总线互不影响，只动了音效
   });
 
   it('存档是坏 JSON 时回落默认，不抛错', () => {
@@ -89,7 +92,7 @@ describe('存盘与读盘', () => {
   it('没有 storage（隐私模式/node）时也能用', () => {
     const store = new SettingsStore(null);
     expect(store.settings).toEqual(DEFAULT_SETTINGS);
-    expect(() => store.cycle('volume')).not.toThrow();
+    expect(() => store.cycle('sfxVolume')).not.toThrow();
     expect(() => store.save()).not.toThrow();
   });
 });
@@ -129,28 +132,29 @@ describe('循环切换', () => {
   it('重置回默认', () => {
     const store = new SettingsStore(null);
     store.cycle('roundsToWin');
-    store.cycle('volume');
+    store.cycle('sfxVolume');
     store.resetDefaults();
     expect(store.settings).toEqual(DEFAULT_SETTINGS);
   });
 });
 
 describe('选项屏的行', () => {
-  it('八行、有标签有值，音量为 0 显示静音', () => {
-    const rows = optionRows({ ...DEFAULT_SETTINGS, volume: 0 });
-    expect(rows).toHaveLength(8);
+  it('九行、有标签有值，音量为 0 显示静音', () => {
+    const rows = optionRows({ ...DEFAULT_SETTINGS, sfxVolume: 0 });
+    expect(rows).toHaveLength(9);
     expect(rows.map((r) => r.key)).toEqual([
       'roundsToWin',
       'roundSeconds',
       'cpuLevel',
-      'volume',
+      'sfxVolume',
+      'bgmVolume',
       'showFrameData',
       'showBoxes',
       'keyPreset',
       'pixelSize',
     ]);
     expect(rows[3]!.value).toBe('静音');
-    expect(rows[4]!.value).toBe('关');
+    expect(rows[5]!.value).toBe('关');
   });
 
   it('键盘预设显示名字，切换后跟着变', () => {
@@ -195,5 +199,21 @@ describe('像素粒度', () => {
     expect(sanitize({ pixelSize: 9 }).pixelSize).toBe(0.5);
     expect(sanitize({ pixelSize: '粗' }).pixelSize).toBe(0.5);
     expect(sanitize({ pixelSize: 4 }).pixelSize).toBe(4);
+  });
+});
+
+describe('两条音量总线', () => {
+  it('音效与音乐分别切换，互不影响', () => {
+    const store = new SettingsStore(null);
+    const bgm = store.settings.bgmVolume;
+    store.cycle('sfxVolume');
+    expect(store.settings.sfxVolume).not.toBe(DEFAULT_SETTINGS.sfxVolume);
+    expect(store.settings.bgmVolume).toBe(bgm);
+  });
+
+  it('老存档只有一个 volume 时迁移到两条总线', () => {
+    const s = sanitize({ volume: 0.75 });
+    expect(s.sfxVolume).toBe(0.75);
+    expect(s.bgmVolume).toBe(0.75);
   });
 });
