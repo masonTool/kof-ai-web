@@ -5,6 +5,7 @@ import { KYO } from '../src/data/chars/kyo';
 import { AERIAL_DAMAGE_MULT, KNOCKDOWN_COMBO, KNOCKDOWN_DAMAGE, isGuarding } from '../src/sim/hit';
 import {
   DEFAULT_MATCH,
+  KO_CUT_FRAMES,
   Match,
   SUPER_CINEMA_ZOOM,
   SUPER_FLASH_FRAMES,
@@ -758,5 +759,32 @@ describe('命中泛色（"打到了"的余光感受）', () => {
     // 超必杀命中走 superHit 演出，泛色应当没被点亮
     expect(m.superHit).toBeGreaterThan(0);
     expect(m.hitTintFrames).toBe(0);
+  });
+});
+
+describe('KO 演出', () => {
+  it('打空血时点亮 KO 演出帧数，并逐帧退掉', () => {
+    const m = new Match(KYO, IORI, { introFrames: 1, roundEndFrames: 40 }, 111);
+    while (m.phase === 'intro') m.step([{ held: 0 }, { held: 0 }]);
+    m.p2.hp = 1;
+    m.p2.x = m.p1.x + 20;
+    m.p1.startMove(KYO.moves['5C']!);
+    for (let i = 0; i < 60 && m.phase === 'fight'; i++) m.step([{ held: 0 }, { held: 0 }]);
+    expect(m.phase).not.toBe('fight');
+    expect(m.koCut).toBe(KO_CUT_FRAMES);
+    // 逐帧退掉，到 0 就完全恢复普通 banner
+    for (let i = 0; i < KO_CUT_FRAMES + 2; i++) m.step([{ held: 0 }, { held: 0 }]);
+    expect(m.koCut).toBe(0);
+  });
+
+  it('koCut 会进到 HUD 模型（否则渲染层拿不到）', () => {
+    const m = new Match(KYO, IORI, { introFrames: 1, roundEndFrames: 40 }, 112);
+    while (m.phase === 'intro') m.step([{ held: 0 }, { held: 0 }]);
+    m.p2.hp = 1;
+    m.p2.x = m.p1.x + 20;
+    m.p1.startMove(KYO.moves['5C']!);
+    for (let i = 0; i < 60 && m.phase === 'fight'; i++) m.step([{ held: 0 }, { held: 0 }]);
+    expect(m.toHudModel().koCut).toBeGreaterThan(0);
+    expect(m.toHudModel().banner).toBeTruthy();
   });
 });

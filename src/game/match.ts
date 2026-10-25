@@ -49,6 +49,9 @@ const TINT_COLOR: Partial<Record<FxStyle, string>> = {
   ki: '#9fd0ff',
 };
 
+/** KO 演出帧数（44 帧 ≈ 0.7 秒） */
+export const KO_CUT_FRAMES = 44;
+
 export const SUPER_FLASH_FRAMES = 12;
 export const SUPER_FREEZE_FRAMES = 10;
 export const SUPER_CINEMA_ZOOM = 1.85;
@@ -103,6 +106,8 @@ export class Match {
    * 分开算迟早对不上（闪完了人还在定，或人动了闪光还在）。
    */
   superFlash = 0;
+  /** KO 演出剩余帧：这段时间里中央大字放大、画面压白（44 帧 ≈ 0.7 秒） */
+  koCut = 0;
   /** 普通命中后的全屏泛色（帧数与颜色），按招式属性走 */
   hitTintFrames = 0;
   hitTintColor = '#ffffff';
@@ -173,6 +178,7 @@ export class Match {
     // 闪光逐帧衰减：放在最前面，保证"起手那一帧设成满值、下一帧开始掉"
     if (this.superFlash > 0) this.superFlash--;
     if (this.hitTintFrames > 0) this.hitTintFrames--;
+    if (this.koCut > 0) this.koCut--;
     switch (this.phase) {
       case 'intro':
         this.introLeft--;
@@ -348,6 +354,8 @@ export class Match {
       winner = r1 > r2 ? 1 : r2 > r1 ? 2 : 0;
     }
 
+    // KO 演出：定格 + 大字放大，让"结束"有一下停顿（TIME UP / 双 KO 也走）
+    this.koCut = KO_CUT_FRAMES;
     this.lastRound = { winner, reason };
     if (winner === 1) this.wins[0]++;
     if (winner === 2) this.wins[1]++;
@@ -533,6 +541,7 @@ export class Match {
       p2: this.playerHud(this.p2, 2),
       combo: comboOf(this.p2, 1) ?? comboOf(this.p1, 2),
       banner: this.banner || undefined,
+      koCut: this.koCut,
     };
   }
 

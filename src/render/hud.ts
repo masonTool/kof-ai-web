@@ -6,6 +6,7 @@
  */
 import { VIEW_HEIGHT, VIEW_WIDTH } from '../sim/constants';
 import type { Ctx2D } from './ctx';
+import { KO_CUT_FRAMES } from '../game/match';
 
 export interface PlayerHud {
   name: string;
@@ -34,6 +35,8 @@ export interface HudModel {
   combo?: { side: 1 | 2; hits: number; damage?: number };
   /** 中央大字：KO / TIME UP / 胜负提示 */
   banner?: string;
+  /** KO 演出剩余帧（>0 时大字更大、并压一层白） */
+  koCut?: number;
 }
 
 export interface Rect {
@@ -246,6 +249,22 @@ export function drawHud(ctx: Ctx2D, model: HudModel): void {
   }
 
   if (model.banner) {
-    text(ctx, model.banner, VIEW_WIDTH / 2, HUD_LAYOUT.bannerY, 'center', 16, HUD_COLORS.text);
+    const cut = model.koCut ?? 0;
+    if (cut > 0) {
+      // KO：字号从 44 收到 22（ease-out），同时压一层白再退掉——
+      // 只放大不闪白会像"文字变大了"，加了闪白才有"被砸了一下"的感觉
+      const t = 1 - cut / KO_CUT_FRAMES; // 0 → 1
+      const size = Math.round(44 - 22 * Math.min(1, t * 1.6));
+      const fade = Math.max(0, 1 - t * 2.4);
+      if (fade > 0) {
+        ctx.globalAlpha = 0.5 * fade;
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, VIEW_WIDTH, VIEW_HEIGHT);
+        ctx.globalAlpha = 1;
+      }
+      text(ctx, model.banner, VIEW_WIDTH / 2, HUD_LAYOUT.bannerY - size / 2 + 4, 'center', size, HUD_COLORS.text);
+    } else {
+      text(ctx, model.banner, VIEW_WIDTH / 2, HUD_LAYOUT.bannerY, 'center', 16, HUD_COLORS.text);
+    }
   }
 }
