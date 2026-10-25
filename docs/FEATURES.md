@@ -20,7 +20,7 @@
 | **受身（倒地 AB）** | ✅ | `fighter.ts` 的 `QUICK_WAKEUP_MIN` + `takeAbBuffer()` | 被打倒后立刻按 A+B 会快速起身 |
 | **吹飞攻击（C+D）** | ✅ | `Btn.C \| Btn.D` | CPU 会用它破防（T206） |
 | MAX 模式（ABC） | ✅ | `maxMode` + `MAX_MODE_DAMAGE` | 气槽满时按 ABC，伤害提升 |
-| **投技（←+C）** | ✅ | `hit.ts` 的 `isGuarding` + `collect` 的 throw 规则；京的 `4C` | 贴脸 ←+C，对手按防御也照抓 |
+| **投技（←+C）** | ✅ | `hit.ts` 的 `isGuarding` + `collect` 的 throw 规则；9 个主力角色各有 `4C` | 贴脸 ←+C，对手按防御也照抓；CPU 破防时也会用（45%） |
 | 眩晕 | ✅ | `stunGauge` + `enterDizzy()` | 连续挨打会晕 |
 | COUNTER（反击） | ✅ | `hit.ts` 的 `c.counter` | 对手出招瞬间打中，伤害更高 |
 
