@@ -30,8 +30,15 @@ export const ZOOM_FAR_DIST = 220;
 
 /** 镜头每帧最多移动多少像素（避免瞬移感） */
 export const CAMERA_MAX_STEP = 6;
-/** 缩放每帧最多变化多少 */
-export const CAMERA_ZOOM_STEP = 0.04;
+/**
+ * 缩放每帧最多变化多少。
+ *
+ * 原来是 0.04，而 zoom 全程只差 0.1（ZOOM_MIN 1.2 → ZOOM_MAX 1.3）——
+ * 也就是**3 帧（50ms）就把整个人物放大 8%**，肉眼看到的就是"角色突然变大"。
+ * 改成 0.006 后约 17 帧（280ms）走完，过渡看得出来但不会觉得突变；
+ * 同时保留平滑（不做瞬切），距离抖动也不会让人物跳动。
+ */
+export const CAMERA_ZOOM_STEP = 0.006;
 
 export interface CameraBody {
   x: number;

@@ -1,4 +1,8 @@
 import { describe, expect, it } from 'vitest';
+import kyoSheet from '../public/sheets/kyo.json';
+import ioriSheet from '../public/sheets/iori.json';
+import terrySheet from '../public/sheets/terry.json';
+import orochiSheet from '../public/sheets/orochi.json';
 import { sanitize } from '../src/ui/settings';
 import { GROUND_Y, STAGE_LEFT, STAGE_RIGHT, VIEW_HEIGHT, VIEW_WIDTH } from '../src/sim/constants';
 import {
@@ -236,7 +240,13 @@ describe('镜头缩放覆盖（超必杀运镜）', () => {
     cam.zoomOverride = 1.45;
     const a = { x: 200 };
     const b = { x: 400 }; // 距离 200 → 正常应该接近 1
-    for (let i = 0; i < 30; i++) cam.update(a, b);
+    // 步长降到 0.006 后，0.45 的差距要 75 帧才走完（原来 0.04 时 12 帧就到）
+    let prev = cam.zoom;
+    for (let i = 0; i < 200; i++) {
+      cam.update(a, b);
+      expect(cam.zoom).toBeGreaterThanOrEqual(prev); // 单调逼近，不来回抖
+      prev = cam.zoom;
+    }
     expect(cam.zoom).toBeCloseTo(1.45, 2);
   });
 
@@ -421,5 +431,40 @@ describe('舞台轮换（之前 drawFrame 不传 stage，永远只有夜城）',
   it('五条舞台的 id 与底图对得上（有 id 没图等于画不出背景层）', () => {
     const ids = STAGES.map((s) => s.id);
     expect(ids).toEqual(['skyline', 'valley', 'arena', 'harbor', 'snow']);
+  });
+});
+
+describe('缩放过渡速度（"角色突然变大"的根因）', () => {
+  it('从最远拉到最近至少要十几帧，不能几十毫秒跳完', () => {
+    const cam = new Camera({ x: 200, zoom: ZOOM_MIN });
+    let frames = 0;
+    while (cam.zoom < ZOOM_MAX - 0.001 && frames < 500) {
+      cam.update({ x: 200 }, { x: 200 }); // 贴脸 → 目标 ZOOM_MAX
+      frames++;
+    }
+    expect(cam.zoom).toBeCloseTo(ZOOM_MAX, 3);
+    // 原来 CAMERA_ZOOM_STEP=0.04 时只要 3 帧（50ms），肉眼就是"突然变大"
+    expect(frames).toBeGreaterThan(10);
+  });
+
+  it('全图集都没有"人物画得比待机更大"的帧（排除贴图尺寸因素）', () => {
+    // 上一轮统计过 29 角色 × 33 动画，偏大超过 12% 的是 0 项；
+    // 这里把它钉成断言，以后重新出图若出现异常会立刻红
+    const KNOWN_SHORT = new Set(['crouch', 'crouchPunch', 'crouchKick', 'down', 'roll', 'landing', 'wakeup', 'hitFall', 'lose', 'taunt']);
+    const sheets: [string, { anims: Record<string, { h: number }[]> }][] = [
+      ['kyo', kyoSheet as never],
+      ['iori', ioriSheet as never],
+      ['terry', terrySheet as never],
+      ['orochi', orochiSheet as never],
+    ];
+    for (const [id, j] of sheets) {
+      const heights: Record<string, number> = {};
+      for (const [a, list] of Object.entries(j.anims)) heights[a] = Math.max(...list.map((f) => f.h));
+      const base = heights['idle']!;
+      for (const [a, v] of Object.entries(heights)) {
+        if (KNOWN_SHORT.has(a)) continue;
+        expect(v / base, `${id}/${a} 比待机大太多`).toBeLessThan(1.25);
+      }
+    }
   });
 });
