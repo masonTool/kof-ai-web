@@ -326,6 +326,15 @@ export function drawFrame(ctx: Ctx2D, match: Match, opts: RenderOptions = {}): v
   drawHud(ctx, match.toHudModel());
   drawMoveBanner(ctx, match.moveBanner);
 
+  // 普通命中的属性泛色：极短（3 帧）且很淡，只是为了"打到了"那一下有体温
+  if (match.hitTintFrames > 0) {
+    const a = 0.16 * (match.hitTintFrames / 3);
+    ctx.globalAlpha = a;
+    ctx.fillStyle = match.hitTintColor;
+    ctx.fillRect(0, 0, VIEW_WIDTH, VIEW_HEIGHT);
+    ctx.globalAlpha = 1;
+  }
+
   // 超必杀起手：先闪白（盖住 HUD），再压上下黑边——
   // 顺序反过来的话黑边也会被闪白冲淡，看着像灰条而不是电影黑边
   if (match.superHit > 0 || match.superFlash > 0) {

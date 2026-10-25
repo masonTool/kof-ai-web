@@ -728,3 +728,35 @@ describe('命中后的属性残留', () => {
     expect(m.p2.burnFrames).toBe(0);
   });
 });
+
+describe('命中泛色（"打到了"的余光感受）', () => {
+  it('火属性命中后全屏泛一层橙色，且只留 3 帧', () => {
+    const m = new Match(KYO, IORI, { introFrames: 1, roundEndFrames: 3 }, 101);
+    while (m.phase === 'intro') m.step([{ held: 0 }, { held: 0 }]);
+    m.p2.x = m.p1.x + 20;
+    m.p1.startMove(KYO.moves['236A']!);
+    for (let i = 0; i < 40; i++) {
+      m.step([{ held: 0 }, { held: 0 }]);
+      if (m.lastHits.length > 0) break;
+    }
+    expect(m.hitTintFrames).toBeGreaterThan(0);
+    expect(m.hitTintColor).toBe('#ff7a2f'); // 火
+    for (let i = 0; i < 6; i++) m.step([{ held: 0 }, { held: 0 }]);
+    expect(m.hitTintFrames).toBe(0);
+  });
+
+  it('超必杀不叠泛色（它自己那套闪白更狠，叠上去只会糊）', () => {
+    const m = new Match(KYO, IORI, { introFrames: 1, roundEndFrames: 3 }, 102);
+    while (m.phase === 'intro') m.step([{ held: 0 }, { held: 0 }]);
+    m.p1.meter = 100;
+    m.p2.x = m.p1.x + 18;
+    m.p1.startMove(KYO.moves['236236AC']!);
+    for (let i = 0; i < 60; i++) {
+      m.step([{ held: 0 }, { held: 0 }]);
+      if (m.lastHits.length > 0) break;
+    }
+    // 超必杀命中走 superHit 演出，泛色应当没被点亮
+    expect(m.superHit).toBeGreaterThan(0);
+    expect(m.hitTintFrames).toBe(0);
+  });
+});

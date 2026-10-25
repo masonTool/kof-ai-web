@@ -6,7 +6,7 @@
  */
 import type { InputSample } from '../core/input';
 import { NO_INPUT } from '../core/input';
-import type { CharDef } from '../data/schema';
+import type { CharDef, FxStyle } from '../data/schema';
 import { Camera } from '../sim/camera';
 import { METER_MAX, STAGE_LEFT, STAGE_RIGHT } from '../sim/constants';
 import { Fighter } from '../sim/fighter';
@@ -41,6 +41,14 @@ export interface MatchConfig {
 }
 
 /** 超必杀起手：闪几帧、双方定格几帧、运镜拉近到多少 */
+/** 命中泛色的颜色（按属性；未列出的用白） */
+const TINT_COLOR: Partial<Record<FxStyle, string>> = {
+  fire: '#ff7a2f',
+  darkfire: '#8b3ff2',
+  thunder: '#8fe3ff',
+  ki: '#9fd0ff',
+};
+
 export const SUPER_FLASH_FRAMES = 12;
 export const SUPER_FREEZE_FRAMES = 10;
 export const SUPER_CINEMA_ZOOM = 1.85;
@@ -95,6 +103,9 @@ export class Match {
    * 分开算迟早对不上（闪完了人还在定，或人动了闪光还在）。
    */
   superFlash = 0;
+  /** 普通命中后的全屏泛色（帧数与颜色），按招式属性走 */
+  hitTintFrames = 0;
+  hitTintColor = '#ffffff';
 
   /** 超必杀命中特写剩余帧（渲染层读它画白闪/集中线） */
   superHit = 0;
@@ -161,6 +172,7 @@ export class Match {
   step(inputs: readonly [InputSample, InputSample] = [NO_INPUT, NO_INPUT]): void {
     // 闪光逐帧衰减：放在最前面，保证"起手那一帧设成满值、下一帧开始掉"
     if (this.superFlash > 0) this.superFlash--;
+    if (this.hitTintFrames > 0) this.hitTintFrames--;
     switch (this.phase) {
       case 'intro':
         this.introLeft--;
@@ -295,6 +307,13 @@ export class Match {
         this.fx.spawnImpact(h.x, h.y, { style: h.style, dir });
         this.cam.shake(3, 1); // 防御也要"顶一下"，否则看不出挡住了
       } else {
+        // 普通命中：按属性给一层极短的全屏泛色（2~3 帧）。
+        // 这是"打到了"最直接的体感——不用看清粒子，余光就能感受到。
+        // 超必杀不叠（它自己那套闪白 + 集中线强得多，叠上去只会糊成一片）。
+        if (h.attacker.move?.kind !== 'super') {
+          this.hitTintFrames = 3;
+          this.hitTintColor = TINT_COLOR[h.style] ?? '#ffffff';
+        }
         // 超必杀的第一下命中：演一次"打击特写"（多段超必杀只演一次）
         if (h.attacker.move?.kind === 'super' && !this.superHitFired) {
           this.superHitFired = true;
