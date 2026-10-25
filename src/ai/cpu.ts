@@ -7,6 +7,7 @@
  */
 import { Btn, type InputSample } from '../core/input';
 import type { Fighter } from '../sim/fighter';
+import { FighterState } from '../sim/state';
 
 export type CpuLevel = 'easy' | 'normal' | 'hard';
 
@@ -33,6 +34,10 @@ export interface CpuProfile {
   specialChance: number;
   /** 气满时选择超必杀的概率（越高越凶，但空放也很蠢，所以给得保守） */
   superChance: number;
+  /** 看到对手放大招时改用回避（A+B 翻滚）而不是硬防的概率 */
+  dodgeChance: number;
+  /** 对手一直防御时改用 C+D 破防的概率 */
+  crushChance: number;
   /** 玩家在空中时跳起对空的概率 */
   antiAirChance: number;
 }
@@ -46,6 +51,8 @@ export const CPU_PROFILES: Record<CpuLevel, CpuProfile> = {
     moveGap: [18, 30],
     specialChance: 0.1,
     superChance: 0.3,
+    dodgeChance: 0.15,
+    crushChance: 0.1,
     antiAirChance: 0.05,
   },
   normal: {
@@ -56,6 +63,8 @@ export const CPU_PROFILES: Record<CpuLevel, CpuProfile> = {
     moveGap: [12, 22],
     specialChance: 0.3,
     superChance: 0.5,
+    dodgeChance: 0.4,
+    crushChance: 0.3,
     antiAirChance: 0.2,
   },
   hard: {
@@ -66,6 +75,8 @@ export const CPU_PROFILES: Record<CpuLevel, CpuProfile> = {
     moveGap: [6, 12],
     specialChance: 0.5,
     superChance: 0.7,
+    dodgeChance: 0.65,
+    crushChance: 0.5,
     antiAirChance: 0.45,
   },
 };
@@ -160,7 +171,12 @@ export class CpuBrain {
         this.reactTimer++;
         return { held: 0 };
       }
-      if (this.rand() < this.profile.guardChance) {
+      // 对手放必杀/超必杀时优先翻滚：硬防会被磨血，翻滚还能绕到背后
+      const bigMove = foe.move?.kind === 'special' || foe.move?.kind === 'super';
+      if (bigMove && this.rand() < this.profile.dodgeChance) {
+        this.queue.push(Btn.A | Btn.B); // A+B = 回避
+        this.reactTimer = 0;
+      } else if (this.rand() < this.profile.guardChance) {
         const crouch = this.rand() < 0.35 ? Btn.Down : 0;
         this.queue.push(this.back | crouch, this.back | crouch, this.back | crouch);
         this.reactTimer = 0;
@@ -186,6 +202,13 @@ export class CpuBrain {
     // 贴太紧退半步（给自己出招空间）
     if (dist < MIN_RANGE && this.rand() < 0.3) {
       this.queue.push(this.back, this.back);
+      return { held: this.queue.shift()! };
+    }
+
+    // 对手一直缩着防 → 用 C+D 吹飞破防（普通拳脚会被一直挡住）
+    if (dist <= ATTACK_RANGE && foe.state === FighterState.Block && this.cooldown === 0 && this.rand() < this.profile.crushChance) {
+      this.cooldown = this.between(this.profile.attackGap[0], this.profile.attackGap[1]) + 12;
+      this.queue.push(Btn.C | Btn.D); // C+D = 吹飞攻击
       return { held: this.queue.shift()! };
     }
 

@@ -4,6 +4,7 @@ import { CpuBrain, CPU_LEVELS, CPU_PROFILES, type CpuLevel } from '../src/ai/cpu
 import { KYO } from '../src/data/chars/kyo';
 import { IORI } from '../src/data/chars/iori';
 import { Fighter } from '../src/sim/fighter';
+import { FighterState } from '../src/sim/state';
 import { resolveCombat } from '../src/sim/hit';
 import { resolvePushAll } from '../src/sim/physics';
 import { World } from '../src/sim/world';
@@ -172,5 +173,59 @@ describe('CPU 会用自己的资源', () => {
       }
     }
     expect(dpFrames).toBeLessThan(20);
+  });
+});
+
+describe('CPU 的攻防手段', () => {
+  it('对手放大招时会用 A+B 翻滚（硬防会被磨血）', () => {
+    let dodges = 0;
+    for (let seed = 1; seed <= 40; seed++) {
+      const me = new Fighter(KYO, { x: 100, facing: 1 });
+      const foe = new Fighter(IORI, { x: 176, facing: -1 });
+      foe.startMove(IORI.moves['236A']!);
+      const brain = new CpuBrain(me, foe, 'hard', seed);
+      for (let i = 0; i < 30; i++) {
+        const h = brain.step().held;
+        if ((h & Btn.A) !== 0 && (h & Btn.B) !== 0) dodges++;
+      }
+    }
+    expect(dodges).toBeGreaterThan(0);
+  });
+
+  it('对手一直防御时会用 C+D 破防（普通拳脚会被一直挡住）', () => {
+    let crushes = 0;
+    for (let seed = 1; seed <= 40; seed++) {
+      const me = new Fighter(KYO, { x: 100, facing: 1 });
+      const foe = new Fighter(IORI, { x: 130, facing: -1 });
+      foe.state = FighterState.Block;
+      const brain = new CpuBrain(me, foe, 'hard', seed);
+      for (let i = 0; i < 40; i++) {
+        const h = brain.step().held;
+        if ((h & Btn.C) !== 0 && (h & Btn.D) !== 0) crushes++;
+      }
+    }
+    expect(crushes).toBeGreaterThan(0);
+  });
+
+  it('低难度翻滚明显少于高难度（不然新手打不到人）', () => {
+    const count = (level: 'easy' | 'hard'): number => {
+      let n = 0;
+      for (let seed = 1; seed <= 40; seed++) {
+        const me = new Fighter(KYO, { x: 100, facing: 1 });
+        const foe = new Fighter(IORI, { x: 176, facing: -1 });
+        foe.startMove(IORI.moves['236A']!);
+        const brain = new CpuBrain(me, foe, level, seed);
+        for (let i = 0; i < 30; i++) {
+          const h = brain.step().held;
+          if ((h & Btn.A) !== 0 && (h & Btn.B) !== 0) n++;
+        }
+      }
+      return n;
+    };
+    const easy = count('easy');
+    const hard = count('hard');
+    expect(easy).toBeLessThan(hard);
+    // 简单档也不能完全不动：偶尔得闪一下，否则看起来像木头
+    expect(easy).toBeGreaterThan(0);
   });
 });
