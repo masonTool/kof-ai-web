@@ -698,3 +698,33 @@ describe('受击分级与击倒', () => {
     expect(KNOCKDOWN_COMBO).toBeGreaterThanOrEqual(4);
   });
 });
+
+describe('命中后的属性残留', () => {
+  it('火属性必杀命中后，对手身上会"烧一会儿"', () => {
+    const m = new Match(KYO, IORI, { introFrames: 1, roundEndFrames: 3 }, 91);
+    while (m.phase === 'intro') m.step([{ held: 0 }, { held: 0 }]);
+    m.p2.x = m.p1.x + 20;
+    m.p1.startMove(KYO.moves['236A']!);
+    for (let i = 0; i < 40; i++) {
+      m.step([{ held: 0 }, { held: 0 }]);
+      if (m.lastHits.length > 0) break;
+    }
+    expect(m.p2.burnFrames).toBeGreaterThan(0);
+    expect(m.p2.burnStyle).not.toBe('none');
+  });
+
+  it('残留是有限的：会逐帧烧完（不会一直挂着）', () => {
+    const m = new Match(KYO, IORI, { introFrames: 1, roundEndFrames: 3 }, 92);
+    while (m.phase === 'intro') m.step([{ held: 0 }, { held: 0 }]);
+    m.p2.x = m.p1.x + 20;
+    m.p1.startMove(KYO.moves['236A']!);
+    for (let i = 0; i < 40; i++) {
+      m.step([{ held: 0 }, { held: 0 }]);
+      if (m.lastHits.length > 0) break;
+    }
+    const peak = m.p2.burnFrames;
+    expect(peak).toBeGreaterThan(0);
+    for (let i = 0; i < peak + 4; i++) m.step([{ held: 0 }, { held: 0 }]);
+    expect(m.p2.burnFrames).toBe(0);
+  });
+});

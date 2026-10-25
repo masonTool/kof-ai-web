@@ -294,6 +294,24 @@ export function drawFrame(ctx: Ctx2D, match: Match, opts: RenderOptions = {}): v
       lag: motion.lag,
       squash: motion.squash,
     });
+
+    // 命中后身上残留的属性火/电弧：让"打中了"这件事在画面上多留一会儿。
+    // 用确定性抖动（sin/cos 哈希），回放能一致。
+    if (f.burnFrames > 0) {
+      const colors = STYLE_COLORS[f.burnStyle] ?? STYLE_COLORS.fire;
+      const life = f.burnFrames;
+      for (let i = 0; i < 7; i++) {
+        const seed = (i + 1) * 12.9898 + life * 7.233;
+        const rx = Math.sin(seed) * 0.5 + 0.5;
+        const ry = Math.cos(seed * 1.7) * 0.5 + 0.5;
+        const px = Math.round(f.x - 13 + rx * 26);
+        const py = Math.round(f.y - 8 - ry * 44 - (18 - life) * 0.5);
+        ctx.globalAlpha = 0.5 + rx * 0.45;
+        ctx.fillStyle = colors[i % colors.length]!;
+        ctx.fillRect(px, py, 3, 3);
+      }
+      ctx.globalAlpha = 1;
+    }
   }
   // 飞行道具：按形状画（球/波/火柱/风刃），颜色按属性
   for (const entity of match.world.entities) {

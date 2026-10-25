@@ -8,7 +8,7 @@
  */
 import type { InputState } from '../core/input';
 import { Btn, axisX, axisY } from '../core/input';
-import type { Box, CharDef, HitDef, MoveDef } from '../data/schema';
+import type { Box, CharDef, FxStyle, HitDef, MoveDef } from '../data/schema';
 import { newCombo, type ComboState } from './combo';
 import {
   GROUND_Y,
@@ -77,6 +77,10 @@ export class Fighter implements Entity {
   /** 空中招式落地硬直 */
   landLag = 0;
   airborne = false;
+  /** 命中后身上残留的属性特效帧数（火/雷/气），0 = 无 */
+  burnFrames = 0;
+  /** 残留特效的属性色系（取自招式 fx） */
+  burnStyle: FxStyle = 'none';
 
   /** 本帧输入（给输入解析/渲染按键提示用） */
   input: InputState = { held: 0, pressed: 0, released: 0 };
@@ -372,6 +376,11 @@ export class Fighter implements Entity {
   // ---------------------------------------------------------------- 被命中入口（hit.ts 调用）
 
   /** 受击硬直（空中受击会继续下落，落地转入倒地）。不清 hitstop——那是命中结算设好的 */
+  /** 受击残留特效计时（每帧由 step 调用） */
+  stepBurn(): void {
+    if (this.burnFrames > 0) this.burnFrames--;
+  }
+
   enterHitstun(frames: number, opts: { launch?: number; knockdown?: boolean } = {}): void {
     this.move = null;
     this.moveFrame = 0;
@@ -437,6 +446,8 @@ export class Fighter implements Entity {
   // ---------------------------------------------------------------- 每帧推进
 
   step(_world: World, input: InputState): void {
+    // 残留特效每帧都减：放在最前面，才不会被各状态的提前 return 漏掉
+    this.stepBurn();
     this.input = input;
     // 指令历史每帧都要攒（冻结期间也不例外），否则连段里的摇杆会断
     this.controls.feed(input);

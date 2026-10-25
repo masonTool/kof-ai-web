@@ -51,6 +51,14 @@ export function guardDirection(f: Fighter): number {
  * 规则：空中不能防（KOF97 没有空中防御）；必须按住后退方向；
  * low 必须蹲防、overhead 必须站防、unblockable 谁都不能防。
  */
+/** 命中后身上残留多少帧（按属性；`none` 不留） */
+const BURN_FRAMES: Partial<Record<FxStyle, number>> = {
+  fire: 18,
+  darkfire: 16,
+  thunder: 12,
+  ki: 14,
+};
+
 /** 单发达到这个伤害就打倒（"打得疼就趴下"） */
 export const KNOCKDOWN_DAMAGE = 95;
 /** 连段达到这么多下，下一击强制打倒（防止无限连） */
@@ -260,6 +268,14 @@ export function applyHit(world: World, c: HitCandidate): HitResolution {
 
   attacker.addMeter(hit.meterGain ?? Math.floor(damage * 0.6));
   defender.addMeter(Math.floor(damage * 0.2));
+
+  // 命中后身上留一会儿属性特效：火/雷/气各有自己的时长与颜色
+  // （KOF 的手感很大一部分来自"打完那一下还在烧"，而不是一次性喷雾）
+  const burn = BURN_FRAMES[style] ?? 0;
+  if (burn > 0) {
+    defender.burnFrames = burn;
+    defender.burnStyle = style;
+  }
 
   world.emit('hit', {
     x: c.x,
