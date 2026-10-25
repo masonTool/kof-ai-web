@@ -746,6 +746,29 @@ function cueInterfaceSounds(): void {
   c.locked = locked;
 }
 
+/** CPU 残血换人的冷却（帧）：换完至少打这么久才允许再换，避免刚上场就撤 */
+let cpuTagCooldown = 0;
+/** 残血换人阈值：低于这个血量比例就考虑撤退 */
+const CPU_TAG_HP_RATIO = 0.25;
+
+/**
+ * CPU 残血撤退：血量低 + 还有队友 + 冷却好了 就换人。
+ *
+ * 只在街机/双人对 CPU 的对局里生效——训练场的假人是让人练连段的，
+ * 自动换人会把练习目标换掉。
+ */
+function stepCpuTag(): void {
+  if (!match || match.phase !== 'fight') return;
+  if (flow.mode === 'training') return;
+  if (cpuTagCooldown > 0) {
+    cpuTagCooldown--;
+    return;
+  }
+  const p2 = match.p2;
+  if (p2.hp / p2.maxHp > CPU_TAG_HP_RATIO) return;
+  if (match.tagOut(2)) cpuTagCooldown = 120;
+}
+
 /**
  * 难度：把 CPU 血量倍率作用到当前出场的 CPU 角色上。
  *
@@ -1031,6 +1054,7 @@ startAnimationLoop(
           }
         }
         applyCpuHpScale();
+        stepCpuTag();
         cueMatchSounds();
         // 残血变奏：任意一方血量低于 30% 就给 BGM 加底鼓
         const lowHp = match.p1.hp / match.p1.maxHp < 0.3 || match.p2.hp / match.p2.maxHp < 0.3;

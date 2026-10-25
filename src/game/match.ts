@@ -390,6 +390,23 @@ export class Match {
     this.startTeamRound(losers);
   }
 
+  /**
+   * 主动换人（残血撤退）：把某一侧换成下一个角色，并走一次换人演出。
+   *
+   * 为什么放在 Match 而不是 AI：换人要动 indexes、重建角色、重置回合计时，
+   * 这些都是 Match 的内部状态；让 AI 直接改会绕过一堆不变量。
+   * AI 只负责"什么时候按下这个按钮"。
+   *
+   * 返回 false = 没有队友可换（已经是最后一人）。
+   */
+  tagOut(side: 1 | 2): boolean {
+    if (this.phase === 'over') return false;
+    if (!this.hasNext(side)) return false;
+    this.indexes[side - 1]++;
+    this.startTeamRound([side]);
+    return true;
+  }
+
   /** 换人后的下一回合：赢家留血，输家换将 */
   private startTeamRound(losers: readonly (1 | 2)[]): void {
     const center = (STAGE_LEFT + STAGE_RIGHT) / 2;

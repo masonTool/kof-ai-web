@@ -567,3 +567,37 @@ describe('浮空追击', () => {
     expect(dealt).toBeLessThanOrEqual(Math.round(raw * AERIAL_DAMAGE_MULT));
   });
 });
+
+describe('CPU 残血换人（tagOut）', () => {
+  const trio = (): Match => new Match([KYO, KYO, KYO], [IORI, IORI, IORI], { introFrames: 1, roundEndFrames: 3 }, 61);
+
+  it('还有队友时能换下一个，没有就拒绝（不会越界）', () => {
+    const m = trio();
+    while (m.phase === 'intro') m.step([{ held: 0 }, { held: 0 }]);
+    expect(m.indexes[1]).toBe(0);
+    expect(m.tagOut(2)).toBe(true);
+    expect(m.indexes[1]).toBe(1);
+    expect(m.tagOut(2)).toBe(true);
+    expect(m.indexes[1]).toBe(2);
+    // 已经是最后一人
+    expect(m.tagOut(2)).toBe(false);
+    expect(m.indexes[1]).toBe(2);
+  });
+
+  it('换人后回到开场演出，血是满的（不是带着残血上场）', () => {
+    const m = trio();
+    while (m.phase === 'intro') m.step([{ held: 0 }, { held: 0 }]);
+    m.p2.hp = 1;
+    m.tagOut(2);
+    expect(m.phase).toBe('intro');
+    expect(m.p2.hp).toBe(m.p2.maxHp);
+  });
+
+  it('对局已经结束时不能再换人', () => {
+    const m = trio();
+    while (m.phase === 'intro') m.step([{ held: 0 }, { held: 0 }]);
+    m.phase = 'over' as never;
+    expect(m.tagOut(2)).toBe(false);
+    expect(m.indexes[1]).toBe(0);
+  });
+});
