@@ -8,7 +8,9 @@ import {
   VIEW_WIDTH_MAX,
   VIEW_WIDTH_MIN,
 } from '../src/sim/constants';
-import {  MOVE_HINT_TEXT,
+import {
+  drawTrainingBadge,
+  MOVE_HINT_TEXT,
   drawMoveHint,
   HELP_BUTTON,
   HELP_PAGE_COUNT,
@@ -206,5 +208,25 @@ describe('宽屏适配：可视宽度随长宽比变化', () => {
     expect(VIEW_HEIGHT).toBe(before);
     expect(VIEW_HEIGHT).toBe(224);
     reset();
+  });
+});
+
+describe('训练场状态条', () => {
+  it('把"不损血 / 气无限"常驻显示出来（开关埋在按钮里没人知道）', () => {
+    const ctx = new FakeCtx();
+    drawTrainingBadge(ctx, { infiniteHp: true, infiniteMeter: true, dummy: 'cpu' });
+    const all = ctx.texts.map((t) => String(t.text)).join('');
+    expect(all).toContain('训练场');
+    expect(all).toContain('不损血');
+    expect(all).toContain('气无限');
+    expect(ctx.globalAlpha).toBe(1);
+  });
+
+  it('关掉时如实显示"正常血量"，不能骗玩家', () => {
+    const ctx = new FakeCtx();
+    drawTrainingBadge(ctx, { infiniteHp: false, infiniteMeter: false, dummy: 'stand' });
+    const all = ctx.texts.map((t) => String(t.text)).join('');
+    expect(all).toContain('正常血量');
+    expect(all).not.toContain('不损血');
   });
 });

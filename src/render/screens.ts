@@ -163,6 +163,31 @@ export function drawDemoLabel(ctx: Ctx2D, label: string, step: number, total: nu
   text(ctx, `演示 ${step + 1}/${total} · ${label}`, VIEW_WIDTH / 2, 194, 'center', 6, SCREEN_COLORS.accent);
 }
 
+/**
+ * 训练场状态条：顶部一行，明确告诉玩家"现在不掉血、气是无限的"。
+ *
+ * 这两个开关原来埋在底部功能条的按钮里（`无限血:OFF`），用户实测反馈"不知道有训练场"——
+ * 状态必须**常驻显示**，不能只存在于一个可以点的按钮上。
+ */
+export function drawTrainingBadge(
+  ctx: Ctx2D,
+  info: { infiniteHp: boolean; infiniteMeter: boolean; dummy: string },
+): void {
+  const y = 26;
+  const w = 190;
+  const x = (VIEW_WIDTH - w) / 2;
+  ctx.globalAlpha = 0.82;
+  ctx.fillStyle = '#05070a';
+  ctx.fillRect(x, y, w, 15);
+  ctx.globalAlpha = 1;
+  ctx.strokeStyle = '#5aa9ff';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(x + 0.5, y + 0.5, w - 1, 14);
+  const hp = info.infiniteHp ? '不损血' : '正常血量';
+  const meter = info.infiniteMeter ? '气无限' : '气正常';
+  text(ctx, `训练场 · ${hp} · ${meter} · 假人:${info.dummy}`, VIEW_WIDTH / 2, y + 4, 'center', 6, '#9fd0ff');
+}
+
 /** 首次进对局时的必杀提示（只弹一次，之后靠左下角「招式」按钮） */
 export const MOVE_HINT_TEXT = '必杀技怎么放？按 L 或点左下角「招式」看本角色招式表';
 

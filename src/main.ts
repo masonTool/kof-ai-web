@@ -35,6 +35,7 @@ import {
   drawHelp,
   drawMoveList,
   drawMoveHint,
+  drawTrainingBadge,
   drawDemoLabel,
   drawPadAdjustHint,
   MENU_BUTTON,
@@ -1098,6 +1099,14 @@ startAnimationLoop(
         const steps = comboDemoFor();
         const at = stepAt(demoStarts, Math.max(0, demoIndex - 1));
         if (at >= 0) drawDemoLabel(ctx, steps[at]!.label, at, steps.length);
+      }
+      // 训练场：顶部常驻状态条（不掉血 / 气无限 / 假人行为）
+      if (flow.screen === 'fight' && flow.mode === 'training' && training && !moveListOpen) {
+        drawTrainingBadge(ctx, {
+          infiniteHp: training.settings.infiniteHp,
+          infiniteMeter: training.settings.infiniteMeter,
+          dummy: training.settings.dummy,
+        });
       }
       if (moveHintFrames > 0 && flow.screen === 'fight' && !moveListOpen) {
         drawMoveHint(ctx, Math.min(1, moveHintFrames / 40));
