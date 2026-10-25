@@ -51,6 +51,11 @@ export function guardDirection(f: Fighter): number {
  * 规则：空中不能防（KOF97 没有空中防御）；必须按住后退方向；
  * low 必须蹲防、overhead 必须站防、unblockable 谁都不能防。
  */
+/** 单发达到这个伤害就打倒（"打得疼就趴下"） */
+export const KNOCKDOWN_DAMAGE = 95;
+/** 连段达到这么多下，下一击强制打倒（防止无限连） */
+export const KNOCKDOWN_COMBO = 6;
+
 /** 浮空追击的伤害倍率（打飞起来的目标多打一点） */
 export const AERIAL_DAMAGE_MULT = 1.15;
 
@@ -148,11 +153,18 @@ export interface HitCandidate {
  * 填的；必杀技用同一套数值，打在身上和普通拳没区别——用户反馈"技能对对手没有影响"。
  * 所以按招式类型在结算处加成，而不是去改 29 个角色的上百条 HitDef。
  */
-function moveWeight(attacker: Fighter): { stun: number; push: number; launch: number; stop: number } {
+function moveWeight(attacker: Fighter): {
+  stun: number;
+  push: number;
+  launch: number;
+  stop: number;
+  /** 这一击本身是否必定打倒（超必杀） */
+  down: boolean;
+} {
   const kind = attacker.move?.kind;
-  if (kind === 'super') return { stun: 8, push: 1.55, launch: -3.4, stop: 6 };
-  if (kind === 'special') return { stun: 4, push: 1.3, launch: 0, stop: 2 };
-  return { stun: 0, push: 1, launch: 0, stop: 0 };
+  if (kind === 'super') return { stun: 8, push: 1.55, launch: -3.4, stop: 6, down: true };
+  if (kind === 'special') return { stun: 4, push: 1.3, launch: 0, stop: 2, down: false };
+  return { stun: 0, push: 1, launch: 0, stop: 0, down: false };
 }
 
 export function applyHit(world: World, c: HitCandidate): HitResolution {
@@ -219,10 +231,19 @@ export function applyHit(world: World, c: HitCandidate): HitResolution {
   addComboHit(defender.combo, damage);
   if (!defender.isDead) {
     const weight = moveWeight(attacker);
-    defender.enterHitstun(hit.hitStun + (c.counter ? COUNTER_EXTRA_STUN : 0) + weight.stun, {
-      // 超必杀即使在数据里没写 launch，也把对手打浮空（必杀要有"被打飞"的观感）
-      launch: hit.launch ?? (weight.launch !== 0 ? weight.launch : undefined),
-      knockdown: hit.knockdown !== undefined && hit.knockdown !== 'none',
+    // 打倒的三种来源，任一成立就倒地：
+    // ①数据里写了 knockdown（投技 slam 之类）②超必杀必倒 ③单发够疼（≥95）
+    // ④连段已经打了很多下（≥6 段）—— 用户说的"打久了人会趴下"就是这个
+    const comboHits = defender.combo.hits;
+    const heavyEnough = damage >= KNOCKDOWN_DAMAGE;
+    const knockedOut = hit.knockdown !== undefined && hit.knockdown !== 'none';
+    const shouldDown = knockedOut || weight.down || heavyEnough || comboHits >= KNOCKDOWN_COMBO;
+    defender.enterHitstun(
+      hit.hitStun + (c.counter ? COUNTER_EXTRA_STUN : 0) + weight.stun + (shouldDown ? 6 : 0),
+      {
+        // 超必杀即使在数据里没写 launch，也把对手打浮空（必杀要有"被打飞"的观感）
+        launch: hit.launch ?? (weight.launch !== 0 ? weight.launch : undefined),
+        knockdown: shouldDown,
     });
 
     // 气绝：挨够了会晕（晕眩中挨打不再累积，否则永远醒不过来）

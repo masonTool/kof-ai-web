@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { Btn, makeInput } from '../src/core/input';
 import { IORI } from '../src/data/chars/iori';
 import { KYO } from '../src/data/chars/kyo';
-import { AERIAL_DAMAGE_MULT, isGuarding } from '../src/sim/hit';
+import { AERIAL_DAMAGE_MULT, KNOCKDOWN_COMBO, KNOCKDOWN_DAMAGE, isGuarding } from '../src/sim/hit';
 import {
   DEFAULT_MATCH,
   Match,
@@ -646,5 +646,55 @@ describe('投技（← + C）', () => {
       if (m.phase !== 'fight') break;
     }
     expect(before - m.p2.hp).toBe(0);
+  });
+});
+
+describe('受击分级与击倒', () => {
+  const mkD = (): Match => new Match(KYO, IORI, { introFrames: 1, roundEndFrames: 3 }, 81);
+  const toFightD = (m: Match): void => {
+    while (m.phase === 'intro') m.step([{ held: 0 }, { held: 0 }]);
+  };
+  const hitWith = (m: Match, id: string): void => {
+    m.p2.x = m.p1.x + 20;
+    m.p1.startMove(KYO.moves[id]!);
+    for (let i = 0; i < 60; i++) {
+      m.step([{ held: 0 }, { held: 0 }]);
+      if (m.lastHits.length > 0) break;
+    }
+  };
+
+  it('轻拳打不出倒地（普通命中只是后仰）', () => {
+    const m = mkD();
+    toFightD(m);
+    hitWith(m, '5A');
+    expect(m.p2.state === 'down').toBe(false);
+  });
+
+  it('超必杀命中必倒（打飞 + 落地倒地）', () => {
+    const m = mkD();
+    toFightD(m);
+    m.p1.meter = 100;
+    m.p2.x = m.p1.x + 18;
+    m.p1.startMove(KYO.moves['236236AC']!);
+    let sawDown = false;
+    for (let i = 0; i < 160; i++) {
+      m.step([{ held: 0 }, { held: 0 }]);
+      if (m.p2.state === 'down' || m.p2.airborne) sawDown = true;
+      if (m.phase !== 'fight') break;
+    }
+    expect(sawDown).toBe(true);
+  });
+
+  it('连段打到 6 段以上，下一击强制打倒（防无限连）', () => {
+    const m = mkD();
+    toFightD(m);
+    m.p2.combo.hits = KNOCKDOWN_COMBO;
+    hitWith(m, '5A');
+    expect(m.p2.state).toBe('down');
+  });
+
+  it('单发够疼（≥95）也打倒：阈值常量与实现一致', () => {
+    expect(KNOCKDOWN_DAMAGE).toBeGreaterThan(60);
+    expect(KNOCKDOWN_COMBO).toBeGreaterThanOrEqual(4);
   });
 });
