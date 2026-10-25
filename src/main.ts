@@ -764,6 +764,28 @@ function cueInterfaceSounds(): void {
 /** 训练场本次最高连击（连断后保留，换对手/重开时清零） */
 let trainingBestCombo = 0;
 
+/** 已经预加载过的对手队（避免 VS 屏每帧重复发起同一批请求） */
+let preloadedEnemyKey = '';
+
+/**
+ * 街机换场预加载：VS 演出期间就把下一场对手装进来。
+ *
+ * 原来是等 `startMatch()` 才 `ensureCharSheets()`——3 打 3 一共 6 个角色、
+ * 每人 2~3MB，进场那一瞬间正好在解图，表现就是"开场先白模、再闪一下"。
+ * VS 屏有 90 帧准备时间，用它把图提前装好。
+ */
+function preloadNextOpponent(): void {
+  if (flow.mode !== 'arcade' || !arcade) return;
+  if (flow.screen !== 'vs') return;
+  const team = arcadeTeam(arcade);
+  if (team.length === 0) return;
+  const key = team.map((c) => c.id).join(',');
+  if (key === preloadedEnemyKey) return;
+  preloadedEnemyKey = key;
+  const mine = match?.p1?.char.id;
+  void ensureCharSheets([...team.map((c) => c.id), ...(mine ? [mine] : [])]);
+}
+
 /**
  * 这一局用哪条舞台。
  *
@@ -1030,6 +1052,7 @@ startAnimationLoop(
         }
       }
       setWeatherEnabled(settings.settings.weatherFx);
+      preloadNextOpponent();
       cueInterfaceSounds();
       bgm.setTrack(trackFor(flow.screen));
       if (flow.screen !== 'fight') bgm.setMood('calm');
