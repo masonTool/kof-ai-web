@@ -248,17 +248,32 @@ function drawStageArt(ctx: Ctx2D, cam: Camera, stage: StageDef, art: StageArt): 
   const ART_W = VIEW_WIDTH + 200;
   const shift = cam.x * PARALLAX_FAR;
   const x = Math.round(VIEW_WIDTH / 2 - ART_W / 2 - shift);
-  // cover：等比放大到铺满这个框，底边对齐（这样画的"地面"永远在屏幕底部，不会被裁掉）
-  const k = Math.max(ART_W / art.width, VIEW_HEIGHT / art.height);
-  const dw = art.width * k;
-  const dh = art.height * k;
+  // 先按宽度定缩放（横向必须铺满，否则视差横移会露出边缘）
+  let k = ART_W / art.width;
+  // 高度不够就补到够
+  if (art.height * k < VIEW_HEIGHT) k = VIEW_HEIGHT / art.height;
+  let dw = art.width * k;
+  let dh = art.height * k;
+
+  // 等比会被裁掉多少：图是 1.5~1.78 比例，视口是 1.78，窄图会被裁掉三到四成高度，
+  // 天空全没、只剩一片地面的色块——用户反馈"场景背景没做"，实际是裁得太狠。
+  // 所以溢出超过 22% 时改成**轻微非等比拉伸**（最多 1.28 倍，AI 场景图不是精确几何，
+  // 这个范围内肉眼看不出变形，但能把整张图保留下来）。
+  const overflow = dh / (VIEW_HEIGHT + 22);
+  if (overflow > 1.22) dh = VIEW_HEIGHT + 22;
   // 底图整体上移 22px：让它的下缘藏进地面色带里——元宝出图右下角有平台水印，
   // 宽屏时那一角会露在地面色带之上，肉眼能看见「…生成」字样
   ctx.drawImage(art.image, 0, 0, art.width, art.height, x + (ART_W - dw) / 2, VIEW_HEIGHT - dh - 22, dw, dh);
 
-  // 地面色带：盖住底图的下缘（含水印），同时给角色一个"踩实"的地面
+  // 地面：有底图时**不能再铺一条实色带**——底图自己画了地板（斗技场的白地砖），
+  // 铺满整条会把地板切掉一半，看起来像画面底部贴了块黑板。
+  // 这里只留 6px 的接地暗影（压住元宝水印的下缘）+ 一条亮线（角色踩实的那道边）。
+  ctx.globalAlpha = 0.85;
   ctx.fillStyle = stage.ground;
-  ctx.fillRect(0, GROUND_SCREEN_Y, VIEW_WIDTH, VIEW_HEIGHT - GROUND_SCREEN_Y);
+  ctx.fillRect(0, VIEW_HEIGHT - 6, VIEW_WIDTH, 6);
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = stage.groundLine;
+  ctx.fillRect(0, GROUND_SCREEN_Y, VIEW_WIDTH, 1);
 
   // 砖缝（和角色同一层视差，脚底才不会滑）
   const first = Math.floor(cam.visibleLeft / TILE_SPACING) * TILE_SPACING;
