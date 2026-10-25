@@ -192,6 +192,26 @@ export function drawDemoLabel(
 }
 
 /**
+ * 街机进度：左上角常驻「STAGE 3/8 · 队伍名」。
+ *
+ * 街机 8 场打下来，玩家需要知道"打到哪了、还剩几场"——原来只能靠记。
+ * 放在左血条上方（不与右侧连击面板冲突，训练场也不会画它）。
+ */
+export function drawStageBadge(ctx: Ctx2D, stage: number, total: number, teamName: string): void {
+  const label = `STAGE ${stage}/${total}${teamName ? ` · ${teamName}` : ''}`;
+  const w = Math.min(VIEW_WIDTH - 8, label.length * 6 + 12);
+  const y = 8;
+  ctx.globalAlpha = 0.8;
+  ctx.fillStyle = '#05070a';
+  ctx.fillRect(4, y, w, 13);
+  ctx.globalAlpha = 1;
+  ctx.strokeStyle = SCREEN_COLORS.dim;
+  ctx.lineWidth = 1;
+  ctx.strokeRect(4.5, y + 0.5, w - 1, 12);
+  text(ctx, label, 4 + w / 2, y + 3, 'center', 6, SCREEN_COLORS.text);
+}
+
+/**
  * 训练场连击面板：右上角显示"当前连击 / 本次最高"。
  *
  * 训练场里打完一套连段，除了伤害数字没有任何反馈——练的人不知道自己到底连上没有、

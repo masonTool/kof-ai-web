@@ -11,6 +11,7 @@ import {
 import {
   drawComboMeter,
   drawDemoResult,
+  drawStageBadge,
   drawTrainingBadge,
   MOVE_HINT_TEXT,
   drawMoveHint,
@@ -276,5 +277,32 @@ describe('演示结果回报', () => {
     drawDemoResult(ctx, 0, 0);
     const all = ctx.texts.map((t) => String(t.text)).join('|');
     expect(all).toContain('没连上');
+  });
+});
+
+describe('街机进度显示', () => {
+  it('报出第几场 + 对手队名（打 8 场时不用靠记忆）', () => {
+    const ctx = new FakeCtx();
+    drawStageBadge(ctx, 3, 8, '怒之队');
+    const all = ctx.texts.map((t) => String(t.text)).join('|');
+    expect(all).toContain('STAGE 3/8');
+    expect(all).toContain('怒之队');
+    expect(ctx.globalAlpha).toBe(1);
+  });
+
+  it('队名为空时不显示多余的分隔符', () => {
+    const ctx = new FakeCtx();
+    drawStageBadge(ctx, 1, 8, '');
+    const all = ctx.texts.map((t) => String(t.text)).join('|');
+    expect(all).toContain('STAGE 1/8');
+    expect(all).not.toContain('·');
+  });
+
+  it('面板在左侧且不越界（右侧留给训练场连击面板）', () => {
+    const ctx = new FakeCtx();
+    drawStageBadge(ctx, 8, 8, '大蛇');
+    const panel = ctx.rects[0]!;
+    expect(panel.x).toBeLessThan(VIEW_WIDTH / 2);
+    expect(panel.x + panel.w).toBeLessThanOrEqual(VIEW_WIDTH);
   });
 });

@@ -38,6 +38,7 @@ import {
   drawMoveHint,
   drawTrainingBadge,
   drawComboMeter,
+  drawStageBadge,
   drawDemoResult,
   drawDemoLabel,
   drawPadAdjustHint,
@@ -64,7 +65,8 @@ import { arcadeResult } from './ui/arcade-result';
 import { moveListFor } from './ui/movelist';
 import type { PadCustom } from './ui/pad-layout';
 import { comboSets, flattenSteps, stepAt } from './ui/combo-demo';
-import { arcadeRules, arcadeTeam } from './ui/arcade-roster';
+import { arcadeRules, arcadeTeam, arcadeTeamName } from './ui/arcade-roster';
+import { ARCADE_ROUTE } from './ui/arcade';
 import { ChallengeBoard } from './ui/challenges';
 import { KeyBindMenu } from './ui/keybind';
 import { PauseMenu } from './ui/pause';
@@ -1171,6 +1173,10 @@ startAnimationLoop(
       if (demoResultLeft > 0) {
         demoResultLeft--;
         if (flow.screen === 'fight') drawDemoResult(ctx, demoResultHits, demoResultDamage);
+      }
+      // 街机：左上角报进度（第几场 / 对手队名）
+      if (flow.screen === 'fight' && flow.mode === 'arcade' && arcade && match) {
+        drawStageBadge(ctx, arcade.stage + 1, ARCADE_ROUTE.length, arcadeTeamName(arcade));
       }
       // 训练场：连击面板（当前 / 本次最高）。连断后不清最高，方便对比两次尝试
       if (flow.screen === 'fight' && flow.mode === 'training' && match) {
