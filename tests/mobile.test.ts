@@ -9,6 +9,7 @@ import {
   VIEW_WIDTH_MIN,
 } from '../src/sim/constants';
 import {
+  drawComboMeter,
   drawTrainingBadge,
   MOVE_HINT_TEXT,
   drawMoveHint,
@@ -228,5 +229,32 @@ describe('训练场状态条', () => {
     const all = ctx.texts.map((t) => String(t.text)).join('');
     expect(all).toContain('正常血量');
     expect(all).not.toContain('不损血');
+  });
+});
+
+describe('训练场连击面板', () => {
+  it('显示当前连击与本次最高（练习的人才知道自己连上没有）', () => {
+    const ctx = new FakeCtx();
+    drawComboMeter(ctx, 7, 12);
+    const all = ctx.texts.map((t) => String(t.text)).join('');
+    expect(all).toContain('7 连');
+    expect(all).toContain('最高 12');
+    expect(ctx.globalAlpha).toBe(1);
+  });
+
+  it('没有连击时显示占位而不是 0（0 连看起来像报错）', () => {
+    const ctx = new FakeCtx();
+    drawComboMeter(ctx, 0, 5);
+    const all = ctx.texts.map((t) => String(t.text)).join('');
+    expect(all).not.toContain('0 连');
+    expect(all).toContain('最高 5');
+  });
+
+  it('面板贴在右上角，不和左侧的训练场状态条重叠', () => {
+    const ctx = new FakeCtx();
+    drawComboMeter(ctx, 3, 3);
+    const panel = ctx.rects[0]!;
+    expect(panel.x).toBeGreaterThan(VIEW_WIDTH / 2);
+    expect(panel.x + panel.w).toBeLessThanOrEqual(VIEW_WIDTH);
   });
 });

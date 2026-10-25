@@ -37,6 +37,7 @@ import {
   drawMoveList,
   drawMoveHint,
   drawTrainingBadge,
+  drawComboMeter,
   drawDemoLabel,
   drawPadAdjustHint,
   MENU_BUTTON,
@@ -746,6 +747,9 @@ function cueInterfaceSounds(): void {
   c.locked = locked;
 }
 
+/** 训练场本次最高连击（连断后保留，换对手/重开时清零） */
+let trainingBestCombo = 0;
+
 /** CPU 残血换人的冷却（帧）：换完至少打这么久才允许再换，避免刚上场就撤 */
 let cpuTagCooldown = 0;
 /** 残血换人阈值：低于这个血量比例就考虑撤退 */
@@ -985,6 +989,10 @@ startAnimationLoop(
         matchOver: matchOver && !arcadeWin,
         matchWinner: match?.matchWinner ?? 0,
       });
+      // 换场/重开时清掉训练场的最高连击（不是同一批尝试，不该混在一起比）
+      if (flow.screen === 'fight' && match?.phase === 'intro' && trainingBestCombo > 0) {
+        trainingBestCombo = 0;
+      }
       if (arcadeWin && arcade) {
         arcade = afterStage(arcade, true);
         if (isCleared(arcade)) {
@@ -1142,6 +1150,12 @@ startAnimationLoop(
           const dmg = steps.slice(0, at + 1).reduce((sum, s) => sum + (s.damage ?? 0), 0);
           drawDemoLabel(ctx, steps[at]!.label, at, steps.length, dmg);
         }
+      }
+      // 训练场：连击面板（当前 / 本次最高）。连断后不清最高，方便对比两次尝试
+      if (flow.screen === 'fight' && flow.mode === 'training' && match) {
+        const current = match.p2.combo.hits;
+        if (current > trainingBestCombo) trainingBestCombo = current;
+        drawComboMeter(ctx, current, trainingBestCombo);
       }
       // 训练场：顶部常驻状态条（不掉血 / 气无限 / 假人行为）
       if (flow.screen === 'fight' && flow.mode === 'training' && training && !moveListOpen) {

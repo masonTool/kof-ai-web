@@ -171,6 +171,27 @@ export function drawDemoLabel(
 }
 
 /**
+ * 训练场连击面板：右上角显示"当前连击 / 本次最高"。
+ *
+ * 训练场里打完一套连段，除了伤害数字没有任何反馈——练的人不知道自己到底连上没有、
+ * 这套的上限是几下。连击数在手感上是最直接的"你打对了"。
+ */
+export function drawComboMeter(ctx: Ctx2D, current: number, best: number): void {
+  const w = 76;
+  const x = VIEW_WIDTH - w - 4;
+  const y = 26;
+  ctx.globalAlpha = 0.82;
+  ctx.fillStyle = '#05070a';
+  ctx.fillRect(x, y, w, 15);
+  ctx.globalAlpha = 1;
+  ctx.strokeStyle = current > 0 ? SCREEN_COLORS.gold : SCREEN_COLORS.dim;
+  ctx.lineWidth = 1;
+  ctx.strokeRect(x + 0.5, y + 0.5, w - 1, 14);
+  const cur = current > 0 ? `${current} 连` : '—';
+  text(ctx, `${cur} · 最高 ${best}`, x + w / 2, y + 4, 'center', 6, current > 0 ? SCREEN_COLORS.gold : SCREEN_COLORS.dim);
+}
+
+/**
  * 训练场状态条：顶部一行，明确告诉玩家"现在不掉血、气是无限的"。
  *
  * 这两个开关原来埋在底部功能条的按钮里（`无限血:OFF`），用户实测反馈"不知道有训练场"——
