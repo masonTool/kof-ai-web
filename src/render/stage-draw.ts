@@ -48,7 +48,7 @@ export interface StageDef {
    * 静止的背景再精细也像一张贴图；一层会动的粒子（雨丝/落花/浮尘）是最便宜的"活起来"，
    * 而且不依赖任何素材、不吃生成时间。
    */
-  weather?: 'rain' | 'petals' | 'dust';
+  weather?: 'rain' | 'petals' | 'dust' | 'snow';
 }
 
 function skyline(seed: number, count: number, minH: number, maxH: number): StageBuilding[] {
@@ -114,6 +114,41 @@ export const STAGES: readonly StageDef[] = [
     buildings: skyline(0xa11ce, 10, 14, 44),
     distant: skyline(0x5a1c, 14, 26, 62),
     weather: 'dust',
+  },
+  {
+    id: 'harbor',
+    name: '黄昏港',
+    skyTop: '#2b1c3d',
+    skyMid: '#8a4331',
+    skyBottom: '#e08a4a',
+    farFar: '#3a2a3e',
+    far: '#5a3b3a',
+    mid: '#7a4e3c',
+    ground: '#3a3230',
+    groundLine: '#5c4d44',
+    accent: '#ffd9a0',
+    horizon: 150,
+    // 港口：吊车剪影用高低错落的长条模拟
+    buildings: skyline(0x4a11, 12, 20, 70),
+    distant: skyline(0x77c2, 16, 30, 52),
+    weather: 'dust',
+  },
+  {
+    id: 'snow',
+    name: '雪神社',
+    skyTop: '#0d1a2e',
+    skyMid: '#1b3350',
+    skyBottom: '#3d5b7a',
+    farFar: '#16243a',
+    far: '#203349',
+    mid: '#2c4258',
+    ground: '#e8eef5',
+    groundLine: '#b8c6d6',
+    accent: '#ff6b5b',
+    horizon: 152,
+    buildings: skyline(0x5f0a, 8, 16, 40),
+    distant: skyline(0x2b1d, 12, 24, 56),
+    weather: 'snow',
   },
 ];
 
@@ -384,6 +419,22 @@ export function drawWeather(ctx: Ctx2D, cam: Camera, stage: StageDef): void {
     return;
   }
 
+  if (kind === 'snow') {
+    // 飘雪：白色小点 + 缓慢横向摆动（比雨慢、比尘大，落到底部就消失重来）
+    for (let i = 0; i < 34; i++) {
+      const speed = 0.8 + (i % 4) * 0.3;
+      const drift = Math.sin((t + i * 24) * 0.015) * 10;
+      const x = (hash01(i, 11) * (VIEW_WIDTH + 80) - shift * 0.35 + drift) % (VIEW_WIDTH + 80);
+      const y = (hash01(i, 12) * VIEW_HEIGHT + t * speed) % (GROUND_SCREEN_Y + 12);
+      const sx = x < 0 ? x + VIEW_WIDTH + 80 : x;
+      ctx.globalAlpha = 0.55 + hash01(i, 13) * 0.4;
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(sx, y, 2, 2);
+    }
+    ctx.globalAlpha = 1;
+    return;
+  }
+
   // 浮尘：缓慢上升的亮点，靠近地面更密
   for (let i = 0; i < 18; i++) {
     const speed = 0.25 + (i % 3) * 0.15;
@@ -395,6 +446,22 @@ export function drawWeather(ctx: Ctx2D, cam: Camera, stage: StageDef): void {
     ctx.fillRect(sx, y, 2, 2);
   }
   ctx.globalAlpha = 1;
+}
+
+/**
+ * 按序号取舞台（街机 8 场循环用）。
+ *
+ * 之前 `drawFrame` 根本不传 stage，所以无论打第几场都只有 `STAGES[0]`（夜城）——
+ * 出图出了 5 条舞台，实际只用上 1 条。这是"场景背景像没做"的真正原因。
+ */
+export function stageForIndex(n: number): StageDef {
+  return STAGES[((n % STAGES.length) + STAGES.length) % STAGES.length] ?? STAGES[0]!;
+}
+
+/** 按对局种子取舞台（双人/训练用，保证同一局不跳变） */
+export function stageForSeed(seed: number): StageDef {
+  // 用低位做模：种子是确定性整数，同一局永远同一个舞台
+  return stageForIndex(Math.abs(Math.floor(seed / 7919)));
 }
 
 export function stageById(id: string): StageDef {

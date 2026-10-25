@@ -19,6 +19,8 @@ import {
   drawStage,
   drawWeather,
   resetWeatherTick,
+  stageForIndex,
+  stageForSeed,
   setWeatherEnabled,
   stageById,
 } from '../src/render/stage-draw';
@@ -324,8 +326,11 @@ describe('天气层', () => {
     return ctx;
   };
 
-  it('三条舞台各有自己的天气（雨 / 落花 / 浮尘）', () => {
-    expect(STAGES.map((s) => s.weather)).toEqual(['rain', 'petals', 'dust']);
+  it('每条舞台都有自己的天气（雨 / 落花 / 浮尘 / 飘雪）', () => {
+    expect(STAGES.length).toBeGreaterThanOrEqual(5);
+    expect(STAGES.slice(0, 3).map((s) => s.weather)).toEqual(['rain', 'petals', 'dust']);
+    // 新加的两条也必须有天气，不能留空
+    for (const s of STAGES.slice(3)) expect(s.weather, s.id).toBeTruthy();
   });
 
   it('下雨以线为主（雨丝）+ 少量地面溅射；落花和浮尘只有点', () => {
@@ -391,5 +396,30 @@ describe('天气开关', () => {
     expect(sanitize({}).weatherFx).toBe(true);
     expect(sanitize({ weatherFx: false }).weatherFx).toBe(false);
     expect(sanitize({ weatherFx: 'yes' }).weatherFx).toBe(true); // 脏数据回落默认
+  });
+});
+
+describe('舞台轮换（之前 drawFrame 不传 stage，永远只有夜城）', () => {
+  it('街机 8 场能走到 5 条不同的舞台', () => {
+    const ids = new Set<string>();
+    for (let s = 0; s < 8; s++) ids.add(stageForIndex(s).id);
+    expect(ids.size).toBe(STAGES.length);
+  });
+
+  it('场次越界也能取到舞台（不会 undefined 崩掉渲染）', () => {
+    expect(stageForIndex(-1).id).toBeTruthy();
+    expect(stageForIndex(999).id).toBeTruthy();
+  });
+
+  it('同一对局种子永远同一个舞台（不能一帧一跳）', () => {
+    expect(stageForSeed(12345).id).toBe(stageForSeed(12345).id);
+    // 不同种子应该能分到不同舞台（不然等于没轮换）
+    const ids = new Set([1, 2, 3, 4, 5, 6, 7, 8].map((s) => stageForSeed(s * 9973).id));
+    expect(ids.size).toBeGreaterThan(1);
+  });
+
+  it('五条舞台的 id 与底图对得上（有 id 没图等于画不出背景层）', () => {
+    const ids = STAGES.map((s) => s.id);
+    expect(ids).toEqual(['skyline', 'valley', 'arena', 'harbor', 'snow']);
   });
 });
