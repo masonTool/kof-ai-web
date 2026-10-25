@@ -105,6 +105,14 @@ function resize(): void {
 }
 window.addEventListener('resize', resize);
 window.addEventListener('orientationchange', () => setTimeout(resize, 120));
+// 进出全屏时窗口尺寸会变，必须重排一次（否则画面停在旧的缩放上）
+document.addEventListener('fullscreenchange', () => setTimeout(resize, 60));
+
+// 竖屏遮罩整块可点：点一下就进全屏并请求锁横屏（必须在用户手势里发起）
+document.getElementById('rotate-hint')?.addEventListener('pointerdown', (e) => {
+  e.preventDefault();
+  void enterLandscapeFullscreen();
+});
 resize();
 
 /** localStorage 可能被禁（隐私模式），拿不到就用 null —— 设置只是不持久化，不影响开局 */
@@ -478,12 +486,48 @@ let fullscreenTried = false;
 function enterFullscreenOnce(): void {
   if (fullscreenTried || !IS_TOUCH) return;
   fullscreenTried = true;
+  void enterLandscapeFullscreen();
+}
+
+/**
+ * 进横屏全屏。
+ *
+ * 必须在**用户手势的回调里**调用（浏览器要求），所以入口有两个：
+ * 竖屏遮罩上那颗按钮，以及第一次触摸画布/手台。
+ *
+ * `orientation.lock` 只在全屏下生效，所以顺序不能反；iOS Safari 两者都不支持，
+ * 那就把提示文案换成"请手动旋转"，而不是让玩家对着一个点不动的按钮。
+ */
+async function enterLandscapeFullscreen(): Promise<void> {
+  const root = document.documentElement;
   try {
-    if (!document.fullscreenElement) void document.documentElement.requestFullscreen?.().catch(() => {});
-    const orientation = screen.orientation as ScreenOrientation & { lock?: (o: string) => Promise<void> };
-    void orientation?.lock?.('landscape').catch(() => {});
+    if (!document.fullscreenElement) await root.requestFullscreen?.();
   } catch {
-    // 不支持就算了，不影响玩
+    // 不支持全屏：继续尝试锁屏（部分浏览器单独支持）
+  }
+  try {
+    const orientation = screen.orientation as ScreenOrientation & { lock?: (o: string) => Promise<void> };
+    await orientation?.lock?.('landscape');
+  } catch {
+    // iOS 等不允许网页锁横屏：靠玩家手动旋转
+  }
+  // 锁成功会触发 resize/orientationchange；再补一次，覆盖"没触发"的浏览器
+  setTimeout(resize, 150);
+  setTimeout(updateRotateHintText, 700);
+}
+
+/** 竖屏遮罩的文案：锁屏失败时明确告诉玩家要手动转 */
+function updateRotateHintText(): void {
+  const sub = document.getElementById('rotate-sub');
+  const cta = document.getElementById('rotate-cta');
+  if (!sub || !cta) return;
+  if (!shouldRotate(window.innerWidth, window.innerHeight)) return; // 已经是横屏了，不用改
+  if (document.fullscreenElement) {
+    cta.textContent = '请手动把手机横过来';
+    sub.textContent = '已进入全屏，但这个浏览器不允许网页锁定方向';
+  } else {
+    cta.textContent = '再点一次进入全屏';
+    sub.textContent = '浏览器拒绝了全屏请求：可以直接手动把手机横过来玩';
   }
 }
 

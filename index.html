@@ -32,13 +32,44 @@
       position: fixed;
       inset: 0;
       display: none;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
-      background: rgba(5, 7, 10, 0.92);
+      gap: 14px;
+      background: #05070a;
       color: #ffd166;
-      font: 600 20px/1.6 system-ui, sans-serif;
-      letter-spacing: 2px;
+      font: 600 18px/1.6 system-ui, sans-serif;
+      letter-spacing: 1px;
+      text-align: center;
+      padding: 24px;
+      cursor: pointer;
       z-index: 30;
+      -webkit-tap-highlight-color: transparent;
+    }
+    /* 手机图标 + 旋转箭头，纯 CSS 画，不依赖图片 */
+    #rotate-hint .phone {
+      width: 46px;
+      height: 76px;
+      border: 3px solid #ffd166;
+      border-radius: 8px;
+      animation: rotateHint 2.4s ease-in-out infinite;
+    }
+    @keyframes rotateHint {
+      0%, 45% { transform: rotate(0deg); }
+      70%, 100% { transform: rotate(-90deg); }
+    }
+    #rotate-hint .sub {
+      font: 500 13px/1.5 system-ui, sans-serif;
+      color: #8fa2b8;
+      letter-spacing: 0;
+    }
+    #rotate-hint .cta {
+      padding: 10px 22px;
+      border: 2px solid #ff5b3d;
+      border-radius: 24px;
+      color: #fff;
+      background: rgba(255, 91, 61, 0.22);
+      font-size: 16px;
     }
 
     #rotate-hint.show {
@@ -165,7 +196,12 @@
     <!-- 安全区探针：读 env(safe-area-inset-*) 的真实值（CSS 里设 padding，JS 读 computedStyle） -->
   <div id="safe-probe" aria-hidden="true"></div>
   <!-- 竖屏提示：手机竖着拿时没法玩，直接盖一层提示 -->
-  <div id="rotate-hint" aria-hidden="true">请横屏游玩</div>
+  <div id="rotate-hint" role="button" aria-label="进入横屏全屏">
+    <div class="phone"></div>
+    <div>请横屏游玩</div>
+    <div class="cta" id="rotate-cta">点击进入横屏全屏</div>
+    <div class="sub" id="rotate-sub">进入后可全屏游戏；若没反应，请手动把手机横过来</div>
+  </div>
   <canvas id="screen"></canvas>
     <script type="module" src="/src/main.ts"></script>
   </body>
