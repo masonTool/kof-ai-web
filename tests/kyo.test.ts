@@ -23,6 +23,7 @@ const MOTION_FRAMES: Record<string, number[]> = {
   '623': [R, D, D | R],
   '236236': [D, D | R, R, D, D | R, R],
   '6': [R],
+  '4': [L],
   '3': [D | R],
 };
 

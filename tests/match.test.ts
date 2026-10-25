@@ -601,3 +601,50 @@ describe('CPU 残血换人（tagOut）', () => {
     expect(m.indexes[1]).toBe(0);
   });
 });
+
+describe('投技（← + C）', () => {
+  const mkT = (): Match => new Match(KYO, IORI, { introFrames: 1, roundEndFrames: 3 }, 71);
+  const toFightT = (m: Match): void => {
+    while (m.phase === 'intro') m.step([{ held: 0 }, { held: 0 }]);
+  };
+
+  it('贴脸时能抓到并造成伤害（近距离判定成立）', () => {
+    const m = mkT();
+    toFightT(m);
+    m.p2.x = m.p1.x + 18;
+    const before = m.p2.hp;
+    m.p1.startMove(KYO.moves['4C']!);
+    for (let i = 0; i < 40; i++) {
+      m.step([{ held: 0 }, { held: 0 }]);
+      if (m.lastHits.length > 0) break;
+    }
+    expect(before - m.p2.hp).toBeGreaterThan(0);
+  });
+
+  it('对手按着防御也会被抓（投技是破防手段，这条是它存在的意义）', () => {
+    const m = mkT();
+    toFightT(m);
+    m.p2.x = m.p1.x + 18;
+    const before = m.p2.hp;
+    m.p1.startMove(KYO.moves['4C']!);
+    for (let i = 0; i < 40; i++) {
+      // 对手一直按住后退（普通技会被挡住，投技挡不住）
+      m.step([{ held: 0 }, { held: Btn.Right }]);
+      if (m.lastHits.length > 0) break;
+    }
+    expect(before - m.p2.hp).toBeGreaterThan(0);
+  });
+
+  it('距离太远抓不到（不是全屏投）', () => {
+    const m = mkT();
+    toFightT(m);
+    m.p2.x = m.p1.x + 120;
+    const before = m.p2.hp;
+    m.p1.startMove(KYO.moves['4C']!);
+    for (let i = 0; i < 40; i++) {
+      m.step([{ held: 0 }, { held: 0 }]);
+      if (m.phase !== 'fight') break;
+    }
+    expect(before - m.p2.hp).toBe(0);
+  });
+});

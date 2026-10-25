@@ -6,7 +6,7 @@
  * 但它的攻击在第一轮收集时就已经成立了。若边收边算，结果会取决于遍历顺序。
  */
 import { Btn } from '../core/input';
-import type { FxStyle, HitDef } from '../data/schema';
+import type { FxStyle, HitDef, MoveDef } from '../data/schema';
 import { styleOfMove } from '../data/fx-style';
 import { centerOf, intersects } from './collision';
 import { addComboHit, scaledDamage } from './combo';
@@ -54,7 +54,9 @@ export function guardDirection(f: Fighter): number {
 /** 浮空追击的伤害倍率（打飞起来的目标多打一点） */
 export const AERIAL_DAMAGE_MULT = 1.15;
 
-export function isGuarding(defender: Fighter, hit: HitDef): boolean {
+export function isGuarding(defender: Fighter, hit: HitDef, moveKind?: MoveDef['kind']): boolean {
+  // 投技不能防：这是 KOF 的基本规则，也是投技存在的意义（破防手段）
+  if (moveKind === 'throw') return false;
   if (defender.airborne) return false;
   if (!isNeutral(defender.state) && defender.state !== 'guard' && defender.state !== 'block') return false;
   const held = defender.input.held;
@@ -111,8 +113,11 @@ function collect(fighters: readonly Fighter[]): Candidate[] {
         if (defender.state === 'down' || defender.state === 'wakeup') continue; // 倒地/起身无敌
         if (isInvulnerable(defender, hit)) continue; // 招式自带的无敌帧（回避/鬼焼）
         if (!intersects(hitBox, defender.worldBox(defender.hurtbox()))) continue;
+        // 投技只能抓"站着或蹲着"的对手：空中、受击、眩晕都抓不到（KOF 规则）
+        const isThrow = attacker.move?.kind === 'throw';
+        if (isThrow && (defender.airborne || defender.isAttacking || defender.state === 'hit')) continue;
 
-        const blocked = isGuarding(defender, hit);
+        const blocked = isGuarding(defender, hit, attacker.move?.kind);
         const startup = defender.isAttacking ? (defender.move!.hits[0]?.frames[0] ?? 0) : 0;
         const counter = !blocked && defender.isAttacking && defender.moveFrame < startup;
         found.push({ attacker, defender, hit, blocked, counter, x: centerOf(hitBox).x, y: centerOf(hitBox).y });
