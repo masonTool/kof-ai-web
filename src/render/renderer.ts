@@ -12,7 +12,7 @@ import type { Ctx2D } from './ctx';
 import { drawFighter } from './fighter-draw';
 import { STYLE_COLORS } from './fx';
 import { lookFor } from './looks';
-import { drawHud } from './hud';
+import { drawHud, text } from './hud';
 import { STATE_ANIM, winPoseFor } from './poses';
 import { STAGES, drawStage, type StageDef } from './stage-draw';
 import { Projectile } from '../sim/projectile';
@@ -219,6 +219,47 @@ function drawSpeedLines(ctx: Ctx2D, k: number, count: number, thick: number): vo
   ctx.globalAlpha = 1;
 }
 
+/**
+ * 招式名横幅：中上方弹出，「必杀技 / 超必杀」+ 招式名。
+ *
+ * 进场 4 帧放大到位、末尾 12 帧淡出——不做这个玩家根本不知道自己放出来没有
+ * （必杀和普通技在画面上差得不够多，尤其手机小屏）。
+ * 超必杀更大、更红、还带一层横线装饰，和"普通必杀"一眼分开。
+ */
+function drawMoveBanner(
+  ctx: Ctx2D,
+  b: { name: string; kind: 'special' | 'super'; frames: number; total: number } | null,
+): void {
+  if (!b) return;
+  const t = 1 - b.frames / b.total; // 0 → 1
+  const fadeIn = Math.min(1, t / 0.08);
+  const fadeOut = Math.min(1, (1 - t) / 0.25);
+  const alpha = Math.max(0, Math.min(fadeIn, fadeOut));
+  if (alpha <= 0) return;
+
+  const superMove = b.kind === 'super';
+  const color = superMove ? '#ff5b3d' : '#ffd166';
+  const size = superMove ? 15 : 11;
+  const y = superMove ? 62 : 64;
+
+  // 进场那一下轻微放大，落定后不再动
+  const pop = 1 + (1 - Math.min(1, t / 0.12)) * 0.18;
+
+  ctx.globalAlpha = alpha * 0.55;
+  ctx.fillStyle = '#05070a';
+  // 中文/日文字宽约等于字号，留 1.25 倍余量 + 左右内边距，别让长招式名溢出边框
+  const boxW = Math.min(VIEW_WIDTH - 16, b.name.length * size * 1.25 + 36);
+  ctx.fillRect(VIEW_WIDTH / 2 - boxW / 2, y - size - 4, boxW, size + 20);
+  ctx.globalAlpha = alpha;
+  ctx.strokeStyle = color;
+  ctx.lineWidth = superMove ? 1.5 : 1;
+  ctx.strokeRect(VIEW_WIDTH / 2 - boxW / 2 + 0.5, y - size - 3.5, boxW - 1, size + 19);
+
+  text(ctx, superMove ? '超必杀' : '必杀技', VIEW_WIDTH / 2, y - size + 1, 'center', 6, color);
+  text(ctx, b.name, VIEW_WIDTH / 2, y + 2, 'center', Math.round(size * pop), '#ffffff');
+  ctx.globalAlpha = 1;
+}
+
 export function drawFrame(ctx: Ctx2D, match: Match, opts: RenderOptions = {}): void {
   const stage = opts.stage ?? STAGES[0]!;
 
@@ -263,6 +304,7 @@ export function drawFrame(ctx: Ctx2D, match: Match, opts: RenderOptions = {}): v
   ctx.restore();
 
   drawHud(ctx, match.toHudModel());
+  drawMoveBanner(ctx, match.moveBanner);
 
   // 超必杀起手：先闪白（盖住 HUD），再压上下黑边——
   // 顺序反过来的话黑边也会被闪白冲淡，看着像灰条而不是电影黑边

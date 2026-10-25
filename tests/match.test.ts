@@ -359,3 +359,57 @@ describe('超必杀运镜', () => {
     expect(m.cam.zoom).toBeGreaterThan(1.2);
   });
 });
+
+describe('招式名横幅', () => {
+  const mk = (): Match => new Match(KYO, IORI, { introFrames: 1, roundEndFrames: 3 }, 7);
+
+  it('放必杀会设横幅，普通技不会', () => {
+    // 普通技：不弹
+    const plain = mk();
+    while (plain.phase === 'intro') plain.step([{ held: 0 }, { held: 0 }]);
+    plain.p1.startMove(KYO.moves['5A']!);
+    plain.step([{ held: 0 }, { held: 0 }]);
+    expect(plain.moveBanner).toBeNull();
+
+    // 必杀：弹（另起一局，否则角色还在上一招里，startMove 会被忽略）
+    const m = mk();
+    while (m.phase === 'intro') m.step([{ held: 0 }, { held: 0 }]);
+    m.p1.startMove(KYO.moves['236A']!);
+    m.step([{ held: 0 }, { held: 0 }]);
+    expect(m.moveBanner).not.toBeNull();
+    expect(m.moveBanner!.kind).toBe('special');
+    expect(m.moveBanner!.name).toBe(KYO.moves['236A']!.name);
+    expect(m.moveBanner!.side).toBe(1);
+  });
+
+  it('超必杀横幅活得更久（更醒目）', () => {
+    const m = mk();
+    while (m.phase === 'intro') m.step([{ held: 0 }, { held: 0 }]);
+    m.p1.meter = 100;
+    m.p1.startMove(KYO.moves['236236AC']!);
+    m.step([{ held: 0 }, { held: 0 }]);
+    expect(m.moveBanner!.kind).toBe('super');
+    expect(m.moveBanner!.total).toBeGreaterThan(48);
+  });
+
+  it('同一招不会每帧重播：连着推进也只记一次，播完自动消失', () => {
+    const m = mk();
+    while (m.phase === 'intro') m.step([{ held: 0 }, { held: 0 }]);
+    m.p1.startMove(KYO.moves['236A']!);
+    m.step([{ held: 0 }, { held: 0 }]);
+    const total = m.moveBanner!.total;
+    const first = m.moveBanner!.frames;
+    m.step([{ held: 0 }, { held: 0 }]);
+    expect(m.moveBanner!.frames).toBe(first - 1); // 只递减，不重置
+    for (let i = 0; i < total + 4; i++) m.step([{ held: 0 }, { held: 0 }]);
+    expect(m.moveBanner).toBeNull();
+  });
+
+  it('对手放的招也能被看到（side=2）', () => {
+    const m = mk();
+    while (m.phase === 'intro') m.step([{ held: 0 }, { held: 0 }]);
+    m.p2.startMove(IORI.moves['236A']!);
+    m.step([{ held: 0 }, { held: 0 }]);
+    expect(m.moveBanner?.side).toBe(2);
+  });
+});

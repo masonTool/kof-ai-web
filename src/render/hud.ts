@@ -125,7 +125,13 @@ export function depletedWidth(rect: Rect, ratio: number): number {
   return Math.round(rect.w * (1 - clamp01(ratio)));
 }
 
-function text(ctx: Ctx2D, str: string, x: number, y: number, align: 'left' | 'center' | 'right', size: number, color: string): void {
+/**
+ * 像素风文字（HUD / 横幅共用）。
+ *
+ * 导出给 `renderer.ts` 画招式横幅用：那层不属于 HUD，但必须是同一套字体度量，
+ * 否则同屏两种字宽会很怪。
+ */
+export function text(ctx: Ctx2D, str: string, x: number, y: number, align: 'left' | 'center' | 'right', size: number, color: string): void {
   ctx.font = `${size}px monospace`;
   ctx.textAlign = align;
   ctx.textBaseline = 'top';

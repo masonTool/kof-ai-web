@@ -98,6 +98,16 @@ export class Match {
 
   /** 超必杀命中特写剩余帧（渲染层读它画白闪/集中线） */
   superHit = 0;
+
+  /**
+   * 招式名横幅：必杀/超必杀起手的那一帧记下来，播几十帧后自动消失。
+   *
+   * 放在 Match 而不是渲染层自己猜：渲染层只看得到"当前动作"，
+   * 分不清"刚起手"和"同一招放到第 20 帧"，会每帧重播。
+   */
+  moveBanner: { name: string; kind: 'special' | 'super'; frames: number; total: number; side: 1 | 2 } | null = null;
+  /** 上一帧两人在放什么招（用来判断"刚起手"） */
+  private lastMoveIds: [string, string] = ['', ''];
   /** 这次超必杀是否已经触发过命中特写（多段超必杀只演一次） */
   private superHitFired = true;
 
@@ -176,10 +186,31 @@ export class Match {
     }
   }
 
+  /** 招式横幅：新起手就记一条，其余帧只衰减 */
+  private stepMoveBanner(): void {
+    const pair: [typeof this.p1, typeof this.p2] = [this.p1, this.p2];
+    for (let i = 0; i < 2; i++) {
+      const f = pair[i]!;
+      const id = f.move?.id ?? '';
+      const isNew = id !== '' && id !== this.lastMoveIds[i];
+      if (isNew && f.move && (f.move.kind === 'special' || f.move.kind === 'super')) {
+        const kind = f.move.kind;
+        const total = kind === 'super' ? 72 : 48;
+        this.moveBanner = { name: f.move.name, kind, frames: total, total, side: i === 0 ? 1 : 2 };
+      }
+      this.lastMoveIds[i] = id;
+    }
+    if (this.moveBanner) {
+      this.moveBanner.frames--;
+      if (this.moveBanner.frames <= 0) this.moveBanner = null;
+    }
+  }
+
   private stepFight(inputs: readonly [InputSample, InputSample]): void {
     this.faceOff();
     this.world.step([inputs[0], inputs[1]]);
     this.checkSuperFlash();
+    this.stepMoveBanner();
     this.lastHits = [...resolveCombat(this.world, this.fighters), ...resolveProjectiles(this.world, this.fighters)];
     this.world.sweep();
     this.applyHitEffects(this.lastHits);
@@ -371,6 +402,8 @@ export class Match {
   /** 清空运镜/特写状态（回合开始、换人时都要清，否则会带着上一场的镜头） */
   private resetCinema(): void {
     this.superFlash = 0;
+    this.moveBanner = null;
+    this.lastMoveIds = ['', ''];
     this.superHit = 0;
     this.superHitFired = true;
     this.cinemaFocus = null;
