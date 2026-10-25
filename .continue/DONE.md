@@ -41,6 +41,18 @@
 
 <!-- 实际归档放下面，最新的放最上面 -->
 
+## 批次 20261026-0019 · 2026-10-26 · 会话 59bce766
+
+**这批的目标**：线上白屏。
+
+- [x] [T221] 修 GitHub Pages 白屏：线上发布的是**仓库根目录的开发版 index.html**（`<script src="/src/main.ts">`），不是 `dist/` 构建产物 → 新增 `deploy.yml` 用 Actions 发布 dist，加 `.nojekyll`
+  - 根因：`curl` 线上首页拿到的 HTML 里是 `src="/src/main.ts"` —— 那是开发模式的入口，浏览器去请求一个不存在的 `.ts`，且 .ts 本身也不能直接跑，于是整页白屏。仓库根目录的 `index.html` 就是这样，说明 Pages 的 Source 选的是 "Deploy from a branch / main / root"
+  - 修复：①新增 `.github/workflows/deploy.yml`（build → upload-pages-artifact → deploy-pages，权限 pages/id-token，concurrency 不打断进行中的部署）；②加 `public/.nojekyll`（build 时复制进 dist，避免 Jekyll 处理）
+  - 为什么不用 gh-pages 分支：既然已经有 Actions，直接把 dist 交给 Pages 最省事，也不用往仓库里塞第二份产物
+  - 验证：①本地模拟子目录部署（`/tmp/ghtest/kof-ai-web/` 放 dist，python http.server）——`index.html`、`assets/*.js`、`sheets/kyo.json` 三个关键资源全部 **200**；②playwright 打开 `http://127.0.0.1:8902/kof-ai-web/` 截图确认画面正常（说明浮层自动弹出、手台摇杆与四键都在），不再白屏
+  - **还需要你做一步**：仓库 Settings → Pages → Source 改成 **GitHub Actions**（现在是 Deploy from a branch，我改不了仓库设置）
+  - 批次：20261026-0019
+
 ## 批次 20261026-0005 · 2026-10-26 · 会话 59bce766
 
 **这批的目标**：给仓库加 GitHub Actions CI。
