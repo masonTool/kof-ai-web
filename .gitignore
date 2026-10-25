@@ -10,6 +10,7 @@ dist/
 !public/sheets/*.png
 # 人物头像（选人/VS 用，从图集裁出来的）
 !public/portraits/*.png
+!public/selportraits/*.png
 # 舞台底图与标题插图
 !public/stages/*.png
 !public/title/*.png
