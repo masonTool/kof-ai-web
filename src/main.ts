@@ -43,9 +43,9 @@ import {
   drawDemoResult,
   drawDemoLabel,
   drawPadAdjustHint,
-  MENU_BUTTON,
+  menuButtonRect,
   drawMenuButton,
-  MOVES_BUTTON,
+  movesButtonRect,
   drawMovesButton,
   drawResult,
   HELP_BUTTON,
@@ -652,10 +652,10 @@ canvas.addEventListener('pointerdown', (e) => {
 
   // 左下角「菜单」：触屏没有 Start 键，靠它叫出系统菜单
   if (
-    x >= MENU_BUTTON.x &&
-    x <= MENU_BUTTON.x + MENU_BUTTON.w &&
-    y >= MENU_BUTTON.y &&
-    y <= MENU_BUTTON.y + MENU_BUTTON.h
+    x >= menuButtonRect().x &&
+    x <= menuButtonRect().x + menuButtonRect().w &&
+    y >= menuButtonRect().y &&
+    y <= menuButtonRect().y + menuButtonRect().h
   ) {
     openMenu();
     return;
@@ -664,10 +664,10 @@ canvas.addEventListener('pointerdown', (e) => {
   // 左下角「招式」开关
   if (
     (flow.screen === 'fight' || flow.screen === 'select') &&
-    x >= MOVES_BUTTON.x &&
-    x <= MOVES_BUTTON.x + MOVES_BUTTON.w &&
-    y >= MOVES_BUTTON.y &&
-    y <= MOVES_BUTTON.y + MOVES_BUTTON.h
+    x >= movesButtonRect().x &&
+    x <= movesButtonRect().x + movesButtonRect().w &&
+    y >= movesButtonRect().y &&
+    y <= movesButtonRect().y + movesButtonRect().h
   ) {
     moveListOpen = !moveListOpen;
     return;
@@ -686,42 +686,39 @@ canvas.addEventListener('pointerdown', (e) => {
   // 暂停菜单盖在最上面，优先处理
   if (pause.open) {
     const hit = hitTestPauseItem(x, y, pause.items.length);
-    if (hit >= 0) {
+    if (hit >= 0 && hit !== pause.cursor) {
+      // 点击 = 选中（不再直接执行）：确认键是 A
       pause.cursor = hit;
-      pad.press('A');
+      audio.play('menu');
       return;
     }
   }
 
-  // 菜单屏：点哪行就选中哪行，然后当成按了一次 A（点一次就生效，不用"先选再确认"）
+  // 菜单屏：点击只移动光标（确认一律走 A），避免误触直接进游戏
   if (flow.screen === 'mode') {
     const hit = hitTestModeItem(x, y);
-    if (hit >= 0) {
+    if (hit >= 0 && hit !== flow.modeCursor) {
       flow.modeCursor = hit;
-      pad.press('A');
+      audio.play('menu');
       return;
     }
   }
   if (flow.screen === 'options') {
     const rows = flow.options.length + 1; // 末行是"按键设置"
     const hit = hitTestOptionRow(x, y, rows);
-    if (hit >= 0) {
-      // "手台位置"这一行点一下就直接进调整界面（不是循环改值）
-      if (flow.options[hit]?.key === 'padCustom') {
-        enterPadAdjust();
-        return;
-      }
+    if (hit >= 0 && hit !== flow.optionCursor) {
+      // 只选中；"手台位置"这类行同样要再按 A 才进入
       flow.optionCursor = hit;
-      pad.press('A');
+      audio.play('menu');
       return;
     }
   }
   if (flow.screen === 'select') {
     const cell = hitTestCell(x, y, flow.rosterSize, flow.config.columns);
-    if (cell >= 0) {
+    if (cell >= 0 && cell !== flow.cursor[0]) {
+      // 点头像 = 选中该角色，锁定仍然按 A
       flow.cursor[0] = cell;
-      flow.locked[0] = true;
-      audio.play('confirm');
+      audio.play('menu');
       return;
     }
   }

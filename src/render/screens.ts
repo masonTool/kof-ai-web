@@ -128,17 +128,20 @@ export function helpPageText(page: number): HelpPageView {
  *
  * 放在「招式」按钮右边一格：两者都在画面下沿，不挡站位，也不和手台的摇杆/四键重叠。
  */
-export const MENU_BUTTON = { x: 52, y: 204, w: 40, h: 15 } as const;
+export function menuButtonRect(): { x: number; y: number; w: number; h: number } {
+  return { x: VIEW_WIDTH - 44, y: 26, w: 40, h: 15 };
+}
 
 export function drawMenuButton(ctx: Ctx2D): void {
   ctx.globalAlpha = 0.9;
   ctx.fillStyle = 'rgba(10,14,20,0.72)';
-  ctx.fillRect(MENU_BUTTON.x, MENU_BUTTON.y, MENU_BUTTON.w, MENU_BUTTON.h);
+  const nb = menuButtonRect();
+  ctx.fillRect(nb.x, nb.y, nb.w, nb.h);
   ctx.strokeStyle = SCREEN_COLORS.dim;
   ctx.lineWidth = 1;
-  ctx.strokeRect(MENU_BUTTON.x + 0.5, MENU_BUTTON.y + 0.5, MENU_BUTTON.w - 1, MENU_BUTTON.h - 1);
+  ctx.strokeRect(nb.x + 0.5, nb.y + 0.5, nb.w - 1, nb.h - 1);
   ctx.globalAlpha = 1;
-  text(ctx, '菜单', MENU_BUTTON.x + MENU_BUTTON.w / 2, MENU_BUTTON.y + 4, 'center', 6, SCREEN_COLORS.text);
+  text(ctx, '菜单', nb.x + nb.w / 2, nb.y + 4, 'center', 6, SCREEN_COLORS.text);
 }
 
 /** 手台位置调整时的顶部提示 */
@@ -217,7 +220,8 @@ export function drawLoadingHint(ctx: Ctx2D, blinkOn: boolean): void {
 export function drawStageBadge(ctx: Ctx2D, stage: number, total: number, teamName: string): void {
   const label = `STAGE ${stage}/${total}${teamName ? ` · ${teamName}` : ''}`;
   const w = Math.min(VIEW_WIDTH - 8, label.length * 6 + 12);
-  const y = 8;
+  // y=8 会盖住血条（barY=6 高 9），下移到血条与名字下面
+  const y = 26;
   ctx.globalAlpha = 0.8;
   ctx.fillStyle = '#05070a';
   ctx.fillRect(4, y, w, 13);
@@ -237,7 +241,8 @@ export function drawStageBadge(ctx: Ctx2D, stage: number, total: number, teamNam
 export function drawComboMeter(ctx: Ctx2D, current: number, best: number): void {
   const w = 76;
   const x = VIEW_WIDTH - w - 4;
-  const y = 26;
+  // 右上 y=26 被「招式/菜单」按钮占了，连击面板下移到 44
+  const y = 44;
   ctx.globalAlpha = 0.82;
   ctx.fillStyle = '#05070a';
   ctx.fillRect(x, y, w, 15);
@@ -293,18 +298,28 @@ export function drawMoveHint(ctx: Ctx2D, alpha = 1): void {
 }
 
 /** 「招式」开关按钮（对局与选人屏左下角，触屏用） */
-export const MOVES_BUTTON = { x: 4, y: 204, w: 44, h: 15 } as const;
+/**
+ * 「招式」按钮（右上）。
+ *
+ * 必须是**函数**而不是 const：`VIEW_WIDTH` 是 `export let` 的活绑定，
+ * 顶层 `const` 会在模块加载时把它固定成 320 —— 宽屏下按钮就跑到画面中间去了。
+ * （左下角原来那个位置的毛病是压住气槽 meterY = VIEW_HEIGHT-13，还紧挨摇杆。）
+ */
+export function movesButtonRect(): { x: number; y: number; w: number; h: number } {
+  return { x: VIEW_WIDTH - 92, y: 26, w: 44, h: 15 };
+}
 
 /** 画「招式」小按钮 */
 export function drawMovesButton(ctx: Ctx2D, active: boolean): void {
   ctx.globalAlpha = 0.9;
   ctx.fillStyle = active ? 'rgba(255,91,61,0.28)' : 'rgba(10,14,20,0.72)';
-  ctx.fillRect(MOVES_BUTTON.x, MOVES_BUTTON.y, MOVES_BUTTON.w, MOVES_BUTTON.h);
+  const mb = movesButtonRect();
+  ctx.fillRect(mb.x, mb.y, mb.w, mb.h);
   ctx.strokeStyle = active ? SCREEN_COLORS.accent : SCREEN_COLORS.dim;
   ctx.lineWidth = 1;
-  ctx.strokeRect(MOVES_BUTTON.x + 0.5, MOVES_BUTTON.y + 0.5, MOVES_BUTTON.w - 1, MOVES_BUTTON.h - 1);
+  ctx.strokeRect(mb.x + 0.5, mb.y + 0.5, mb.w - 1, mb.h - 1);
   ctx.globalAlpha = 1;
-  text(ctx, active ? '关招式' : '招式', MOVES_BUTTON.x + MOVES_BUTTON.w / 2, MOVES_BUTTON.y + 4, 'center', 6, active ? SCREEN_COLORS.accent : SCREEN_COLORS.text);
+  text(ctx, active ? '关招式' : '招式', mb.x + mb.w / 2, mb.y + 4, 'center', 6, active ? SCREEN_COLORS.accent : SCREEN_COLORS.text);
 }
 
 /**

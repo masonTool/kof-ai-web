@@ -1,6 +1,7 @@
 import { FakeCtx } from './helpers/fake-ctx';
 import { describe, expect, it } from 'vitest';
 import { LOGICAL_HEIGHT, LOGICAL_WIDTH, computeViewport } from '../src/render/scale';
+import { HUD_LAYOUT } from '../src/render/hud';
 import {
   setViewWidthByAspect,
   VIEW_HEIGHT,
@@ -9,6 +10,8 @@ import {
   VIEW_WIDTH_MIN,
 } from '../src/sim/constants';
 import {
+  menuButtonRect,
+  movesButtonRect,
   drawComboMeter,
   drawDemoResult,
   drawLoadingHint,
@@ -315,5 +318,26 @@ describe('贴图加载提示', () => {
     const all = ctx.texts.map((t) => String(t.text)).join('|');
     expect(all).toContain('加载中');
     expect(ctx.globalAlpha).toBe(1);
+  });
+});
+
+describe('画面内按钮位置（从左上角挪到右上）', () => {
+  it('两个按钮都在右上，且跟着可视宽度走（不是加载时快照）', () => {
+    setViewWidthByAspect(1280, 720); // → 398
+    const wide = VIEW_WIDTH;
+    const mb = movesButtonRect();
+    const nb = menuButtonRect();
+    expect(mb.x).toBeGreaterThan(wide / 2);
+    expect(nb.x + nb.w).toBeLessThanOrEqual(wide);
+    expect(mb.x + mb.w).toBeLessThanOrEqual(nb.x); // 招式在菜单左边，不重叠
+
+    setViewWidthByAspect(320, 240); // → 320 基准
+    expect(menuButtonRect().x).toBeLessThan(nb.x + 1); // 跟着变窄
+  });
+
+  it('不压血条也不压气槽（原来 y=204 正压着气槽）', () => {
+    const mb = movesButtonRect();
+    expect(mb.y).toBeGreaterThan(HUD_LAYOUT.barY + HUD_LAYOUT.barH); // 血条之下
+    expect(mb.y + mb.h).toBeLessThan(HUD_LAYOUT.meterY); // 气槽之上
   });
 });
