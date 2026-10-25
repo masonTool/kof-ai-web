@@ -1,0 +1,64 @@
+name: Deploy to GitHub Pages
+
+# 为什么需要这个 workflow：
+# 仓库根目录的 index.html 是**开发模式**的（`<script src="/src/main.ts">`），
+# 直接在 Settings → Pages 里选 "Deploy from a branch / main / root" 会把这份 HTML
+# 原样发布出去 —— 线上浏览器去请求 /src/main.ts，那个文件不存在、而且 .ts 浏览器也不认，
+# 于是整页白屏 + 404。必须发布 `npm run build` 出来的 dist/。
+on:
+  push:
+    branches: [main]
+  # 允许手动触发（改了设置想重发一次）
+  workflow_dispatch:
+
+# Pages 部署需要的权限：写 pages、拿 OIDC token
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 同一时间只允许一次部署；正在跑的不要被打断（避免线上出现半个站点）
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+env:
+  NODE_VERSION: '22'
+
+jobs:
+  build:
+    name: 构建
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: 安装依赖
+        run: npm ci
+
+      # npm run build = tsc --noEmit && vite build（改 vite.config 的 base 会影响这里，
+      # 当前是 './'，子目录部署天然可用）
+      - name: 构建
+        run: npm run build
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    name: 发布
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
