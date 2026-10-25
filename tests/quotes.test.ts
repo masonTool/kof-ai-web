@@ -98,7 +98,7 @@ describe('台词框绘制', () => {
     const all = ctx.texts.map((t) => t.text);
     expect(all).toContain('草薙京'); // 说话人
     expect(all).toContain('この程度か。');
-    expect(all).toContain('按 A 回到标题');
+    expect(all).toContain('点击 / 按 A 回到标题');
     // "WINS" 交给 HUD 横幅，结果屏不再画一次（否则正中会有两行）
     expect(all).not.toContain('WINS');
   });

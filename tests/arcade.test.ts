@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ROSTER } from '../src/data/chars';
+import { Btn } from '../src/core/input';
+import { AppFlow, DEFAULT_FLOW } from '../src/ui/flow';
 import {
   ARCADE_ROUTE,
   DIFFICULTY_RULES,
@@ -12,6 +14,7 @@ import {
   stageLabel,
 } from '../src/ui/arcade';
 import { arcadeResult } from '../src/ui/arcade-result';
+import { arcadeRules, arcadeTeam, arcadeTeamName } from '../src/ui/arcade-roster';
 
 const ids = new Set(ROSTER.map((c) => c.id));
 
@@ -98,5 +101,72 @@ describe('街机结算模型', () => {
     expect(r.title).toBe('GAME OVER');
     expect(r.subtitle).toContain('第 2 场');
     expect(r.canContinue).toBe(false);
+  });
+});
+
+describe('路线 → 队伍', () => {
+  it('每一场都能解析出 2 人以上的队伍，且都是花名册里的角色', () => {
+    let s = newArcade('normal');
+    for (let i = 0; i < 8; i++) {
+      const team = arcadeTeam(s);
+      expect(team.length, `第 ${i + 1} 场`).toBeGreaterThanOrEqual(2);
+      for (const c of team) expect(ids.has(c.id), c.id).toBe(true);
+      s = afterStage(s, true);
+    }
+    expect(arcadeTeam(s)).toEqual([]); // 打完之后没有对手
+  });
+
+  it('第一场的对手就是路线表的第一支队伍', () => {
+    const team = arcadeTeam(newArcade('normal'));
+    expect(team.map((c) => c.id)).toEqual([...ARCADE_ROUTE[0]!.team]);
+    expect(arcadeTeamName(newArcade('normal'))).toBe(ARCADE_ROUTE[0]!.name);
+  });
+
+  it('难度规则透传给对局（CPU 等级 + 血量倍率）', () => {
+    expect(arcadeRules(newArcade('easy'))).toEqual({ cpuLevel: 'easy', hpScale: 0.85 });
+    expect(arcadeRules(newArcade('hard'))).toEqual({ cpuLevel: 'hard', hpScale: 1.15 });
+    expect(arcadeRules(newArcade('normal')).hpScale).toBe(1);
+  });
+});
+
+describe('街机流程（flow 层，不需要真打）', () => {
+  const mkFlow = (): AppFlow => {
+    const flow = new AppFlow(ROSTER, { ...DEFAULT_FLOW, vsFrames: 1, resultLockFrames: 1 }, null);
+    flow.screen = 'fight';
+    flow.mode = 'arcade';
+    return flow;
+  };
+
+  it('赢了：nextArcadeStage 把屏幕切到 vs，随后返回 start-match 重开对局', () => {
+    const flow = mkFlow();
+    flow.nextArcadeStage();
+    expect(flow.screen).toBe('vs');
+    let action = 'none';
+    for (let i = 0; i < 50 && action === 'none'; i++) {
+      action = flow.step([{ held: 0 }, { held: 0 }], { matchOver: false, matchWinner: 0 });
+    }
+    expect(action).toBe('start-match');
+    expect(flow.screen).toBe('fight');
+  });
+
+  it('通关/失败：showArcadeResult 停在结算屏，按一下才回标题', () => {
+    const flow = mkFlow();
+    flow.showArcadeResult();
+    expect(flow.screen).toBe('result');
+    // 结算屏有锁定期，连按两帧才走
+    const step = (): string =>
+      flow.step([{ held: Btn.A }, { held: 0 }], { matchOver: true, matchWinner: 1 });
+    expect(step()).toBe('none'); // 锁定期内按下无效
+    flow.step([{ held: 0 }, { held: 0 }], { matchOver: true, matchWinner: 1 }); // 松手
+    expect(step()).toBe('to-title'); // 再按一次才走
+  });
+
+  it('街机输给 CPU 才给续关机会，赢了不弹续关', () => {
+    const flow = mkFlow();
+    flow.step([{ held: 0 }, { held: 0 }], { matchOver: true, matchWinner: 1 });
+    expect(flow.screen).toBe('result');
+    const flow2 = mkFlow();
+    flow2.step([{ held: 0 }, { held: 0 }], { matchOver: true, matchWinner: 2 });
+    expect(flow2.screen).toBe('continue');
   });
 });

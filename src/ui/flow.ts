@@ -298,6 +298,23 @@ export class AppFlow {
     this.cursor = [0, Math.min(1, this.rosterSize - 1)];
   }
 
+  /**
+   * 街机：赢了这一场，直接进下一场的 VS 演出。
+   *
+   * 不走结算屏——8 场里每场都弹一次结算会把节奏打断，
+   * 只有"通关"或"续关机会用完"才值得停下来。
+   */
+  nextArcadeStage(): void {
+    this.screen = 'vs';
+    this.timer = 0;
+  }
+
+  /** 街机：打完最后一场（或失败收场），停在结算屏等玩家确认 */
+  showArcadeResult(): void {
+    this.screen = 'result';
+    this.timer = 0;
+  }
+
   /** 回到标题时清状态（结果屏/续关超时之后由外层调用） */
   reset(): void {
     this.screen = 'title';

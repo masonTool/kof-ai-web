@@ -44,6 +44,9 @@ import {
 import { VIEW_HEIGHT, VIEW_WIDTH } from './sim/constants';
 import { Btn } from './core/input';
 import { AppFlow } from './ui/flow';
+import { afterStage, isCleared, newArcade, type ArcadeState } from './ui/arcade';
+import { arcadeResult } from './ui/arcade-result';
+import { arcadeRules, arcadeTeam } from './ui/arcade-roster';
 import { ChallengeBoard } from './ui/challenges';
 import { KeyBindMenu } from './ui/keybind';
 import { PauseMenu } from './ui/pause';
@@ -194,22 +197,35 @@ function teamFor(starter: CharDef): CharDef[] {
  */
 function startMatch(): void {
   const [a, b] = flow.picks ?? [ROSTER[0]!, ROSTER[1] ?? ROSTER[0]!];
-  // 把这 6 个人的图集装进来（没有素材的角色静默回落程序化）
-  void ensureCharSheets([...teamFor(a), ...teamFor(b)].map((c) => c.id));
   const cfg = settings.settings;
-  match = new Match(teamFor(a), teamFor(b), {
+
+  // 街机模式：第一次开局时建进度；对手来自路线表，而不是"对面玩家选的人"
+  if (flow.mode === 'arcade' && arcade === null) arcade = newArcade();
+  const inArcade = flow.mode === 'arcade' && arcade !== null;
+  const playerTeam = teamFor(a);
+  const enemyTeam = inArcade ? arcadeTeam(arcade!) : teamFor(b);
+  if (enemyTeam.length === 0) {
+    // 路线表里一个角色都找不到（数据坏了），退回"对面选的人"，别让玩家卡住
+    enemyTeam.push(...teamFor(b));
+  }
+  const rules = inArcade ? arcadeRules(arcade!) : { cpuLevel: cfg.cpuLevel, hpScale: 1 };
+  cpuHpScaledFor = -1;
+
+  // 把这 6 个人的图集装进来（没有素材的角色静默回落程序化）
+  void ensureCharSheets([...playerTeam, ...enemyTeam].map((c) => c.id));
+  match = new Match(playerTeam, enemyTeam, {
     roundsToWin: cfg.roundsToWin,
     roundSeconds: cfg.roundSeconds,
   });
   recorder = new ReplayRecorder({
     seed: match.world.seed,
     config: match.config,
-    teams: [teamFor(a).map((c) => c.id), teamFor(b).map((c) => c.id)],
+    teams: [playerTeam.map((c) => c.id), enemyTeam.map((c) => c.id)],
   });
   training = new TrainingSession(match, {
     showBoxes: cfg.showBoxes,
     showFrameData: cfg.showFrameData,
-    cpuLevel: cfg.cpuLevel,
+    cpuLevel: rules.cpuLevel,
     // 训练模式：无限血/气，站着不动的木桩，方便练连段
     infiniteHp: flow.mode === 'training',
     infiniteMeter: flow.mode === 'training',
@@ -540,6 +556,24 @@ function cueInterfaceSounds(): void {
   c.locked = locked;
 }
 
+/**
+ * 难度：把 CPU 血量倍率作用到当前出场的 CPU 角色上。
+ *
+ * 为什么不改 `Match`：血量在换人/回合重置时会跟着角色重建，
+ * 与其在每个重建点插一刀，不如"每帧检查出场角色变了没有"——只有变化时才缩放一次，
+ * 换人、重开、续关都自动覆盖。
+ */
+function applyCpuHpScale(): void {
+  if (!match || !arcade) return;
+  const { hpScale } = arcadeRules(arcade);
+  if (hpScale === 1) return;
+  const idx = match.indexes[1];
+  if (cpuHpScaledFor === idx) return;
+  cpuHpScaledFor = idx;
+  match.p2.maxHp = Math.max(1, Math.round(match.p2.maxHp * hpScale));
+  match.p2.hp = Math.max(1, Math.round(match.p2.hp * hpScale));
+}
+
 function cueMatchSounds(): void {
   if (!match) return;
   const c = sfxCue;
@@ -565,6 +599,11 @@ function cueMatchSounds(): void {
     c.tickAt = -1;
   }
 }
+
+/** 街机进度：null = 不在街机模式（双人/训练/观战都不用它） */
+let arcade: ArcadeState | null = null;
+/** CPU 血量倍率已经作用到哪个角色身上（-1 = 还没作用），避免同一人反复缩放 */
+let cpuHpScaledFor = -1;
 
 /** 上一次喊的时间（人声冷却，避免连段里连喊） */
 let lastVoiceAt = 0;
@@ -604,15 +643,25 @@ startAnimationLoop(
       }
       prevPauseHeld = p1In.held;
       const matchOver = match !== null && match.phase === 'over';
+      // 街机打赢这一场：由我们自己推进（不走 flow 的结算屏），否则每场都要点一次"回标题"
+      const arcadeWin = matchOver && flow.mode === 'arcade' && arcade !== null && match?.matchWinner === 1;
       // 按键设置屏由 raw keydown 独占输入：再喂给 flow 会"一套按键两处消费"
       // （实测按 B 从按键屏返回时，flow 在同一帧又把 B 当成"退出选项屏"）。
       // 关掉 mute 的时机是"所有键都松开"，否则那个按键的按住状态还会被当成新的一次边沿。
       if (muteFlow && p1In.held === 0 && p2In.held === 0) muteFlow = false;
       const flowInputs = muteFlow || flow.screen === 'keybind' ? [{ held: 0 }, { held: 0 }] : [p1In, p2In];
       const action = flow.step(flowInputs as [{ held: number }, { held: number }], {
-        matchOver,
+        matchOver: matchOver && !arcadeWin,
         matchWinner: match?.matchWinner ?? 0,
       });
+      if (arcadeWin && arcade) {
+        arcade = afterStage(arcade, true);
+        if (isCleared(arcade)) {
+          flow.showArcadeResult(); // 打穿 8 场：停在结算屏
+        } else {
+          flow.nextArcadeStage(); // 进下一场的 VS 演出，下帧会重新 startMatch
+        }
+      }
       cueInterfaceSounds();
       bgm.setTrack(trackFor(flow.screen));
       if (flow.screen !== 'fight') bgm.setMood('calm');
@@ -625,6 +674,8 @@ startAnimationLoop(
         return;
       }
       if (action === 'to-title') {
+        arcade = null;
+        cpuHpScaledFor = -1;
         if (recorder) lastReplay = recorder.finish();
         recorder = null;
         replayPlayer = null;
@@ -670,6 +721,7 @@ startAnimationLoop(
             lastVoiceAt = nowMs;
           }
         }
+        applyCpuHpScale();
         cueMatchSounds();
         // 残血变奏：任意一方血量低于 30% 就给 BGM 加底鼓
         const lowHp = match.p1.hp / match.p1.maxHp < 0.3 || match.p2.hp / match.p2.maxHp < 0.3;
@@ -706,7 +758,13 @@ startAnimationLoop(
             const winner = side === 2 ? match.p2 : match.p1;
             const name = flow.picks?.[side - 1]?.name ?? (side === 2 ? 'CPU' : 'P1');
             // 台词按胜场数轮换：同一场里是固定的，回放/录屏不会变
-            drawResult(ctx, name, winQuoteFor(winner.char.id, match.wins[side - 1] ?? 0), blink);
+            drawResult(
+              ctx,
+              name,
+              winQuoteFor(winner.char.id, match.wins[side - 1] ?? 0),
+              blink,
+              arcade ? arcadeResult(arcade) : null,
+            );
           }
           break;
         }
@@ -730,7 +788,11 @@ startAnimationLoop(
       uiTick++;
       if (uiTick % 20 === 0) {
         controls.refresh();
-        controls.setBarVisible(flow.screen === 'fight' || flow.screen === 'result' || flow.screen === 'continue');
+        // 调试条只在训练模式出现：街机/双人里摆一排"无限血/假人"按钮是错的
+        controls.setBarVisible(
+          flow.mode === 'training' &&
+            (flow.screen === 'fight' || flow.screen === 'result' || flow.screen === 'continue'),
+        );
       }
     },
   },

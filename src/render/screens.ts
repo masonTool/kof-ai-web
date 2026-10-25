@@ -10,6 +10,7 @@ import type { ChallengeBoard } from '../ui/challenges';
 import type { KeyBindMenu } from '../ui/keybind';
 import { KEY_ACTIONS, keyLabelFor, type GameSettings } from '../ui/settings';
 import type { Ctx2D } from './ctx';
+import type { ArcadeResultModel } from '../ui/arcade-result';
 import { drawFighter } from './fighter-draw';
 import { portraitFor } from './portraits';
 import { titleArt } from './title-art';
@@ -185,14 +186,13 @@ export function drawSelect(ctx: Ctx2D, flow: AppFlow, blinkOn: boolean): void {
   const cursorIdx = flow.cursor[0];
   const picked = flow.picks?.map((c) => c.name).join(' / ') ?? '';
   if (picked) {
-    text(ctx, picked, VIEW_WIDTH / 2, 196, 'center', 8, SCREEN_COLORS.gold);
+    text(ctx, picked, VIEW_WIDTH / 2, 191, 'center', 8, SCREEN_COLORS.gold);
   } else if (cursorIdx >= 0) {
-    text(ctx, nameOf(cursorIdx), VIEW_WIDTH / 2, 196, 'center', 9, SCREEN_COLORS.text);
+    text(ctx, nameOf(cursorIdx), VIEW_WIDTH / 2, 190, 'center', 9, SCREEN_COLORS.text);
   }
 
   const label = flow.locked[0] ? '已确定 · B/D 重选' : '点格子选人 · A 确认';
-  if (blinkOn || flow.locked[0]) text(ctx, label, VIEW_WIDTH / 2, 200, 'center', 7, SCREEN_COLORS.text);
-  text(ctx, '点击角色格子也能选', VIEW_WIDTH / 2, 212, 'center', 6, SCREEN_COLORS.dim);
+  if (blinkOn || flow.locked[0]) text(ctx, label, VIEW_WIDTH / 2, 203, 'center', 7, SCREEN_COLORS.text);
 }
 
 export function drawVs(ctx: Ctx2D, flow: AppFlow): void {
@@ -220,7 +220,13 @@ export function drawVs(ctx: Ctx2D, flow: AppFlow): void {
   text(ctx, 'VS', VIEW_WIDTH / 2, 96, 'center', 26, SCREEN_COLORS.accent);
 }
 
-export function drawResult(ctx: Ctx2D, winnerName: string, quote: string, blinkOn: boolean): void {
+export function drawResult(
+  ctx: Ctx2D,
+  winnerName: string,
+  quote: string,
+  blinkOn: boolean,
+  arcade: ArcadeResultModel | null = null,
+): void {
   // 赢家名与 WINS 由 HUD 的中央横幅负责（K.O. 横幅就一直挂在那儿），
   // 这里只画台词框，否则屏幕正中会有两行"某某 WINS"。
   const boxY = 148;
@@ -238,7 +244,22 @@ export function drawResult(ctx: Ctx2D, winnerName: string, quote: string, blinkO
     text(ctx, line, VIEW_WIDTH / 2, boxY + 15 + i * 11, 'center', 7, SCREEN_COLORS.text);
   });
 
-  if (blinkOn) text(ctx, '按 A 回到标题', VIEW_WIDTH / 2, boxY + 58, 'center', 7, SCREEN_COLORS.dim);
+  // 街机：这是整条路线的收尾（通关 / 失败），比"谁赢了这一场"重要得多
+  if (arcade) {
+    text(
+      ctx,
+      arcade.title,
+      VIEW_WIDTH / 2,
+      62,
+      'center',
+      arcade.cleared ? 22 : 18,
+      arcade.cleared ? SCREEN_COLORS.gold : SCREEN_COLORS.accent,
+    );
+    text(ctx, arcade.subtitle, VIEW_WIDTH / 2, 92, 'center', 8, SCREEN_COLORS.text);
+    if (arcade.nextName) text(ctx, `下一场：${arcade.nextName}`, VIEW_WIDTH / 2, 108, 'center', 7, SCREEN_COLORS.dim);
+  }
+
+  if (blinkOn) text(ctx, '点击 / 按 A 回到标题', VIEW_WIDTH / 2, boxY + 58, 'center', 7, SCREEN_COLORS.dim);
 }
 
 /** 按字数粗折行（像素字体等宽，20 字 ≈ 一行） */
