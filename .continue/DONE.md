@@ -41,6 +41,17 @@
 
 <!-- 实际归档放下面，最新的放最上面 -->
 
+## 批次 20261026-0033 · 2026-10-26 · 会话 59bce766
+
+**这批的目标**：把 CI 与部署合并成一个 workflow。
+
+- [x] [T222] 合并 CI 与部署：单 workflow 内 `npm ci` + `build` 只跑一遍，产物直接交给 Pages；PR 只校验不发布
+  - 做了什么：删掉 `deploy.yml`，重写 `ci.yml`——`build` job 串起「安装 → typecheck → test → art:check → build →（仅 main）configure-pages + upload-pages-artifact」，`deploy` job 只有一步 `deploy-pages`，`if: github.ref == 'refs/heads/main'` 且 `needs: build`
+  - 为什么合并：两个 workflow 各跑一遍 `npm ci` + `npm run build`，等于白花一顿；合并进一个 job 才共享 `node_modules`
+  - 并发策略分两层：workflow 级 `group: <workflow>-<ref>` + `cancel-in-progress: true`（同分支连推取消旧的，省额度）；`deploy` job 级 `group: pages` + `cancel-in-progress: false`（部署不能被打断，否则线上会出现半个站点）
+  - 验证：`ruby -ryaml` 解析通过（jobs: build 9 步 / deploy 1 步，只有一个 workflow 文件）；本地按合并后的顺序跑完整链路——typecheck 通过、`npm run test` **926 条全绿**、`art:check` 通过、`npm run build` 成功（2.62s）；README 的「持续集成」章节改写为单 workflow 说明
+  - 批次：20261026-0033
+
 ## 批次 20261026-0019 · 2026-10-26 · 会话 59bce766
 
 **这批的目标**：线上白屏。
