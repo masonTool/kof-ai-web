@@ -274,7 +274,13 @@ const controls = mountTouchControls(pad, [
       else match.softReset();
     },
   },
-]);
+], {
+  // 手台在画布之外，第一次按它也要解锁音频并进全屏（画布的 pointerdown 收不到）
+  onFirstInput: () => {
+    audio.resume();
+    enterFullscreenOnce();
+  },
+});
 padHandle = controls;
 resize();
 

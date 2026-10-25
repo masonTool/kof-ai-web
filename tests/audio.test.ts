@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { DEFAULT_BGM_VOLUME, DEFAULT_SFX_VOLUME, audioGraph, setBusVolume, unlockAudio } from '../src/audio/graph';
 import { NullSink, SFX, WebAudioSink, sfxForWorldEvent, voiceForWorldEvent, type SfxName } from '../src/audio/sfx';
 
 describe('音效表', () => {
@@ -71,5 +72,30 @@ describe('人声', () => {
     expect(voiceForWorldEvent('hit', { damage: 10 })).toBeNull();
     expect(voiceForWorldEvent('guard', {})).toBeNull();
     expect(voiceForWorldEvent('proj', {})).toBeNull();
+  });
+});
+
+describe('混音总线', () => {
+  it('node 里没有 AudioContext：拿图/设音量/解锁都静默降级，不抛异常', () => {
+    expect(audioGraph()).toBeNull();
+    expect(() => setBusVolume('sfx', 0.5)).not.toThrow();
+    expect(() => setBusVolume('bgm', 0)).not.toThrow();
+    expect(() => unlockAudio()).not.toThrow();
+  });
+
+  it('两条总线默认音量分开定义（静音 BGM 不影响打击音）', () => {
+    expect(DEFAULT_SFX_VOLUME).toBeGreaterThan(0);
+    expect(DEFAULT_BGM_VOLUME).toBeGreaterThan(0);
+    expect(DEFAULT_SFX_VOLUME).not.toBe(DEFAULT_BGM_VOLUME);
+  });
+
+  it('打击类音效都带中频补偿（手机小喇叭听不见低频，没有这层就只剩"噗"）', () => {
+    for (const name of ['hitLight', 'hitHeavy', 'hitCounter', 'guard', 'guardCrush', 'ko'] as const) {
+      expect(SFX[name].presence, name).toBeGreaterThan(0);
+    }
+  });
+
+  it('环境类音效不需要中频补偿（避免整屏都在"叮"）', () => {
+    expect(SFX.whiff.presence ?? 0).toBe(0);
   });
 });

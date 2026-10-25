@@ -8,6 +8,8 @@
  * 这样"打中该响什么"不依赖浏览器，也能在 node 里断言。
  */
 
+import { audioGraph, DEFAULT_SFX_VOLUME, setBusVolume, unlockAudio } from './graph';
+
 export type SfxName =
   | 'hitLight'
   | 'hitHeavy'
@@ -42,6 +44,11 @@ export interface SfxSpec {
   thump?: number;
   /** 带通滤波（人声靠它：没有滤波的锯齿波听起来是"电子叫"） */
   filter?: { type: BiquadFilterType; freq: number; q: number };
+  /**
+   * 中频补偿（0~1）：手机小喇叭放不出低频，打击音必须补一层 1.2~1.6kHz 窄带噪声，
+   * 否则"打到东西"在手机上听起来就是"噗"一下。
+   */
+  presence?: number;
 }
 
 /**
@@ -52,15 +59,15 @@ export interface SfxSpec {
  * 和 `noise`（宽频噪声）两个量，`play()` 里分两层叠。
  */
 export const SFX: Record<SfxName, SfxSpec> = {
-  hitLight: { wave: 'square', from: 640, to: 220, ms: 65, gain: 0.22, noise: 0.4, thump: 0.5 },
-  hitHeavy: { wave: 'sawtooth', from: 340, to: 80, ms: 140, gain: 0.3, noise: 0.55, thump: 0.9 },
+  hitLight: { wave: 'square', from: 640, to: 220, ms: 65, gain: 0.22, noise: 0.4, thump: 0.5, presence: 0.5 },
+  hitHeavy: { wave: 'sawtooth', from: 340, to: 80, ms: 140, gain: 0.3, noise: 0.55, thump: 0.9, presence: 0.75 },
   // 反击：比普通命中更"脆"更响，玩家要能凭听觉分出反击
-  hitCounter: { wave: 'square', from: 900, to: 260, ms: 110, gain: 0.3, noise: 0.7, thump: 0.7 },
-  guard: { wave: 'triangle', from: 940, to: 720, ms: 55, gain: 0.14, noise: 0.18 },
+  hitCounter: { wave: 'square', from: 900, to: 260, ms: 110, gain: 0.3, noise: 0.7, thump: 0.7, presence: 0.85 },
+  guard: { wave: 'triangle', from: 940, to: 720, ms: 55, gain: 0.14, noise: 0.18, presence: 0.35 },
   // 破防：金属被砸裂的钝响
-  guardCrush: { wave: 'sawtooth', from: 520, to: 120, ms: 220, gain: 0.28, noise: 0.5, thump: 0.6 },
+  guardCrush: { wave: 'sawtooth', from: 520, to: 120, ms: 220, gain: 0.28, noise: 0.5, thump: 0.6, presence: 0.6 },
   clash: { wave: 'triangle', from: 1500, to: 700, ms: 120, gain: 0.22, noise: 0.35 },
-  ko: { wave: 'sawtooth', from: 220, to: 50, ms: 460, gain: 0.34, noise: 0.2, thump: 1 },
+  ko: { wave: 'sawtooth', from: 220, to: 50, ms: 460, gain: 0.34, noise: 0.2, thump: 1, presence: 0.5 },
   whiff: { wave: 'sine', from: 460, to: 260, ms: 55, gain: 0.07, noise: 0.25 },
   // 超必杀起手：上滑 + 强噪声，像气在聚
   superStart: { wave: 'sawtooth', from: 180, to: 1200, ms: 420, gain: 0.26, noise: 0.45, thump: 0.35 },
@@ -143,55 +150,34 @@ export function voiceForWorldEvent(
   }
 }
 
-type AudioCtor = new () => AudioContext;
-
-/** 真播放：第一次 play 时才建 AudioContext（浏览器要求用户交互后才能出声） */
+/**
+ * 真播放：走全局音频图的 **音效总线**（见 `graph.ts`）。
+ *
+ * 总线后面挂了压缩器，所以密集连段不会把手机小喇叭推爆；
+ * `setVolume` 调的是这条总线，和 BGM 完全独立。
+ */
 export class WebAudioSink implements SfxSink {
-  private ctx: AudioContext | null = null;
-  private master: GainNode | null = null;
   private noiseBuffer: AudioBuffer | null = null;
-  private failed = false;
+  private volume: number = DEFAULT_SFX_VOLUME;
 
-  private volume: number;
-
-  constructor(volume = 0.22) {
+  constructor(volume = DEFAULT_SFX_VOLUME) {
     this.volume = volume;
+    setBusVolume('sfx', volume);
   }
 
   /** 运行时改音量（选项屏用）；静音就是 0，不重建 AudioContext */
   setVolume(volume: number): void {
-    this.volume = Math.min(1, Math.max(0, volume));
-    if (this.master) this.master.gain.value = this.volume;
+    this.volume = Math.min(1, Math.max(1e-4, volume));
+    setBusVolume('sfx', this.volume);
   }
 
   get currentVolume(): number {
     return this.volume;
   }
 
-  private ensure(): AudioContext | null {
-    if (this.ctx || this.failed) return this.ctx;
-    const ctor = (globalThis as unknown as { AudioContext?: AudioCtor; webkitAudioContext?: AudioCtor }).AudioContext
-      ?? (globalThis as unknown as { webkitAudioContext?: AudioCtor }).webkitAudioContext;
-    if (!ctor) {
-      this.failed = true; // node / 老浏览器：静默降级
-      return null;
-    }
-    try {
-      this.ctx = new ctor();
-      this.master = this.ctx.createGain();
-      this.master.gain.value = this.volume;
-      this.master.connect(this.ctx.destination);
-    } catch {
-      this.failed = true;
-      this.ctx = null;
-    }
-    return this.ctx;
-  }
-
-  /** 用户第一次点/按键时调用，解锁音频上下文 */
+  /** 兼容旧调用：现在等价于全局解锁（两条总线一起） */
   resume(): void {
-    const ctx = this.ensure();
-    if (ctx && ctx.state === 'suspended') void ctx.resume();
+    unlockAudio();
   }
 
   private noise(ctx: AudioContext): AudioBuffer {
@@ -206,8 +192,9 @@ export class WebAudioSink implements SfxSink {
 
   play(name: SfxName): void {
     const spec = SFX[name];
-    const ctx = this.ensure();
-    if (!ctx || !this.master) return;
+    const g = audioGraph();
+    if (!g) return;
+    const { ctx } = g;
 
     const now = ctx.currentTime;
     const dur = Math.max(0.02, spec.ms / 1000);
@@ -215,7 +202,7 @@ export class WebAudioSink implements SfxSink {
     const env = ctx.createGain();
     env.gain.setValueAtTime(spec.gain, now);
     env.gain.exponentialRampToValueAtTime(0.0001, now + dur);
-    env.connect(this.master);
+    env.connect(g.sfx);
 
     const osc = ctx.createOscillator();
     osc.type = spec.wave;
@@ -246,9 +233,30 @@ export class WebAudioSink implements SfxSink {
       thumpOsc.frequency.setValueAtTime(120, now);
       thumpOsc.frequency.exponentialRampToValueAtTime(45, now + thumpDur);
       thumpOsc.connect(thumpGain);
-      thumpGain.connect(this.master);
+      thumpGain.connect(g.sfx);
       thumpOsc.start(now);
       thumpOsc.stop(now + thumpDur + 0.02);
+    }
+
+    // 手机外放补偿：小喇叭放不出 100Hz 以下，也放不出响亮的高频，
+    // 所以打击音必须补一层 1.2~1.6kHz 的窄带噪声——人耳对这个频段最敏感，
+    // 手机外放下"打到东西"的感觉基本全靠它。
+    if (spec.presence && spec.presence > 0) {
+      const src = ctx.createBufferSource();
+      src.buffer = this.noise(ctx);
+      const bp = ctx.createBiquadFilter();
+      bp.type = 'bandpass';
+      bp.frequency.setValueAtTime(1400, now);
+      bp.Q.setValueAtTime(0.9, now);
+      const gain = ctx.createGain();
+      const len = Math.min(0.14, dur * 1.6);
+      gain.gain.setValueAtTime(spec.gain * spec.presence, now);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + len);
+      src.connect(bp);
+      bp.connect(gain);
+      gain.connect(g.sfx);
+      src.start(now);
+      src.stop(now + len + 0.02);
     }
 
     if (spec.noise && spec.noise > 0) {
@@ -258,7 +266,7 @@ export class WebAudioSink implements SfxSink {
       ng.gain.setValueAtTime(spec.gain * spec.noise, now);
       ng.gain.exponentialRampToValueAtTime(0.0001, now + dur);
       src.connect(ng);
-      ng.connect(this.master);
+      ng.connect(g.sfx);
       src.start(now);
       src.stop(now + dur);
     }

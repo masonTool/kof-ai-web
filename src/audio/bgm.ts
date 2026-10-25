@@ -8,6 +8,8 @@
  * 而不是靠耳朵听。
  */
 
+import { audioGraph, setBusVolume } from './graph';
+
 export type Channel = 'lead' | 'bass';
 
 export interface TrackDef {
@@ -194,18 +196,18 @@ export class NullBgm implements BgmSink {
   update(): void {}
 }
 
-type AudioCtor = new () => AudioContext;
-
-/** 真播放：一个主音量节点 + 每次音符一个振荡器 */
+/**
+ * 真播放：走全局音频图的 **BGM 总线**。
+ *
+ * 和音效共用同一个 AudioContext + 压缩器（见 `graph.ts`），
+ * 所以两路同时响不会叠爆，音量也能分别调。
+ */
 export class WebAudioBgm implements BgmSink {
-  private ctx: AudioContext | null = null;
-  private master: GainNode | null = null;
   private player: BgmPlayer | null = null;
   private track: TrackDef | null = null;
   private volume = 0.25;
   private ducked = false;
   private lastMs = 0;
-  private failed = false;
   private mood: BgmMood = 'calm';
   /** 底鼓累计时钟（只在 urgent 时推进） */
   private beatMs = 0;
@@ -215,38 +217,22 @@ export class WebAudioBgm implements BgmSink {
     return this.track?.id ?? null;
   }
 
-  private ensure(): AudioContext | null {
-    if (this.ctx || this.failed) return this.ctx;
-    const ctor = (globalThis as unknown as { AudioContext?: AudioCtor }).AudioContext
-      ?? (globalThis as unknown as { webkitAudioContext?: AudioCtor }).webkitAudioContext;
-    if (!ctor) {
-      this.failed = true;
-      return null;
-    }
-    try {
-      this.ctx = new ctor();
-      this.master = this.ctx.createGain();
-      this.master.gain.value = this.effectiveGain();
-      this.master.connect(this.ctx.destination);
-    } catch {
-      this.failed = true;
-      this.ctx = null;
-    }
-    return this.ctx;
-  }
-
   private effectiveGain(): number {
     return Math.min(1, Math.max(0, this.volume)) * (this.ducked ? 0.25 : 1);
   }
 
+  private applyGain(): void {
+    setBusVolume('bgm', this.effectiveGain());
+  }
+
   setVolume(volume: number): void {
     this.volume = volume;
-    if (this.master) this.master.gain.value = this.effectiveGain();
+    this.applyGain();
   }
 
   setDucked(ducked: boolean): void {
     this.ducked = ducked;
-    if (this.master) this.master.gain.value = this.effectiveGain();
+    this.applyGain();
   }
 
   setMood(mood: BgmMood): void {
@@ -264,14 +250,16 @@ export class WebAudioBgm implements BgmSink {
     this.track = id ? (TRACKS[id] ?? null) : null;
     this.player = this.track ? new BgmPlayer(this.track) : null;
     this.lastMs = 0;
-    this.ensure();
+    audioGraph();
+    this.applyGain();
   }
 
   update(nowMs: number): void {
-    const ctx = this.ensure();
+    const g = audioGraph();
     const track = this.track;
     const player = this.player;
-    if (!ctx || !track || !player || !this.master) return;
+    if (!g || !track || !player) return;
+    const { ctx } = g;
     if (ctx.state === 'suspended') return;
 
     // 每帧只推进一点点；页面切后台回来时会有大跳跃，夹住避免一次排上百个音
@@ -293,7 +281,7 @@ export class WebAudioBgm implements BgmSink {
         gain.gain.exponentialRampToValueAtTime(Math.max(0.0002, track.gain * 2.2), start + 0.005);
         gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.16);
         osc.connect(gain);
-        gain.connect(this.master);
+        gain.connect(g.bgm);
         osc.start(start);
         osc.stop(start + 0.18);
       }
@@ -312,7 +300,7 @@ export class WebAudioBgm implements BgmSink {
       gain.gain.exponentialRampToValueAtTime(Math.max(0.0002, peak), start + 0.01);
       gain.gain.exponentialRampToValueAtTime(0.0001, start + dur);
       osc.connect(gain);
-      gain.connect(this.master);
+      gain.connect(g.bgm);
       osc.start(start);
       osc.stop(start + dur + 0.02);
     }

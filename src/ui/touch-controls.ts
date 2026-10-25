@@ -45,7 +45,23 @@ function buzz(): void {
   }
 }
 
-export function mountTouchControls(pad: VirtualPad, actions: readonly TouchAction[]): TouchControlsHandle {
+export interface TouchControlsOptions {
+  /** 第一次按下手台时通知外面（解锁音频 / 进全屏）——手台在画布之外，画布的 pointerdown 收不到 */
+  onFirstInput?: () => void;
+}
+
+export function mountTouchControls(
+  pad: VirtualPad,
+  actions: readonly TouchAction[],
+  opts: TouchControlsOptions = {},
+): TouchControlsHandle {
+  let firstDone = false;
+  const firstInput = (): void => {
+    if (firstDone) return;
+    firstDone = true;
+    opts.onFirstInput?.();
+  };
+
   const root = el('div', 'controls');
   root.id = 'controls';
 
@@ -64,6 +80,7 @@ export function mountTouchControls(pad: VirtualPad, actions: readonly TouchActio
 
   stick.addEventListener('pointerdown', (e) => {
     e.preventDefault();
+    firstInput();
     if (stickPointer !== null) return; // 摇杆只认第一根手指
     stickPointer = e.pointerId;
     stick.setPointerCapture(e.pointerId);
@@ -99,6 +116,7 @@ export function mountTouchControls(pad: VirtualPad, actions: readonly TouchActio
     b.setAttribute('aria-label', `按键 ${key}`);
     const press = (e: PointerEvent): void => {
       e.preventDefault();
+      firstInput();
       try {
         b.setPointerCapture(e.pointerId);
       } catch {
