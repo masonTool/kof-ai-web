@@ -10,15 +10,19 @@ import { GROUND_Y, STAGE_LEFT, STAGE_RIGHT, VIEW_HEIGHT, VIEW_WIDTH } from './co
 export const GROUND_SCREEN_Y = GROUND_Y;
 
 /** 视野最宽时的缩放（1 = 角色按原始大小画） */
-export const ZOOM_MIN = 1;
+export const ZOOM_MIN = 1.2;
 /**
  * 贴脸时的放大上限。
  *
  * 这个值是"视觉精细度"的性价比开关：世界坐标与判定盒都不用改，
  * 只是把人画得更大——角色在 320×224 里占的像素越多，细节就越经得住看。
- * 调大 = 更近、更细，但视野变窄（远距离仍会退回 ZOOM_MIN=1）。
+ * 调大 = 更近、更细，但视野变窄。
+ *
+ * 用户实测反馈"两人拉开时人物缩得很小"，所以区间压到 1.2~1.3（差 8%，肉眼几乎一致），
+ * 并且整体比原来的 1.0 大 20~30%——代价是可视宽度从 320 收到 246~266，
+ * 贴到两边时靠镜头平移跟随，而不是把人缩成小人。
  */
-export const ZOOM_MAX = 1.5;
+export const ZOOM_MAX = 1.3;
 /** 距离 ≤ 这个值就是最近（拉满） */
 export const ZOOM_NEAR_DIST = 56;
 /** 距离 ≥ 这个值就是最远（放开） */

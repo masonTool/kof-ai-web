@@ -231,7 +231,9 @@ describe('镜头缩放覆盖（超必杀运镜）', () => {
     const cam = new Camera({ x: 200, zoom: 1.45 });
     cam.zoomOverride = null;
     for (let i = 0; i < 60; i++) cam.update({ x: 200 }, { x: 400 });
-    expect(cam.zoom).toBeLessThan(1.2);
+    // 距离拉远 → 回到"距离决定的缩放"，现在区间压到 1.2~1.3，所以只断言落回这个范围
+    expect(cam.zoom).toBeGreaterThanOrEqual(1.2);
+    expect(cam.zoom).toBeLessThanOrEqual(1.3);
   });
 
   it('覆盖值也参与左右夹取（拉近后视野更窄，位置仍在舞台内）', () => {
