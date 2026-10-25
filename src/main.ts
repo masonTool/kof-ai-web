@@ -38,6 +38,7 @@ import {
   drawMoveHint,
   drawTrainingBadge,
   drawComboMeter,
+  drawDemoResult,
   drawDemoLabel,
   drawPadAdjustHint,
   MENU_BUTTON,
@@ -131,6 +132,13 @@ let padDraft: PadCustom = {};
 let demoFrames: number[] | null = null;
 let demoIndex = 0;
 let demoStarts: number[] = [];
+/** 演示结果浮层剩余帧 / 实际连击数 / 实际伤害 */
+let demoResultLeft = 0;
+let demoResultHits = 0;
+let demoResultDamage = 0;
+/** 演示开始前对手的血量（用来算真实伤害） */
+let demoDamageBase = 0;
+
 /** 当前选中的连段套数（0 入门 / 1 标准 / 2 高伤） */
 let demoSegment = 0;
 /** 手台句柄：`resize()` 在模块初始化阶段就会跑，那时 `controls` 还没建好（TDZ），所以走可变引用 */
@@ -381,7 +389,11 @@ const controls = mountTouchControls(pad, [
       demoFrames = frames;
       demoStarts = starts;
       demoIndex = 0;
-      if (match) match.softReset();
+      if (match) {
+        match.softReset();
+        demoDamageBase = match.p2.hp;
+        demoResultLeft = 0;
+      }
     },
   },
   {
@@ -886,8 +898,12 @@ startAnimationLoop(
           p1In.held = demoFrames[demoIndex]!;
           demoIndex++;
         } else {
+          // 演示播完：报一次真实结果（连击数取对局里的实际值，不是预估）
           demoFrames = null;
           demoIndex = 0;
+          demoResultLeft = 150;
+          demoResultHits = match?.p2.combo.hits ?? 0;
+          demoResultDamage = Math.max(0, demoDamageBase - (match?.p2.hp ?? 0));
         }
       }
       const p2In = p2keys.sample;
@@ -1150,6 +1166,11 @@ startAnimationLoop(
           const dmg = steps.slice(0, at + 1).reduce((sum, s) => sum + (s.damage ?? 0), 0);
           drawDemoLabel(ctx, steps[at]!.label, at, steps.length, dmg);
         }
+      }
+      // 演示结果浮层：播完停 2.5 秒，报"实际连上几下 / 实际打了多少"
+      if (demoResultLeft > 0) {
+        demoResultLeft--;
+        if (flow.screen === 'fight') drawDemoResult(ctx, demoResultHits, demoResultDamage);
       }
       // 训练场：连击面板（当前 / 本次最高）。连断后不清最高，方便对比两次尝试
       if (flow.screen === 'fight' && flow.mode === 'training' && match) {

@@ -10,6 +10,7 @@ import {
 } from '../src/sim/constants';
 import {
   drawComboMeter,
+  drawDemoResult,
   drawTrainingBadge,
   MOVE_HINT_TEXT,
   drawMoveHint,
@@ -256,5 +257,24 @@ describe('训练场连击面板', () => {
     const panel = ctx.rects[0]!;
     expect(panel.x).toBeGreaterThan(VIEW_WIDTH / 2);
     expect(panel.x + panel.w).toBeLessThanOrEqual(VIEW_WIDTH);
+  });
+});
+
+describe('演示结果回报', () => {
+  it('连上了：报"连上了 + N 连 + 伤害"', () => {
+    const ctx = new FakeCtx();
+    drawDemoResult(ctx, 7, 320);
+    const all = ctx.texts.map((t) => String(t.text)).join('|');
+    expect(all).toContain('连上了');
+    expect(all).toContain('7 连');
+    expect(all).toContain('320 伤害');
+    expect(ctx.globalAlpha).toBe(1);
+  });
+
+  it('没连上时明确说"没连上"（而不是显示 0 连让人以为出 bug）', () => {
+    const ctx = new FakeCtx();
+    drawDemoResult(ctx, 0, 0);
+    const all = ctx.texts.map((t) => String(t.text)).join('|');
+    expect(all).toContain('没连上');
   });
 });

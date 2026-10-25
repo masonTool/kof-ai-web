@@ -151,6 +151,27 @@ export function drawPadAdjustHint(ctx: Ctx2D, blinkOn: boolean): void {
   if (blinkOn) text(ctx, '点画面任意处保存', VIEW_WIDTH / 2, 26, 'center', 6, SCREEN_COLORS.text);
 }
 
+/**
+ * 演示结果：播完后居中报一次"实际连上几下 / 实际打了多少"。
+ *
+ * 用真实对局数据而不是连段表里的预估——两者对不上时（比如被挡住、距离不够），
+ * 恰恰是玩家最需要知道的信息。
+ */
+export function drawDemoResult(ctx: Ctx2D, hits: number, damage: number): void {
+  const w = 150;
+  const x = (VIEW_WIDTH - w) / 2;
+  const y = 96;
+  ctx.globalAlpha = 0.92;
+  ctx.fillStyle = '#05070a';
+  ctx.fillRect(x, y, w, 34);
+  ctx.globalAlpha = 1;
+  ctx.strokeStyle = hits > 0 ? SCREEN_COLORS.gold : SCREEN_COLORS.accent;
+  ctx.lineWidth = 1;
+  ctx.strokeRect(x + 0.5, y + 0.5, w - 1, 33);
+  text(ctx, hits > 0 ? '连上了' : '没连上', VIEW_WIDTH / 2, y + 5, 'center', 9, hits > 0 ? SCREEN_COLORS.gold : SCREEN_COLORS.accent);
+  text(ctx, `${hits} 连 · ${damage} 伤害`, VIEW_WIDTH / 2, y + 20, 'center', 7, SCREEN_COLORS.text);
+}
+
 /** 连招演示的浮标：显示"正在演示第几步" */
 export function drawDemoLabel(
   ctx: Ctx2D,
