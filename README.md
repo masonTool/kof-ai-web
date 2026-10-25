@@ -106,17 +106,23 @@ docs/        ARCHITECTURE.md（技术口径，改架构先改它）
 - `docs/ARCHITECTURE.md` — 技术栈、模拟内核口径、帧数据格式、KOF97 系统对照表
 - `AGENTS.md` — 协作与工作流约定
 
-## 持续集成
+## 持续集成与发布
 
-`.github/workflows/ci.yml` 在 push 到 `main` 和所有 PR 上跑：
+一个 workflow（`.github/workflows/ci.yml`）干完校验、构建、发布。
+
+**push 到 `main`**：跑完整链路并自动发布到 GitHub Pages。
+**PR**：只校验和构建，不发布。
 
 | 步骤 | 命令 | 防的是什么 |
 |---|---|---|
 | 类型检查 | `npm run typecheck` | 类型错（和用例失败分开报，好定位） |
 | 单元测试 | `npm run test` | 926 条用例，含模拟/判定/素材结构 |
 | 素材自检 | `npm run art:check` | 图集数量、动画名、身高极差、舞台比例对不上 |
-| 生产构建 | `npm run build` | 能出 dist（产物上传成 artifact，留 7 天） |
+| 生产构建 | `npm run build` | 能出 dist（直接作为 Pages 产物上传） |
 
 本地等价命令：`npm run check && npm run art:check && npm run build`
+
+**依赖只装一次、构建只做一次**：合并成一个 job 就是为了共享 `node_modules`
+（早期拆成 ci.yml + deploy.yml 时，两个 workflow 各跑一遍 `npm ci` + `build`，纯浪费）。
 
 `.continue/hooks/check.mjs` 不进 CI —— 它依赖本地队列与 git 历史状态，不是通用门禁。

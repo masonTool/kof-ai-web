@@ -239,3 +239,4 @@
 - [x] T219 CPU 会用投技破防（C+D 与 ←+C 各 45%）+ 9 个主力角色配投技
 - [x] T220 GitHub Actions CI：typecheck → test → art:check → build（产物上传 artifact）
 - [x] T221 修 GitHub Pages 白屏：发布仓库根目录的开发版 HTML → 改用 Actions 部署 dist/
+- [x] T222 合并 CI 与部署为单 workflow（npm ci / build 只跑一次，PR 不发布）
