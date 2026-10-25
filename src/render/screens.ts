@@ -12,6 +12,7 @@ import { KEY_ACTIONS, keyLabelFor, type GameSettings } from '../ui/settings';
 import type { Ctx2D } from './ctx';
 import { drawFighter } from './fighter-draw';
 import { portraitFor } from './portraits';
+import { titleArt } from './title-art';
 import { lookFor } from './looks';
 
 export const SCREEN_COLORS = {
@@ -68,9 +69,22 @@ export function drawTitle(ctx: Ctx2D, blinkOn: boolean): void {
   ctx.fillStyle = SCREEN_COLORS.bg;
   ctx.fillRect(0, 0, VIEW_WIDTH, VIEW_HEIGHT);
 
-  // 背景横条，别太素
-  ctx.fillStyle = SCREEN_COLORS.panel;
-  for (let y = 0; y < VIEW_HEIGHT; y += 16) ctx.fillRect(0, y, VIEW_WIDTH, 6);
+  const art = titleArt();
+  if (art) {
+    // 有插图就铺满（cover），再压一层半透明黑保证文字可读
+    const k = Math.max(VIEW_WIDTH / art.width, VIEW_HEIGHT / art.height);
+    const dw = art.width * k;
+    const dh = art.height * k;
+    ctx.drawImage(art.image, 0, 0, art.width, art.height, (VIEW_WIDTH - dw) / 2, VIEW_HEIGHT - dh, dw, dh);
+    ctx.globalAlpha = 0.34;
+    ctx.fillStyle = '#05070a';
+    ctx.fillRect(0, 0, VIEW_WIDTH, VIEW_HEIGHT);
+    ctx.globalAlpha = 1;
+  } else {
+    // 没有插图：横条底纹，别太素
+    ctx.fillStyle = SCREEN_COLORS.panel;
+    for (let y = 0; y < VIEW_HEIGHT; y += 16) ctx.fillRect(0, y, VIEW_WIDTH, 6);
+  }
 
   text(ctx, "KOF '97", VIEW_WIDTH / 2, 58, 'center', 30, SCREEN_COLORS.accent);
   text(ctx, 'WEB REMAKE', VIEW_WIDTH / 2, 94, 'center', 9, SCREEN_COLORS.gold);
@@ -78,8 +92,15 @@ export function drawTitle(ctx: Ctx2D, blinkOn: boolean): void {
   if (blinkOn) {
     text(ctx, '按 A 开始 · 点屏幕也可', VIEW_WIDTH / 2, 132, 'center', 9, SCREEN_COLORS.text);
   }
-  text(ctx, 'A 轻拳 B 轻脚 C 重拳 D 重脚 · A+B 回避 · C+D 吹飞 · ABC MAX', VIEW_WIDTH / 2, 190, 'center', 6, SCREEN_COLORS.dim);
-  text(ctx, '方向键移动/跳蹲 · 236/623/214 出必杀', VIEW_WIDTH / 2, 200, 'center', 6, SCREEN_COLORS.dim);
+  // 底部操作说明压在火焰上会看不清，垫一条半透明暗带（有插图时才需要）
+  if (art) {
+    ctx.globalAlpha = 0.68;
+    ctx.fillStyle = '#05070a';
+    ctx.fillRect(0, 182, VIEW_WIDTH, VIEW_HEIGHT - 182);
+    ctx.globalAlpha = 1;
+  }
+  text(ctx, 'A 轻拳 B 轻脚 C 重拳 D 重脚 · A+B 回避 · C+D 吹飞 · ABC MAX', VIEW_WIDTH / 2, 190, 'center', 6, SCREEN_COLORS.text);
+  text(ctx, '方向键移动/跳蹲 · 236/623/214 出必杀', VIEW_WIDTH / 2, 200, 'center', 6, art ? SCREEN_COLORS.text : SCREEN_COLORS.dim);
 }
 
 export function drawSelect(ctx: Ctx2D, flow: AppFlow, blinkOn: boolean): void {

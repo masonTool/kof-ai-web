@@ -10,5 +10,8 @@ dist/
 !public/sheets/*.png
 # 人物头像（选人/VS 用，从图集裁出来的）
 !public/portraits/*.png
+# 舞台底图与标题插图
+!public/stages/*.png
+!public/title/*.png
 # AI 出的原始候选图（55MB，本地保留即可，用 node scripts/sprites/build-kyo.mjs 重新生成图集）
 art-source/

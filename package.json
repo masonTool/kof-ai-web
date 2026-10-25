@@ -16,7 +16,11 @@
     "art:base": "node scripts/sprites/gen-base.mjs",
     "art:poses": "node scripts/sprites/gen-poses.mjs",
     "art:all": "node scripts/sprites/gen-all.mjs",
-    "continue:worktree": "node .continue/hooks/worktree.mjs"
+    "continue:worktree": "node .continue/hooks/worktree.mjs",
+    "art:check": "node scripts/sprites/check-assets.mjs",
+    "art:stages": "node scripts/sprites/gen-stages.mjs",
+    "art:stages:build": "node scripts/sprites/build-stages.mjs",
+    "art:portraits": "node scripts/sprites/build-portraits.mjs"
   },
   "devDependencies": {
     "typescript": "^5.9.3",

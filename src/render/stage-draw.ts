@@ -9,6 +9,7 @@ import { Rng } from '../core/rng';
 import { GROUND_Y, VIEW_HEIGHT, VIEW_WIDTH } from '../sim/constants';
 import { GROUND_SCREEN_Y, type Camera } from '../sim/camera';
 import type { Ctx2D } from './ctx';
+import { stageArtFor, type StageArt } from './stage-art';
 
 export interface StageBuilding {
   x: number;
@@ -114,6 +115,12 @@ export const PARALLAX_MID = 0.6;
 export const TILE_SPACING = 24;
 
 export function drawStage(ctx: Ctx2D, cam: Camera, stage: StageDef = STAGES[0]!): void {
+  const art = stageArtFor(stage.id);
+  if (art) {
+    drawStageArt(ctx, cam, stage, art);
+    return;
+  }
+
   // 天空：三段色带（像素风用色带而不是渐变，色带还顺便给了"大气分层"）
   const band1 = Math.round(stage.horizon * 0.45);
   const band2 = Math.round(stage.horizon * 0.8);
@@ -227,6 +234,43 @@ export function drawStage(ctx: Ctx2D, cam: Camera, stage: StageDef = STAGES[0]!)
   ctx.globalAlpha = 1;
 
   // 地平线高光
+  ctx.fillStyle = stage.groundLine;
+  ctx.fillRect(0, GROUND_Y, VIEW_WIDTH, 1);
+}
+
+/**
+ * 有底图时的画法：底图铺满整屏高度、按视差横移，
+ * 然后只补"地面色带 + 砖缝"——底图自带的地面负责观感，判定线仍然由代码画，
+ * 顺便把元宝的右下角水印压在这条色带底下看不见。
+ */
+function drawStageArt(ctx: Ctx2D, cam: Camera, stage: StageDef, art: StageArt): void {
+  // 要覆盖"屏幕宽 + 视差最大横移两侧"：320 + 2×100 留足余量
+  const ART_W = VIEW_WIDTH + 200;
+  const shift = cam.x * PARALLAX_FAR;
+  const x = Math.round(VIEW_WIDTH / 2 - ART_W / 2 - shift);
+  // cover：等比放大到铺满这个框，底边对齐（这样画的"地面"永远在屏幕底部，不会被裁掉）
+  const k = Math.max(ART_W / art.width, VIEW_HEIGHT / art.height);
+  const dw = art.width * k;
+  const dh = art.height * k;
+  ctx.drawImage(art.image, 0, 0, art.width, art.height, x + (ART_W - dw) / 2, VIEW_HEIGHT - dh, dw, dh);
+
+  // 地面色带：盖住底图的下缘（含水印），同时给角色一个"踩实"的地面
+  ctx.fillStyle = stage.ground;
+  ctx.fillRect(0, GROUND_SCREEN_Y, VIEW_WIDTH, VIEW_HEIGHT - GROUND_SCREEN_Y);
+
+  // 砖缝（和角色同一层视差，脚底才不会滑）
+  const first = Math.floor(cam.visibleLeft / TILE_SPACING) * TILE_SPACING;
+  ctx.strokeStyle = stage.groundLine;
+  ctx.lineWidth = 1;
+  for (let wx = first; wx < cam.visibleRight + TILE_SPACING; wx += TILE_SPACING) {
+    const sx = Math.round(cam.worldToScreenX(wx)) + 0.5;
+    if (sx < -1 || sx > VIEW_WIDTH + 1) continue;
+    ctx.beginPath();
+    ctx.moveTo(sx, GROUND_SCREEN_Y);
+    ctx.lineTo(sx, VIEW_HEIGHT);
+    ctx.stroke();
+  }
+
   ctx.fillStyle = stage.groundLine;
   ctx.fillRect(0, GROUND_Y, VIEW_WIDTH, 1);
 }
