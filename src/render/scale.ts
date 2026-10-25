@@ -100,13 +100,37 @@ export function computeViewport(
  * 把视口应用到 canvas：CSS 尺寸 + 居中 + 后备缓冲按 dpr × 超采样放大，
  * 返回绘制用的 device 缩放（含超采样，直接用 `setTransform(device,0,0,device,0,0)`）。
  */
-export function applyViewport(canvas: HTMLCanvasElement, vp: Viewport): number {
+/**
+ * 把视口应用到 canvas。
+ *
+ * `coverWindow` = true 时**画布铺满整个窗口**，而游戏内容仍按 4:3 居中：
+ * 内容区之外的左右两条用背景色填掉，视觉上不再有"黑边"。
+ * 返回的 `device` 是内容缩放，`offsetX/offsetY` 是内容在画布内的偏移
+ * （调用方 setTransform 时要用，否则贴到左上角）。
+ */
+export function applyViewport(
+  canvas: HTMLCanvasElement,
+  vp: Viewport,
+  coverWindow = false,
+): { device: number; offsetX: number; offsetY: number } {
   const device = vp.scale * vp.dpr * RENDER_SCALE;
-  canvas.width = Math.round(vp.cssWidth * vp.dpr * RENDER_SCALE);
-  canvas.height = Math.round(vp.cssHeight * vp.dpr * RENDER_SCALE);
-  canvas.style.width = `${vp.cssWidth}px`;
-  canvas.style.height = `${vp.cssHeight}px`;
-  canvas.style.left = `${vp.offsetX}px`;
-  canvas.style.top = `${vp.offsetY}px`;
-  return device;
+  if (!coverWindow) {
+    canvas.width = Math.round(vp.cssWidth * vp.dpr * RENDER_SCALE);
+    canvas.height = Math.round(vp.cssHeight * vp.dpr * RENDER_SCALE);
+    canvas.style.width = `${vp.cssWidth}px`;
+    canvas.style.height = `${vp.cssHeight}px`;
+    canvas.style.left = `${vp.offsetX}px`;
+    canvas.style.top = `${vp.offsetY}px`;
+    return { device, offsetX: 0, offsetY: 0 };
+  }
+  // 铺满窗口：画布 = 整个窗口，内容居中（左右各留一条背景）
+  const w = Math.round((vp.cssWidth + vp.offsetX * 2) * vp.dpr * RENDER_SCALE);
+  const h = Math.round((vp.cssHeight + vp.offsetY * 2) * vp.dpr * RENDER_SCALE);
+  canvas.width = w;
+  canvas.height = h;
+  canvas.style.width = `${vp.cssWidth + vp.offsetX * 2}px`;
+  canvas.style.height = `${vp.cssHeight + vp.offsetY * 2}px`;
+  canvas.style.left = '0px';
+  canvas.style.top = '0px';
+  return { device, offsetX: Math.round(vp.offsetX * vp.dpr * RENDER_SCALE), offsetY: Math.round(vp.offsetY * vp.dpr * RENDER_SCALE) };
 }

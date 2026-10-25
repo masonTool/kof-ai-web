@@ -82,6 +82,9 @@ const IS_TOUCH =
     new URLSearchParams(window.location.search).get('touch') === '1');
 
 let device = 1;
+/** 内容在画布内的偏移（铺满窗口后两侧留白，内容居中） */
+let deviceOffsetX = 0;
+let deviceOffsetY = 0;
 /** 手台句柄：`resize()` 在模块初始化阶段就会跑，那时 `controls` 还没建好（TDZ），所以走可变引用 */
 let padHandle: { layout(w: number, h: number, insets: SafeInsets): void } | null = null;
 
@@ -101,7 +104,11 @@ function resize(): void {
   const w = window.innerWidth;
   const h = window.innerHeight;
   const insets = safeInsets();
-  device = applyViewport(canvas!, computeViewport(w, h, window.devicePixelRatio, insets, { fill: IS_TOUCH }));
+  const vp = computeViewport(w, h, window.devicePixelRatio, insets, { fill: IS_TOUCH });
+  const applied = applyViewport(canvas!, vp, true);
+  device = applied.device;
+  deviceOffsetX = applied.offsetX;
+  deviceOffsetY = applied.offsetY;
   // 手台按屏幕短边比例重排（不是固定 px），旋转屏幕/切全屏都会走这里
   padHandle?.layout(w, h, insets);
   // 竖屏时盖一层"请横屏"，否则画面只有拇指大小
@@ -905,7 +912,11 @@ startAnimationLoop(
       }
     },
     render: () => {
-      raw.setTransform(device, 0, 0, device, 0, 0);
+      // 先按画布坐标铺一层背景（两侧留白用这个颜色，不是纯黑），再切到内容坐标系
+      raw.setTransform(1, 0, 0, 1, 0, 0);
+      raw.fillStyle = '#0a0e16';
+      raw.fillRect(0, 0, raw.canvas.width, raw.canvas.height);
+      raw.setTransform(device, 0, 0, device, deviceOffsetX, deviceOffsetY);
       raw.fillStyle = '#05070a';
       raw.fillRect(0, 0, VIEW_WIDTH, VIEW_HEIGHT);
 
