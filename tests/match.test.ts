@@ -413,3 +413,50 @@ describe('招式名横幅', () => {
     expect(m.moveBanner?.side).toBe(2);
   });
 });
+
+describe('必杀技的特效存在感', () => {
+  const mk = (): Match => new Match(KYO, IORI, { introFrames: 1, roundEndFrames: 3 }, 21);
+  const toFight = (m: Match): void => {
+    while (m.phase === 'intro') m.step([{ held: 0 }, { held: 0 }]);
+  };
+
+  it('必杀起手会在身前炸一圈属性冲击（普通技没有）', () => {
+    const plain = mk();
+    toFight(plain);
+    plain.p1.startMove(KYO.moves['5C']!);
+    plain.step([{ held: 0 }, { held: 0 }]);
+    expect(plain.fx.impacts).toHaveLength(0);
+
+    const m = mk();
+    toFight(m);
+    m.p1.startMove(KYO.moves['236A']!);
+    m.step([{ held: 0 }, { held: 0 }]);
+    expect(m.fx.impacts.length).toBeGreaterThan(0);
+    // 冲击点偏向出手方向，不是身体正中
+    const im = m.fx.impacts[0]!;
+    expect(im.dir).toBe(m.p1.facing);
+  });
+
+  it('超必杀起手走原演出（闪白 + 定格），不和普通必杀抢同一套特效', () => {
+    const m = mk();
+    toFight(m);
+    m.p1.meter = 100;
+    m.p1.startMove(KYO.moves['236236AC']!);
+    m.step([{ held: 0 }, { held: 0 }]);
+    expect(m.superFlash).toBeGreaterThan(0);
+  });
+
+  it('必杀命中按重击规模演（伤害不到 60 也要有重击的打击感）', () => {
+    const m = mk();
+    toFight(m);
+    m.p2.x = m.p1.x + 20;
+    m.p1.startMove(KYO.moves['236A']!);
+    let heavy = false;
+    for (let i = 0; i < 40; i++) {
+      m.step([{ held: 0 }, { held: 0 }]);
+      if (m.fx.impacts.some((im) => im.heavy)) heavy = true;
+      if (m.lastHits.length > 0) break;
+    }
+    expect(heavy).toBe(true);
+  });
+});

@@ -237,7 +237,20 @@ export class Match {
     // 不管触没触发演出，标记都要清掉：它只表示"这一帧刚起手"
     for (const f of this.fighters) f.justStartedMove = null;
     if (this.superFlash > 0) return;
-    if (!started.some((f) => f.move?.kind === 'super')) return;
+
+    // 普通必杀起手：属性色的冲击环 + 轻微震屏（没有定格，不能抢超必杀的戏）
+    const special = started.find((f) => f.move?.kind === 'special');
+    if (!started.some((f) => f.move?.kind === 'super')) {
+      if (!special) return;
+      // 起手点在角色身前一点：贴在拳/脚出手的位置，而不是身体中心
+      this.fx.spawnImpact(special.x + special.facing * 12, special.y - 38, {
+        style: special.move?.fx ?? 'none',
+        dir: special.facing,
+      });
+      this.cam.shake(3, 1.2);
+      return;
+    }
+
     this.superFlash = SUPER_FLASH_FRAMES;
     this.superHitFired = false; // 这一发还没演过命中特写
     this.cam.shake(SUPER_FLASH_FRAMES, 3.5);
@@ -292,7 +305,9 @@ export class Match {
           this.p2.addHitstop(SUPER_HIT_FREEZE);
           this.world.emit('superhit', { x: h.x, y: h.y });
         }
-        const heavy = h.hit.damage >= 60;
+        // 必杀命中一律按重击规模演出：必杀的伤害不一定到 60，但打击感必须是重的那一档
+        const special = h.attacker.move?.kind === 'special' || h.attacker.move?.kind === 'super';
+        const heavy = h.hit.damage >= 60 || special;
         this.fx.spawnHit(h.x, h.y, { heavy, counter: h.counter, style: h.style });
         this.fx.spawnImpact(h.x, h.y, { heavy, counter: h.counter, style: h.style, dir });
         // 震屏：重击更狠，反击再加一点
