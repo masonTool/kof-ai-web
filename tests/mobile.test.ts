@@ -2,6 +2,13 @@ import { FakeCtx } from './helpers/fake-ctx';
 import { describe, expect, it } from 'vitest';
 import { LOGICAL_HEIGHT, LOGICAL_WIDTH, computeViewport } from '../src/render/scale';
 import {
+  setViewWidthByAspect,
+  VIEW_HEIGHT,
+  VIEW_WIDTH,
+  VIEW_WIDTH_MAX,
+  VIEW_WIDTH_MIN,
+} from '../src/sim/constants';
+import {
   BACK_BUTTON,
   backButtonKey,
   drawBackButton,
@@ -141,5 +148,52 @@ describe('返回按钮', () => {
     drawBackButton(ctx);
     expect(ctx.texts.some((t) => String(t.text).includes('返回'))).toBe(true);
     expect(ctx.globalAlpha).toBe(1);
+  });
+});
+
+describe('宽屏适配：可视宽度随长宽比变化', () => {
+  const reset = (): void => void setViewWidthByAspect(320, 224);
+
+  it('16:9 屏幕上看到 398×224（比 4:3 宽，不留左右黑边）', () => {
+    reset();
+    expect(setViewWidthByAspect(1280, 720)).toBe(398);
+    expect(VIEW_WIDTH).toBe(398);
+  });
+
+  it('4:3 屏幕保持 320（不多看也不少看）', () => {
+    expect(setViewWidthByAspect(640, 448)).toBe(320);
+  });
+
+  it('超宽屏夹在上限，竖屏夹在下限（不会露出舞台外）', () => {
+    expect(setViewWidthByAspect(2560, 720)).toBe(VIEW_WIDTH_MAX);
+    expect(setViewWidthByAspect(390, 844)).toBe(VIEW_WIDTH_MIN);
+  });
+
+  it('手机（铺满模式）下画面正好吃满窗口：加宽就是为了这个', () => {
+    setViewWidthByAspect(1280, 720);
+    const vp = computeViewport(1280, 720, 1, undefined, { fill: true });
+    expect(vp.cssWidth).toBeCloseTo(1280, -0.5);
+    expect(vp.cssHeight).toBeCloseTo(720, -0.5);
+    expect(vp.cssWidth / vp.cssHeight).toBeCloseTo(VIEW_WIDTH / VIEW_HEIGHT, 2);
+    reset();
+  });
+
+  it('桌面仍走整数倍（像素画要锐利），但因为看宽了，留白比 4:3 时更少', () => {
+    setViewWidthByAspect(1280, 720);
+    const wide = computeViewport(1280, 720, 1);
+    setViewWidthByAspect(640, 448); // 回到 4:3
+    const narrow = computeViewport(1280, 720, 1);
+    expect(wide.scale).toBeGreaterThanOrEqual(narrow.scale);
+    expect(wide.cssWidth).toBeGreaterThan(narrow.cssWidth);
+    reset();
+  });
+
+  it('高度不变：加宽只影响"看多宽"，判定/跳跃的垂直空间没动', () => {
+    reset();
+    const before = VIEW_HEIGHT;
+    setViewWidthByAspect(2560, 720);
+    expect(VIEW_HEIGHT).toBe(before);
+    expect(VIEW_HEIGHT).toBe(224);
+    reset();
   });
 });

@@ -53,7 +53,7 @@ import {
   hitTestOptionRow,
   hitTestPauseItem,
 } from './render/screens';
-import { VIEW_HEIGHT, VIEW_WIDTH } from './sim/constants';
+import { setViewWidthByAspect, VIEW_HEIGHT, VIEW_WIDTH } from './sim/constants';
 import { Btn } from './core/input';
 import { AppFlow } from './ui/flow';
 import { afterStage, isCleared, newArcade, type ArcadeState } from './ui/arcade';
@@ -132,6 +132,8 @@ function resize(): void {
   const w = window.innerWidth;
   const h = window.innerHeight;
   const insets = safeInsets();
+  // 先按窗口长宽比定"看多宽"，再算缩放：宽屏看 398×224 而不是 320×224（不留黑边）
+  setViewWidthByAspect(w, h);
   const vp = computeViewport(w, h, window.devicePixelRatio, insets, { fill: IS_TOUCH });
   const applied = applyViewport(canvas!, vp, true);
   device = applied.device;

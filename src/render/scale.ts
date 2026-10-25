@@ -6,7 +6,8 @@
 import { VIEW_HEIGHT, VIEW_WIDTH } from '../sim/constants';
 
 /** 逻辑分辨率（唯一来源在 sim/constants.ts） */
-export const LOGICAL_WIDTH = VIEW_WIDTH;
+/** 设计基准宽度（固定 320）。当前可视宽度是 `VIEW_WIDTH`（会随屏幕变宽） */
+export const LOGICAL_WIDTH = 320;
 export const LOGICAL_HEIGHT = VIEW_HEIGHT;
 
 export interface Viewport {
@@ -81,10 +82,11 @@ export function computeViewport(
   // 可用区域要扣掉安全区，否则画面会被刘海/圆角切掉
   const usableW = Math.max(1, w - Math.max(0, insets.left) - Math.max(0, insets.right));
   const usableH = Math.max(1, h - Math.max(0, insets.top) - Math.max(0, insets.bottom));
-  const raw = Math.min(usableW / LOGICAL_WIDTH, usableH / LOGICAL_HEIGHT);
+  // 用当前可视宽度（宽屏时比 320 宽），这样长宽比能对上、不用留黑边
+  const raw = Math.min(usableW / VIEW_WIDTH, usableH / LOGICAL_HEIGHT);
   // 铺满模式：小数倍也接受（画布边缘会有轻微非整数缩放，手机上看不出来）
   const scale = opts.fill === true ? Math.max(raw, 0.1) : raw >= 1 ? Math.floor(raw) : Math.max(raw, 0.1);
-  const cssW = LOGICAL_WIDTH * scale;
+  const cssW = VIEW_WIDTH * scale;
   const cssH = LOGICAL_HEIGHT * scale;
   return {
     scale,

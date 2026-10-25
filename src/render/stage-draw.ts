@@ -252,7 +252,9 @@ function drawStageArt(ctx: Ctx2D, cam: Camera, stage: StageDef, art: StageArt): 
   const k = Math.max(ART_W / art.width, VIEW_HEIGHT / art.height);
   const dw = art.width * k;
   const dh = art.height * k;
-  ctx.drawImage(art.image, 0, 0, art.width, art.height, x + (ART_W - dw) / 2, VIEW_HEIGHT - dh, dw, dh);
+  // 底图整体上移 22px：让它的下缘藏进地面色带里——元宝出图右下角有平台水印，
+  // 宽屏时那一角会露在地面色带之上，肉眼能看见「…生成」字样
+  ctx.drawImage(art.image, 0, 0, art.width, art.height, x + (ART_W - dw) / 2, VIEW_HEIGHT - dh - 22, dw, dh);
 
   // 地面色带：盖住底图的下缘（含水印），同时给角色一个"踩实"的地面
   ctx.fillStyle = stage.ground;

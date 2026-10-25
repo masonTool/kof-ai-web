@@ -2,9 +2,41 @@
  * 模拟常量（数值不再散的到处都是）。
  * 坐标系：x 向右，y **向下**为正；角色原点是脚底中心，所以头顶是负 y。
  */
-/** 逻辑分辨率（MVS 320×224） */
-export const VIEW_WIDTH = 320;
+/**
+ * 设计基准分辨率（MVS 320×224）。
+ *
+ * 宽屏设备上 `VIEW_WIDTH` 会被调大（看得到更多舞台），但**基准永远是 320**——
+ * 所有 "这个数是不是 320 的一半" 的判断都用它，别用会变的那个。
+ */
+export const DESIGN_VIEW_WIDTH = 320;
 export const VIEW_HEIGHT = 224;
+
+/**
+ * 当前可视宽度（逻辑单位）：16:9 屏幕上会比 320 宽，看到更多场景。
+ *
+ * 用 `let` + setter 而不是常量，是因为 ES module 的导入是**活绑定**：
+ * 各模块 `import { VIEW_WIDTH }` 拿到的会跟着变，不用把所有调用点改成函数调用。
+ * 高度永远 224（判定/跳跃都按它算），所以这里是唯一的自由度。
+ */
+export let VIEW_WIDTH = DESIGN_VIEW_WIDTH;
+
+/** 可视宽度的上下限（再宽就露出舞台外，再窄就是竖屏了） */
+export const VIEW_WIDTH_MIN = DESIGN_VIEW_WIDTH;
+export const VIEW_WIDTH_MAX = 480;
+
+/**
+ * 按窗口长宽比设置可视宽度。
+ *
+ * 为什么不加宽就得留黑边：世界是 224 高、4:3 的内容，放到 16:9 的屏幕上
+ * 要么左右留白，要么看宽一点。加宽只影响"看得见多少"，判定盒/跳跃/帧数据全不变。
+ */
+export function setViewWidthByAspect(cssWidth: number, cssHeight: number): number {
+  const aspect = cssWidth / Math.max(1, cssHeight);
+  const raw = Math.round(VIEW_HEIGHT * aspect);
+  const next = Math.min(VIEW_WIDTH_MAX, Math.max(VIEW_WIDTH_MIN, raw));
+  VIEW_WIDTH = next;
+  return next;
+}
 
 /** 地面线（脚底 y 的静止值），同时也是地面在屏幕上的行号 */
 export const GROUND_Y = 200;
