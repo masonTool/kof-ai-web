@@ -306,6 +306,13 @@ function drawStageArt(ctx: Ctx2D, cam: Camera, stage: StageDef, art: StageArt): 
   ctx.fillRect(0, GROUND_Y, VIEW_WIDTH, 1);
 }
 
+/** 天气总开关（设置项同步过来；关掉就不画，省电也免得挡视线） */
+let weatherEnabled = true;
+
+export function setWeatherEnabled(on: boolean): void {
+  weatherEnabled = on;
+}
+
 /** 天气层的帧计数：渲染层自增即可（不参与模拟，回放一致性不受影响） */
 let weatherTick = 0;
 
@@ -329,7 +336,7 @@ function hash01(i: number, salt: number): number {
  */
 export function drawWeather(ctx: Ctx2D, cam: Camera, stage: StageDef): void {
   const kind = stage.weather;
-  if (!kind) return;
+  if (!kind || !weatherEnabled) return;
   weatherTick++;
   const t = weatherTick;
   const shift = cam.x * PARALLAX_MID;

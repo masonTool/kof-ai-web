@@ -499,3 +499,35 @@ describe('必杀技对对手的影响', () => {
     expect(airborne).toBe(true);
   });
 });
+
+describe('打击顿帧分级', () => {
+  it('必杀命中顿帧比普通技长，超必杀更长', () => {
+    const hitstopOf = (moveId: '5C' | '236A' | '236236AC', meter = 0): number => {
+      const m = new Match(KYO, IORI, { introFrames: 1, roundEndFrames: 3 }, 41);
+      while (m.phase === 'intro') m.step([{ held: 0 }, { held: 0 }]);
+      m.p1.meter = meter;
+      m.p2.x = m.p1.x + 18;
+      m.p1.startMove(KYO.moves[moveId]!);
+      for (let i = 0; i < 60; i++) {
+        m.step([{ held: 0 }, { held: 0 }]);
+        if (m.lastHits.length > 0) break;
+      }
+      return m.p2.hitstop;
+    };
+    const plain = hitstopOf('5C');
+    const special = hitstopOf('236A');
+    const sup = hitstopOf('236236AC', 100);
+    expect(special).toBeGreaterThan(plain);
+    expect(sup).toBeGreaterThan(special);
+  });
+
+  it('不会污染招式数据：同一个必杀打两次，顿帧不累加', () => {
+    const before = KYO.moves['236A']!.hits[0]!.hitstop;
+    const m = new Match(KYO, IORI, { introFrames: 1, roundEndFrames: 3 }, 42);
+    while (m.phase === 'intro') m.step([{ held: 0 }, { held: 0 }]);
+    m.p2.x = m.p1.x + 18;
+    m.p1.startMove(KYO.moves['236A']!);
+    for (let i = 0; i < 40; i++) m.step([{ held: 0 }, { held: 0 }]);
+    expect(KYO.moves['236A']!.hits[0]!.hitstop).toBe(before);
+  });
+});

@@ -27,6 +27,8 @@ export interface GameSettings {
   showFrameData: boolean;
   /** 显示判定框 */
   showBoxes: boolean;
+  /** 天气粒子（雨/落花/浮尘）：有人嫌挡视线，也给省电留个开关 */
+  weatherFx: boolean;
   /** 键盘预设下标（见 input/keyboard.ts 的 KEY_PRESETS） */
   keyPreset: number;
   /** 像素粒度：1 = 最细（默认）、2/4 = 越来越粗 */
@@ -45,6 +47,7 @@ export const DEFAULT_SETTINGS: GameSettings = {
   bgmVolume: 0.25,
   showFrameData: false,
   showBoxes: false,
+  weatherFx: true,
   keyPreset: 0,
   pixelSize: 0.5,
   customKeys: { p1: {}, p2: {} },
@@ -66,6 +69,7 @@ export type OptionKey =
   | 'bgmVolume'
   | 'showFrameData'
   | 'showBoxes'
+  | 'weatherFx'
   | 'keyPreset'
   | 'pixelSize'
   | 'padCustom';
@@ -198,6 +202,7 @@ export function sanitize(raw: unknown): GameSettings {
     ),
     showFrameData: typeof obj['showFrameData'] === 'boolean' ? obj['showFrameData'] : DEFAULT_SETTINGS.showFrameData,
     showBoxes: typeof obj['showBoxes'] === 'boolean' ? obj['showBoxes'] : DEFAULT_SETTINGS.showBoxes,
+    weatherFx: typeof obj['weatherFx'] === 'boolean' ? obj['weatherFx'] : DEFAULT_SETTINGS.weatherFx,
     keyPreset: Math.round(clampNumber(obj['keyPreset'], [0, KEY_PRESETS.length - 1], DEFAULT_SETTINGS.keyPreset)),
     pixelSize: PIXEL_SIZES.includes(Number(obj['pixelSize'])) ? Number(obj['pixelSize']) : DEFAULT_SETTINGS.pixelSize,
     customKeys: sanitizeCustom(obj['customKeys']),
@@ -237,6 +242,7 @@ export function optionRows(s: GameSettings): OptionRow[] {
     { key: 'sfxVolume', label: '音量·音效', value: pct(s.sfxVolume) },
     { key: 'bgmVolume', label: '音量·音乐', value: pct(s.bgmVolume) },
     { key: 'showFrameData', label: '帧数面板', value: s.showFrameData ? '开' : '关' },
+    { key: 'weatherFx', label: '天气效果', value: s.weatherFx ? '开' : '关' },
     { key: 'showBoxes', label: '判定框', value: s.showBoxes ? '开' : '关' },
     { key: 'keyPreset', label: '键盘布局', value: KEY_PRESETS[s.keyPreset]?.name ?? '默认' },
     { key: 'pixelSize', label: '像素粒度', value: `${s.pixelSize}×${s.pixelSize}` },
@@ -309,6 +315,9 @@ export class SettingsStore {
         break;
       case 'showBoxes':
         s.showBoxes = !s.showBoxes;
+        break;
+      case 'weatherFx':
+        s.weatherFx = !s.weatherFx;
         break;
       case 'keyPreset':
         s.keyPreset = ((s.keyPreset + dir) % KEY_PRESETS.length + KEY_PRESETS.length) % KEY_PRESETS.length;

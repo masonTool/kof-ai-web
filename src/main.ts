@@ -22,6 +22,7 @@ import { lookFor } from './render/looks';
 import { drawFrame } from './render/renderer';
 import { ensurePortraits } from './render/portraits';
 import { ensureStageArt } from './render/stage-art';
+import { setWeatherEnabled } from './render/stage-draw';
 import { ensureTitleArt } from './render/title-art';
 import { ensureCharSheets, installSheetProvider } from './render/sprite-loader';
 import { applyViewport, computeViewport, shouldRotate, type SafeInsets } from './render/scale';
@@ -969,6 +970,7 @@ startAnimationLoop(
           flow.nextArcadeStage(); // 进下一场的 VS 演出，下帧会重新 startMatch
         }
       }
+      setWeatherEnabled(settings.settings.weatherFx);
       cueInterfaceSounds();
       bgm.setTrack(trackFor(flow.screen));
       if (flow.screen !== 'fight') bgm.setMood('calm');

@@ -140,19 +140,22 @@ export interface HitCandidate {
  * 填的；必杀技用同一套数值，打在身上和普通拳没区别——用户反馈"技能对对手没有影响"。
  * 所以按招式类型在结算处加成，而不是去改 29 个角色的上百条 HitDef。
  */
-function moveWeight(attacker: Fighter): { stun: number; push: number; launch: number } {
+function moveWeight(attacker: Fighter): { stun: number; push: number; launch: number; stop: number } {
   const kind = attacker.move?.kind;
-  if (kind === 'super') return { stun: 8, push: 1.55, launch: -3.4 };
-  if (kind === 'special') return { stun: 4, push: 1.3, launch: 0 };
-  return { stun: 0, push: 1, launch: 0 };
+  if (kind === 'super') return { stun: 8, push: 1.55, launch: -3.4, stop: 6 };
+  if (kind === 'special') return { stun: 4, push: 1.3, launch: 0, stop: 2 };
+  return { stun: 0, push: 1, launch: 0, stop: 0 };
 }
 
 export function applyHit(world: World, c: HitCandidate): HitResolution {
   const { attacker, defender, hit } = c;
   // 近身命中的风格来自招式；道具命中由调用方从道具身上带过来（主人可能已经收招了）
   const style: FxStyle = c.style ?? styleOfMove(attacker.char.id, attacker.move);
-  attacker.addHitstop(hit.hitstop);
-  defender.addHitstop(hit.hitstop);
+  // 顿帧分级：必杀"砸"下去和轻拳停一样久，手感上就分不出轻重。
+  // 注意不能写回 `hit.hitstop`——那是 MoveDef 里的对象，改一次会永久污染招式数据
+  const stopTotal = hit.hitstop + moveWeight(attacker).stop;
+  attacker.addHitstop(stopTotal);
+  defender.addHitstop(stopTotal);
 
   const comboBefore = defender.combo.hits;
 

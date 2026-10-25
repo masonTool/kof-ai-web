@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { sanitize } from '../src/ui/settings';
 import { GROUND_Y, STAGE_LEFT, STAGE_RIGHT, VIEW_HEIGHT, VIEW_WIDTH } from '../src/sim/constants';
 import {
   CAMERA_MAX_STEP,
@@ -18,6 +19,7 @@ import {
   drawStage,
   drawWeather,
   resetWeatherTick,
+  setWeatherEnabled,
   stageById,
 } from '../src/render/stage-draw';
 import { FakeCtx } from './helpers/fake-ctx';
@@ -363,5 +365,31 @@ describe('天气层', () => {
   it('画完把 globalAlpha 还原（否则后面整屏半透明）', () => {
     resetWeatherTick();
     for (const id of ['skyline', 'valley', 'arena']) expect(draw(id).globalAlpha).toBe(1);
+  });
+});
+
+describe('天气开关', () => {
+  it('关掉后一个粒子都不画（挡视线/省电）', () => {
+    setWeatherEnabled(false);
+    resetWeatherTick();
+    const ctx = new FakeCtx();
+    drawWeather(ctx, new Camera({ x: 100, zoom: 1 }), stageById('skyline'));
+    expect(ctx.rects).toHaveLength(0);
+    expect(ctx.calls).not.toContain('stroke');
+    setWeatherEnabled(true);
+  });
+
+  it('重新打开能恢复（开关不是一次性的）', () => {
+    setWeatherEnabled(true);
+    resetWeatherTick();
+    const ctx = new FakeCtx();
+    drawWeather(ctx, new Camera({ x: 100, zoom: 1 }), stageById('skyline'));
+    expect(ctx.calls).toContain('stroke');
+  });
+
+  it('设置里的字段默认开，消毒时保留布尔值', () => {
+    expect(sanitize({}).weatherFx).toBe(true);
+    expect(sanitize({ weatherFx: false }).weatherFx).toBe(false);
+    expect(sanitize({ weatherFx: 'yes' }).weatherFx).toBe(true); // 脏数据回落默认
   });
 });

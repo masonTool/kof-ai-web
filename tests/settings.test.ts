@@ -60,6 +60,7 @@ describe('消毒（读盘必过）', () => {
       cpuLevel: 'hard',
       sfxVolume: 0.5,
       bgmVolume: 0.5,
+      weatherFx: true,
       padCustom: {},
       showFrameData: true,
       showBoxes: false,
@@ -140,9 +141,11 @@ describe('循环切换', () => {
 });
 
 describe('选项屏的行', () => {
-  it('十行、有标签有值，音量为 0 显示静音', () => {
+  it('十一行、有标签有值，音量为 0 显示静音', () => {
     const rows = optionRows({ ...DEFAULT_SETTINGS, sfxVolume: 0 });
-    expect(rows).toHaveLength(10);
+    expect(rows).toHaveLength(11);
+    // 天气开关单独断言存在（顺序见 settings.ts，不在这里钉死整张表）
+    expect(rows.some((r) => r.key === 'weatherFx')).toBe(true);
     expect(rows.map((r) => r.key)).toEqual([
       'roundsToWin',
       'roundSeconds',
@@ -150,6 +153,7 @@ describe('选项屏的行', () => {
       'sfxVolume',
       'bgmVolume',
       'showFrameData',
+      'weatherFx',
       'showBoxes',
       'keyPreset',
       'pixelSize',
