@@ -37,9 +37,8 @@ import {
   drawMoveHint,
   drawDemoLabel,
   drawPadAdjustHint,
-  BACK_BUTTON,
-  backButtonKey,
-  drawBackButton,
+  MENU_BUTTON,
+  drawMenuButton,
   MOVES_BUTTON,
   drawMovesButton,
   drawResult,
@@ -64,7 +63,7 @@ import { comboDemoFor, flattenSteps, stepAt } from './ui/combo-demo';
 import { arcadeRules, arcadeTeam } from './ui/arcade-roster';
 import { ChallengeBoard } from './ui/challenges';
 import { KeyBindMenu } from './ui/keybind';
-import { PAUSE_ITEMS, PauseMenu } from './ui/pause';
+import { PauseMenu } from './ui/pause';
 import { SettingsStore, keymapFor, type StorageLike } from './ui/settings';
 import { TrainingSession, drawTrainingOverlay } from './ui/training';
 import { mountTouchControls } from './ui/touch-controls';
@@ -89,6 +88,22 @@ let device = 1;
 /** 内容在画布内的偏移（铺满窗口后两侧留白，内容居中） */
 let deviceOffsetX = 0;
 let deviceOffsetY = 0;
+
+/**
+ * 菜单上下文：对局/结算这类"正在推进世界"的界面不需要"返回上一级"，
+ * 标题/模式/选人/选项这类菜单界面才需要（它们原来靠左上角返回键）。
+ */
+function menuContextFor(screen: string): 'fight' | 'menu' {
+  if (screen === 'fight' || screen === 'result' || screen === 'continue' || screen === 'title') return 'fight';
+  return 'menu';
+}
+
+/** 打开系统菜单（任何界面都能叫出来） */
+function openMenu(): void {
+  pause.show(menuContextFor(flow.screen));
+  bgm.setDucked(true);
+  audio.play('confirm');
+}
 
 /** 进入手台位置调整（暂停菜单与选项屏共用） */
 function enterPadAdjust(): void {
@@ -511,21 +526,13 @@ window.addEventListener('keydown', (e) => {
         audio.play('menu');
       }
       break;
-    case 'KeyR':
-      if (match) {
-        if (match.phase === 'over') match.restart();
-        else match.softReset();
-      }
-      break;
     case 'Escape':
-      if (flow.screen === 'fight') {
-        pause.toggle();
-        bgm.setDucked(pause.open);
-      } else if (flow.screen === 'options') {
-        flow.screen = 'mode';
-      } else if (pause.open) {
+      // 任意界面都能叫出系统菜单（桌面快捷键；触屏用左下角「菜单」按钮）
+      if (pause.open) {
         pause.hide();
         bgm.setDucked(false);
+      } else {
+        openMenu();
       }
       break;
     default:
@@ -607,18 +614,15 @@ canvas.addEventListener('pointerdown', (e) => {
   const x = (px - deviceOffsetX) / device;
   const y = (py - deviceOffsetY) / device;
 
-  // 左上角「返回」：按各屏的返回键等于按一次对应按键
+  // 左下角「菜单」：触屏没有 Start 键，靠它叫出系统菜单
   if (
-    x >= BACK_BUTTON.x &&
-    x <= BACK_BUTTON.x + BACK_BUTTON.w &&
-    y >= BACK_BUTTON.y &&
-    y <= BACK_BUTTON.y + BACK_BUTTON.h
+    x >= MENU_BUTTON.x &&
+    x <= MENU_BUTTON.x + MENU_BUTTON.w &&
+    y >= MENU_BUTTON.y &&
+    y <= MENU_BUTTON.y + MENU_BUTTON.h
   ) {
-    const key = backButtonKey(flow.screen);
-    if (key) {
-      pad.press(key);
-      return;
-    }
+    openMenu();
+    return;
   }
 
   // 左下角「招式」开关
@@ -645,7 +649,7 @@ canvas.addEventListener('pointerdown', (e) => {
 
   // 暂停菜单盖在最上面，优先处理
   if (pause.open) {
-    const hit = hitTestPauseItem(x, y, PAUSE_ITEMS.length);
+    const hit = hitTestPauseItem(x, y, pause.items.length);
     if (hit >= 0) {
       pause.cursor = hit;
       pad.press('A');
@@ -873,13 +877,26 @@ startAnimationLoop(
         prevPauseHeld = p1In.held;
         if ((pressed & Btn.Up) !== 0) pause.move(-1);
         if ((pressed & Btn.Down) !== 0) pause.move(1);
+        // B 直接关菜单（等同"继续"），不用先移到第一项
+        if ((pressed & Btn.B) !== 0) {
+          pause.hide();
+          bgm.setDucked(false);
+          audio.play('cancel');
+          return;
+        }
         if ((pressed & (Btn.A | Btn.Start)) !== 0) {
           const action = pause.confirm();
           bgm.setDucked(false);
-          if (action === 'restart') match?.restart();
+          if (action === 'back') {
+            // 返回上一级：菜单界面才有这一项
+            if (flow.screen === 'select') flow.screen = 'mode';
+            else if (flow.screen === 'options') flow.screen = flow.optionsFrom;
+            else if (flow.screen === 'keybind') flow.screen = 'options';
+            audio.play('cancel');
+          }
           if (action === 'options') {
+            flow.optionsFrom = flow.screen === 'fight' ? 'fight' : 'mode';
             flow.screen = 'options';
-            flow.optionsFrom = 'fight';
             flow.optionCursor = 0;
           }
           if (action === 'pad') enterPadAdjust();
@@ -887,9 +904,20 @@ startAnimationLoop(
             flow.reset();
             match = null;
             training = null;
+            arcade = null;
           }
         }
         return;
+      }
+
+      // 任意界面按 B 叫出系统菜单（对局中 B 仍是轻脚，所以那里不放这条）
+      if (flow.screen !== 'fight') {
+        const pressedMenu = p1In.held & ~prevPauseHeld;
+        if ((pressedMenu & Btn.B) !== 0) {
+          prevPauseHeld = p1In.held;
+          openMenu();
+          return;
+        }
       }
       prevPauseHeld = p1In.held;
       const matchOver = match !== null && match.phase === 'over';
@@ -1053,7 +1081,7 @@ startAnimationLoop(
       }
 
       if (padAdjusting) drawPadAdjustHint(ctx, blink);
-      if (pause.open) drawPause(ctx, pause.cursor, blink);
+      if (pause.open) drawPause(ctx, pause, blink);
       // 招式清单：对局看 P1 当前角色，选人看光标角色
       if (moveListOpen && !pause.open) {
         const shown =
@@ -1065,7 +1093,7 @@ startAnimationLoop(
         if (shown) drawMoveList(ctx, shown.name, moveListFor(shown));
       }
       if (flow.screen === 'fight' || flow.screen === 'select') drawMovesButton(ctx, moveListOpen);
-      if (backButtonKey(flow.screen)) drawBackButton(ctx);
+      if (flow.screen !== 'title') drawMenuButton(ctx);
       if (demoFrames && flow.screen === 'fight') {
         const steps = comboDemoFor();
         const at = stepAt(demoStarts, Math.max(0, demoIndex - 1));

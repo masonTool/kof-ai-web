@@ -8,11 +8,7 @@ import {
   VIEW_WIDTH_MAX,
   VIEW_WIDTH_MIN,
 } from '../src/sim/constants';
-import {
-  BACK_BUTTON,
-  backButtonKey,
-  drawBackButton,
-  MOVE_HINT_TEXT,
+import {  MOVE_HINT_TEXT,
   drawMoveHint,
   HELP_BUTTON,
   HELP_PAGE_COUNT,
@@ -22,7 +18,7 @@ import {
   hitTestPauseItem,
 } from '../src/render/screens';
 import { MODE_ITEMS } from '../src/ui/flow';
-import { PAUSE_ITEMS } from '../src/ui/pause';
+import { menuItems } from '../src/ui/pause';
 
 describe('铺满模式（手机）', () => {
   it('手机上不取整数倍，画面尽量填满（整数倍会缩成 320×224 蹲在黑边里）', () => {
@@ -66,14 +62,14 @@ describe('菜单点选（触屏）', () => {
   });
 
   it('暂停菜单：点第 i 项返回 i', () => {
-    for (let i = 0; i < PAUSE_ITEMS.length; i++) {
-      expect(hitTestPauseItem(160, 100 + i * 24, PAUSE_ITEMS.length)).toBe(i);
+    for (let i = 0; i < menuItems('fight').length; i++) {
+      expect(hitTestPauseItem(160, 100 + i * 24, menuItems('fight').length)).toBe(i);
     }
-    expect(hitTestPauseItem(160, 60, PAUSE_ITEMS.length)).toBe(-1);
+    expect(hitTestPauseItem(160, 60, menuItems('fight').length)).toBe(-1);
   });
 
   it('相邻两行的命中带不重叠（点一个不会误选隔壁）', () => {
-    const n = PAUSE_ITEMS.length;
+    const n = menuItems('fight').length;
     for (let i = 0; i < n - 1; i++) {
       const a = 100 + i * 24;
       const b = 100 + (i + 1) * 24;
@@ -126,27 +122,42 @@ describe('首次必杀提示', () => {
   });
 });
 
-describe('返回按钮', () => {
-  it('每个需要返回的屏都有对应的键，对局/标题没有（那里不该出现返回）', () => {
-    expect(backButtonKey('mode')).toBe('B');
-    expect(backButtonKey('select')).toBe('B');
-    expect(backButtonKey('options')).toBe('B');
-    expect(backButtonKey('result')).toBe('A'); // 结算屏是"回标题"
-    expect(backButtonKey('fight')).toBeNull();
-    expect(backButtonKey('title')).toBeNull();
+describe('说明浮层', () => {
+  it('页数与文案齐全，越界也能取到合法页（不会因为索引越界画空白）', () => {
+    expect(HELP_PAGE_COUNT).toBeGreaterThanOrEqual(3);
+    for (let i = 0; i < HELP_PAGE_COUNT; i++) {
+      const p = helpPageText(i);
+      expect(p.title.length, String(i)).toBeGreaterThan(0);
+      expect(p.lines.length, String(i)).toBeGreaterThan(0);
+    }
+    expect(helpPageText(-5)).toEqual(helpPageText(0));
+    expect(helpPageText(99)).toEqual(helpPageText(HELP_PAGE_COUNT - 1));
   });
 
-  it('按钮在左上角且不越界', () => {
-    expect(BACK_BUTTON.x).toBeLessThan(60);
-    expect(BACK_BUTTON.y).toBeLessThan(20);
-    expect(BACK_BUTTON.x + BACK_BUTTON.w).toBeLessThanOrEqual(320);
-    expect(BACK_BUTTON.y + BACK_BUTTON.h).toBeLessThanOrEqual(224);
+  it('说明内容覆盖用户要的四件事：目标 / 操作 / 必杀 / 气槽', () => {
+    const all = Array.from({ length: HELP_PAGE_COUNT }, (_, i) => helpPageText(i).title + helpPageText(i).lines.join('')).join('');
+    for (const kw of ['3 打 3', 'A 轻拳', '↓↘→', '气']) {
+      expect(all, kw).toContain(kw);
+    }
   });
 
-  it('画出来带「返回」字样，且 alpha 还原', () => {
+  it('「怎么玩」按钮在屏幕内', () => {
+    expect(HELP_BUTTON.x + HELP_BUTTON.w).toBeLessThanOrEqual(320);
+    expect(HELP_BUTTON.y + HELP_BUTTON.h).toBeLessThanOrEqual(224);
+  });
+});
+
+describe('首次必杀提示', () => {
+  it('提示文案点名了「招式」入口，玩家知道去哪儿看', () => {
+    expect(MOVE_HINT_TEXT).toContain('招式');
+    expect(MOVE_HINT_TEXT).toMatch(/L|点/);
+  });
+
+  it('能画出来（底板 + 文字），且会把 globalAlpha 还原', () => {
     const ctx = new FakeCtx();
-    drawBackButton(ctx);
-    expect(ctx.texts.some((t) => String(t.text).includes('返回'))).toBe(true);
+    drawMoveHint(ctx, 1);
+    expect(ctx.texts.some((t) => String(t.text).includes('招式'))).toBe(true);
+    expect(ctx.rects.length).toBeGreaterThanOrEqual(1);
     expect(ctx.globalAlpha).toBe(1);
   });
 });

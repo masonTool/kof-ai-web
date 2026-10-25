@@ -5,12 +5,12 @@
 import type { CharDef } from '../data/schema';
 import { VIEW_HEIGHT, VIEW_WIDTH } from '../sim/constants';
 import { MODE_ITEMS, gridColumns, type AppFlow } from '../ui/flow';
-import { PAUSE_ITEMS } from '../ui/pause';
 import type { ChallengeBoard } from '../ui/challenges';
 import type { KeyBindMenu } from '../ui/keybind';
 import { KEY_ACTIONS, keyLabelFor, type GameSettings } from '../ui/settings';
 import type { Ctx2D } from './ctx';
 import type { ArcadeResultModel } from '../ui/arcade-result';
+import type { SystemMenu } from '../ui/pause';
 import type { MoveEntry } from '../ui/movelist';
 import { drawFighter } from './fighter-draw';
 import { portraitFor } from './portraits';
@@ -123,48 +123,35 @@ export function helpPageText(page: number): HelpPageView {
   return p;
 }
 
-/** 左上角「返回」按钮的命中区域（逻辑坐标） */
-export const BACK_BUTTON = { x: 4, y: 4, w: 40, h: 16 } as const;
-
 /**
- * 「返回」按钮按下去等于按哪个键。
+ * 左下角「菜单」按钮：触屏没有 Start 键，靠它叫出系统菜单。
  *
- * 各屏的返回键本来就不统一（选人/模式/选项是 B，结算屏是 A 回标题），
- * 所以这里把映射收成一张表，而不是在点击处写一串 if。
+ * 放在「招式」按钮右边一格：两者都在画面下沿，不挡站位，也不和手台的摇杆/四键重叠。
  */
-export function backButtonKey(screen: string): 'A' | 'B' | null {
-  if (screen === 'mode' || screen === 'select' || screen === 'options' || screen === 'keybind') return 'B';
-  if (screen === 'result' || screen === 'continue') return 'A';
-  return null;
-}
+export const MENU_BUTTON = { x: 52, y: 204, w: 40, h: 15 } as const;
 
-/** 画左上角「返回」（只在需要它的屏上调用） */
-export function drawBackButton(ctx: Ctx2D): void {
+export function drawMenuButton(ctx: Ctx2D): void {
   ctx.globalAlpha = 0.9;
   ctx.fillStyle = 'rgba(10,14,20,0.72)';
-  ctx.fillRect(BACK_BUTTON.x, BACK_BUTTON.y, BACK_BUTTON.w, BACK_BUTTON.h);
+  ctx.fillRect(MENU_BUTTON.x, MENU_BUTTON.y, MENU_BUTTON.w, MENU_BUTTON.h);
   ctx.strokeStyle = SCREEN_COLORS.dim;
   ctx.lineWidth = 1;
-  ctx.strokeRect(BACK_BUTTON.x + 0.5, BACK_BUTTON.y + 0.5, BACK_BUTTON.w - 1, BACK_BUTTON.h - 1);
+  ctx.strokeRect(MENU_BUTTON.x + 0.5, MENU_BUTTON.y + 0.5, MENU_BUTTON.w - 1, MENU_BUTTON.h - 1);
   ctx.globalAlpha = 1;
-  text(ctx, '‹ 返回', BACK_BUTTON.x + BACK_BUTTON.w / 2, BACK_BUTTON.y + 4, 'center', 6, SCREEN_COLORS.text);
+  text(ctx, '菜单', MENU_BUTTON.x + MENU_BUTTON.w / 2, MENU_BUTTON.y + 4, 'center', 6, SCREEN_COLORS.text);
 }
 
-/** 手台位置调整中的提示条 */
+/** 手台位置调整时的顶部提示 */
 export function drawPadAdjustHint(ctx: Ctx2D, blinkOn: boolean): void {
-  const y = 4;
-  ctx.globalAlpha = 0.9;
+  ctx.globalAlpha = 0.86;
   ctx.fillStyle = '#05070a';
-  ctx.fillRect(0, y, VIEW_WIDTH, 26);
+  ctx.fillRect(0, 0, VIEW_WIDTH, 40);
   ctx.globalAlpha = 1;
-  ctx.strokeStyle = SCREEN_COLORS.gold;
-  ctx.lineWidth = 1;
-  ctx.strokeRect(0.5, y + 0.5, VIEW_WIDTH - 1, 25);
-  text(ctx, '拖动摇杆和按键调整位置', VIEW_WIDTH / 2, y + 6, 'center', 7, SCREEN_COLORS.gold);
-  if (blinkOn) text(ctx, '点画面任意处保存', VIEW_WIDTH / 2, y + 16, 'center', 6, SCREEN_COLORS.text);
+  text(ctx, '拖动摇杆和按键调整位置', VIEW_WIDTH / 2, 12, 'center', 8, SCREEN_COLORS.gold);
+  if (blinkOn) text(ctx, '点画面任意处保存', VIEW_WIDTH / 2, 26, 'center', 6, SCREEN_COLORS.text);
 }
 
-/** 连招演示的浮标：左上角显示"正在演示第几步" */
+/** 连招演示的浮标：显示"正在演示第几步" */
 export function drawDemoLabel(ctx: Ctx2D, label: string, step: number, total: number): void {
   ctx.globalAlpha = 0.9;
   ctx.fillStyle = '#05070a';
@@ -589,22 +576,34 @@ export function drawChallengePanel(ctx: Ctx2D, board: ChallengeBoard): void {
   text(ctx, `${board.doneCount}/${board.runs.length}`, 168, y, 'right', 6, SCREEN_COLORS.dim);
 }
 
-export function drawPause(ctx: Ctx2D, cursor: number, blinkOn: boolean): void {
-  ctx.fillStyle = 'rgba(5,7,10,0.72)';
+export function drawPause(ctx: Ctx2D, menu: SystemMenu, blinkOn: boolean): void {
+  const items = menu.items;
+  // 先整屏压暗，再给菜单本身一块**不透明**底板：
+  // 只压暗的话，背后的模式列表会从字缝里透上来，两层文字叠在一起根本读不清
+  ctx.fillStyle = 'rgba(5,7,10,0.82)';
   ctx.fillRect(0, 0, VIEW_WIDTH, VIEW_HEIGHT);
-  text(ctx, 'PAUSE', VIEW_WIDTH / 2, 54, 'center', 16, SCREEN_COLORS.accent);
+  const gap = items.length > 4 ? 22 : 26;
+  // 面板高度要把底部提示也包进去，否则提示会掉到面板外
+  const panelH = 52 + items.length * gap + 16;
+  ctx.fillStyle = '#080b11';
+  ctx.fillRect(28, 26, VIEW_WIDTH - 56, panelH);
+  ctx.strokeStyle = SCREEN_COLORS.accent;
+  ctx.lineWidth = 1;
+  ctx.strokeRect(28.5, 26.5, VIEW_WIDTH - 57, panelH - 1);
+  text(ctx, '菜单', VIEW_WIDTH / 2, 46, 'center', 14, SCREEN_COLORS.accent);
 
-  PAUSE_ITEMS.forEach((item, i) => {
-    const y = 100 + i * 24;
-    const active = cursor === i;
+  const top = 82;
+  items.forEach((item, i) => {
+    const y = top + i * gap;
+    const active = menu.cursor === i;
     if (active) {
       ctx.fillStyle = 'rgba(255,91,61,0.22)';
-      ctx.fillRect(84, y - 4, VIEW_WIDTH - 168, 20);
+      ctx.fillRect(72, y - 6, VIEW_WIDTH - 144, gap - 2);
     }
     text(ctx, item.label, VIEW_WIDTH / 2, y, 'center', active ? 11 : 9, active ? SCREEN_COLORS.text : SCREEN_COLORS.dim);
   });
 
-  if (blinkOn) text(ctx, '点击选择 · A 确认', VIEW_WIDTH / 2, 194, 'center', 6, SCREEN_COLORS.dim);
+  if (blinkOn) text(ctx, '↑↓ 选择 · A 确认 · B 返回', VIEW_WIDTH / 2, VIEW_HEIGHT - 24, 'center', 6, SCREEN_COLORS.dim);
 }
 
 /**
