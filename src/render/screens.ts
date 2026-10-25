@@ -90,7 +90,7 @@ export function drawTitle(ctx: Ctx2D, blinkOn: boolean): void {
   text(ctx, 'WEB REMAKE', VIEW_WIDTH / 2, 94, 'center', 9, SCREEN_COLORS.gold);
 
   if (blinkOn) {
-    text(ctx, '按 A 开始 · 点屏幕也可', VIEW_WIDTH / 2, 132, 'center', 9, SCREEN_COLORS.text);
+    text(ctx, '点击屏幕开始', VIEW_WIDTH / 2, 132, 'center', 9, SCREEN_COLORS.text);
   }
   // 底部操作说明压在火焰上会看不清，垫一条半透明暗带（有插图时才需要）
   if (art) {
@@ -190,7 +190,7 @@ export function drawSelect(ctx: Ctx2D, flow: AppFlow, blinkOn: boolean): void {
     text(ctx, nameOf(cursorIdx), VIEW_WIDTH / 2, 196, 'center', 9, SCREEN_COLORS.text);
   }
 
-  const label = flow.locked[0] ? '已确定 · B/D 重选' : 'A/C 确定 · 方向键选人';
+  const label = flow.locked[0] ? '已确定 · B/D 重选' : '点格子选人 · A 确认';
   if (blinkOn || flow.locked[0]) text(ctx, label, VIEW_WIDTH / 2, 200, 'center', 7, SCREEN_COLORS.text);
   text(ctx, '点击角色格子也能选', VIEW_WIDTH / 2, 212, 'center', 6, SCREEN_COLORS.dim);
 }
@@ -264,7 +264,7 @@ export function drawMode(ctx: Ctx2D, flow: AppFlow, blinkOn: boolean): void {
     text(ctx, item.label, VIEW_WIDTH / 2, y, 'center', active ? 11 : 9, active ? SCREEN_COLORS.text : SCREEN_COLORS.dim);
   });
 
-  if (blinkOn) text(ctx, 'A 确定 · ↑↓ 选择', VIEW_WIDTH / 2, 194, 'center', 7, SCREEN_COLORS.dim);
+  if (blinkOn) text(ctx, '点击选项 · A 确定', VIEW_WIDTH / 2, 194, 'center', 7, SCREEN_COLORS.dim);
 }
 
 export function drawOptions(ctx: Ctx2D, flow: AppFlow): void {
@@ -294,7 +294,7 @@ export function drawOptions(ctx: Ctx2D, flow: AppFlow): void {
   text(ctx, '按键设置', 32, y, 'left', 7, active ? SCREEN_COLORS.text : SCREEN_COLORS.dim);
   text(ctx, '进入 ▶', VIEW_WIDTH - 32, y, 'right', 7, active ? SCREEN_COLORS.accent : SCREEN_COLORS.text);
 
-  text(ctx, '←→ 或 A 修改 · B 返回', VIEW_WIDTH / 2, 210, 'center', 6, SCREEN_COLORS.dim);
+  text(ctx, '点击一行修改 · B 返回', VIEW_WIDTH / 2, 210, 'center', 6, SCREEN_COLORS.dim);
 }
 
 export function drawContinue(ctx: Ctx2D, flow: AppFlow, blinkOn: boolean): void {
@@ -361,7 +361,42 @@ export function drawPause(ctx: Ctx2D, cursor: number, blinkOn: boolean): void {
     text(ctx, item.label, VIEW_WIDTH / 2, y, 'center', active ? 11 : 9, active ? SCREEN_COLORS.text : SCREEN_COLORS.dim);
   });
 
-  if (blinkOn) text(ctx, '↑↓ 选择 · A 确认 · Esc 返回游戏', VIEW_WIDTH / 2, 194, 'center', 6, SCREEN_COLORS.dim);
+  if (blinkOn) text(ctx, '点击选择 · A 确认', VIEW_WIDTH / 2, 194, 'center', 6, SCREEN_COLORS.dim);
+}
+
+/**
+ * 菜单行的命中测试（触屏用）。
+ *
+ * 三张屏的行距、起始 y、命中带高度都写在各自的 draw 里，这里必须和它们对齐——
+ * 所以三个函数紧挨着各自的布局常量写在一起，改布局时一眼能看到。
+ */
+export function hitTestModeItem(x: number, y: number): number {
+  if (x < 40 || x > VIEW_WIDTH - 40) return -1;
+  for (let i = 0; i < MODE_ITEMS.length; i++) {
+    const rowY = 76 + i * 26;
+    // 上下各半个行距：相邻两行的命中带首尾相接，中间不留"点不到"的缝
+    if (y >= rowY - 8 && y < rowY + 18) return i;
+  }
+  return -1;
+}
+
+/** `rowCount` 含最后的"按键设置"那一行 */
+export function hitTestOptionRow(x: number, y: number, rowCount: number): number {
+  if (x < 16 || x > VIEW_WIDTH - 16) return -1;
+  for (let i = 0; i < rowCount; i++) {
+    const rowY = 52 + i * 19;
+    if (y >= rowY - 6 && y < rowY + 13) return i;
+  }
+  return -1;
+}
+
+export function hitTestPauseItem(x: number, y: number, itemCount: number): number {
+  if (x < 60 || x > VIEW_WIDTH - 60) return -1;
+  for (let i = 0; i < itemCount; i++) {
+    const rowY = 100 + i * 24;
+    if (y >= rowY - 8 && y < rowY + 16) return i;
+  }
+  return -1;
 }
 
 /** 选人格子命中测试（鼠标/触屏点选） */

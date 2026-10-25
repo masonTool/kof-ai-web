@@ -59,11 +59,22 @@ export function shouldRotate(cssWidth: number, cssHeight: number): boolean {
   return h > w * 1.15;
 }
 
+export interface ViewportOptions {
+  /**
+   * 铺满模式：不取整数倍，直接按比例铺（最大程度填满屏幕）。
+   *
+   * 桌面端保持整数倍（像素画才锐利）；手机端必须铺满——整数倍在 390 高的横屏上
+   * 只能取 1 倍，画布缩成 320×224 蹲在屏幕中间，四周全是黑边。
+   */
+  fill?: boolean;
+}
+
 export function computeViewport(
   cssWidth: number,
   cssHeight: number,
   dpr = 1,
   insets: SafeInsets = NO_INSETS,
+  opts: ViewportOptions = {},
 ): Viewport {
   const w = Math.max(1, Math.floor(cssWidth));
   const h = Math.max(1, Math.floor(cssHeight));
@@ -71,7 +82,8 @@ export function computeViewport(
   const usableW = Math.max(1, w - Math.max(0, insets.left) - Math.max(0, insets.right));
   const usableH = Math.max(1, h - Math.max(0, insets.top) - Math.max(0, insets.bottom));
   const raw = Math.min(usableW / LOGICAL_WIDTH, usableH / LOGICAL_HEIGHT);
-  const scale = raw >= 1 ? Math.floor(raw) : Math.max(raw, 0.1);
+  // 铺满模式：小数倍也接受（画布边缘会有轻微非整数缩放，手机上看不出来）
+  const scale = opts.fill === true ? Math.max(raw, 0.1) : raw >= 1 ? Math.floor(raw) : Math.max(raw, 0.1);
   const cssW = LOGICAL_WIDTH * scale;
   const cssH = LOGICAL_HEIGHT * scale;
   return {

@@ -37,6 +37,9 @@ import {
   drawTitle,
   drawVs,
   hitTestCell,
+  hitTestModeItem,
+  hitTestOptionRow,
+  hitTestPauseItem,
 } from './render/screens';
 import { VIEW_HEIGHT, VIEW_WIDTH } from './sim/constants';
 import { Btn } from './core/input';
@@ -56,6 +59,13 @@ const raw = canvas.getContext('2d', { alpha: false });
 if (!raw) throw new Error('无法创建 2D context');
 // CanvasRenderingContext2D 的 textAlign 等属性比我们声明的宽，需要在边界处断言一次
 const ctx = raw as unknown as Ctx2D;
+
+/** 触屏设备：手台、铺满、全屏、点选菜单都按这个开关走 */
+const IS_TOUCH =
+  typeof window !== 'undefined' &&
+  (window.matchMedia?.('(pointer: coarse)').matches === true ||
+    // 调试/演示用：`?touch=1` 在桌面浏览器里也能走触屏那套（铺满 + 点选）
+    new URLSearchParams(window.location.search).get('touch') === '1');
 
 let device = 1;
 /** 手台句柄：`resize()` 在模块初始化阶段就会跑，那时 `controls` 还没建好（TDZ），所以走可变引用 */
@@ -77,7 +87,7 @@ function resize(): void {
   const w = window.innerWidth;
   const h = window.innerHeight;
   const insets = safeInsets();
-  device = applyViewport(canvas!, computeViewport(w, h, window.devicePixelRatio, insets));
+  device = applyViewport(canvas!, computeViewport(w, h, window.devicePixelRatio, insets, { fill: IS_TOUCH }));
   // 手台按屏幕短边比例重排（不是固定 px），旋转屏幕/切全屏都会走这里
   padHandle?.layout(w, h, insets);
   // 竖屏时盖一层"请横屏"，否则画面只有拇指大小
@@ -418,13 +428,61 @@ window.addEventListener('keydown', (e) => {
   controls.refresh();
 });
 
-/** 画布点击：标题/结果当"按 A"，选人屏直接点格子 */
+/**
+ * 首次触摸时进全屏并尝试锁横屏。
+ *
+ * 必须发生在用户手势的回调里（浏览器要求），所以挂在第一次 pointerdown 上。
+ * 全屏/锁屏 API 在桌面、iOS Safari 上可能直接没有或抛异常，一律静默跳过。
+ */
+let fullscreenTried = false;
+function enterFullscreenOnce(): void {
+  if (fullscreenTried || !IS_TOUCH) return;
+  fullscreenTried = true;
+  try {
+    if (!document.fullscreenElement) void document.documentElement.requestFullscreen?.().catch(() => {});
+    const orientation = screen.orientation as ScreenOrientation & { lock?: (o: string) => Promise<void> };
+    void orientation?.lock?.('landscape').catch(() => {});
+  } catch {
+    // 不支持就算了，不影响玩
+  }
+}
+
+/** 画布点击：标题/结果当"按 A"，选人屏直接点格子，菜单屏点行选中 */
 canvas.addEventListener('pointerdown', (e) => {
   audio.resume();
+  enterFullscreenOnce();
   const rect = canvas.getBoundingClientRect();
   const x = ((e.clientX - rect.left) / rect.width) * VIEW_WIDTH;
   const y = ((e.clientY - rect.top) / rect.height) * VIEW_HEIGHT;
 
+  // 暂停菜单盖在最上面，优先处理
+  if (pause.open) {
+    const hit = hitTestPauseItem(x, y, 4);
+    if (hit >= 0) {
+      pause.cursor = hit;
+      pad.press('A');
+      return;
+    }
+  }
+
+  // 菜单屏：点哪行就选中哪行，然后当成按了一次 A（点一次就生效，不用"先选再确认"）
+  if (flow.screen === 'mode') {
+    const hit = hitTestModeItem(x, y);
+    if (hit >= 0) {
+      flow.modeCursor = hit;
+      pad.press('A');
+      return;
+    }
+  }
+  if (flow.screen === 'options') {
+    const rows = flow.options.length + 1; // 末行是"按键设置"
+    const hit = hitTestOptionRow(x, y, rows);
+    if (hit >= 0) {
+      flow.optionCursor = hit;
+      pad.press('A');
+      return;
+    }
+  }
   if (flow.screen === 'select') {
     const cell = hitTestCell(x, y, flow.rosterSize, flow.config.columns);
     if (cell >= 0) {

@@ -9,7 +9,9 @@
       body {
         margin: 0;
         height: 100%;
-        background: #000;
+        /* 不只是纯黑：宽屏时画布两侧会留一条，用同色系的暗渐变当"画框"，
+           读起来是留白而不是黑边（手台就摆在这两条里，不挡画面） */
+        background: radial-gradient(120% 90% at 50% 45%, #10151f 0%, #070a10 55%, #04060a 100%);
         overflow: hidden;
         touch-action: none;
         -webkit-user-select: none;
