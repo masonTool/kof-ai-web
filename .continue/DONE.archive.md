@@ -1556,3 +1556,26 @@
   - 验证：新增 3 条测试（贴脸抓到并掉血、对手按住防御也会被抓、距离 120 抓不到）；`npm run check` **923 条全绿**
   - 批次：20261025-2244
 
+## 批次 20261026-0005 · 2026-10-26 · 会话 59bce766
+
+**这批的目标**：给仓库加 GitHub Actions CI。
+
+- [x] [T220] GitHub Actions CI：push/PR 上跑 typecheck → test → art:check → build，构建产物上传 artifact → 本地逐条验证
+  - 做了什么：新增 `.github/workflows/ci.yml`，两个 job——`check`（typecheck / test / art:check）与 `build`（vite build + 上传 dist artifact，依赖 check 通过）；`concurrency` 取消同分支旧运行；Node 锁 22（vite 7 要求 20.19+/22.12+）
+  - 为什么 typecheck 和 test 分成两步：`npm run check` 是一条命令串联，失败时看不出是类型错还是用例挂；拆开后日志一眼能定位
+  - 为什么 art:check 放进 CI：素材自检读的是仓库里已有的 `public/`（29 个图集 / 33 个动画名 / 身高极差），不需要重新出图，几秒就能防住"改了图集忘了同步"这类问题
+  - 没放进去的：`.continue/hooks/check.mjs`（依赖本地队列与 git 历史状态，不是通用门禁）；出图脚本（要元宝账号与网络，不该在 CI 跑）
+  - 验证：`ruby -ryaml` 解析通过（jobs: check/build）；本地逐条跑过 CI 的四个步骤——typecheck 通过、`npm run test` **926 条全绿**、`art:check` 通过、`npm run build` 成功（dist 236KB / gzip 69KB）；确认 `package-lock.json` 存在（`npm ci` 可用）、`dist/` 已在 `.gitignore`
+  - 批次：20261026-0005
+
+## 批次 20261025-2248 · 2026-10-25 · 会话 59bce766
+
+**这批的目标**：投技只有玩家能用，CPU 不会——补上，并给主力角色都配投技。
+
+- [x] [T219] CPU 会用投技 + 9 个角色有投技
+  - 做了什么：①CPU 破防分支里按 45% 概率改成 `←+C` 投技（原来只有 C+D 吹飞）；②京 + 八神 + 特瑞 + 坂崎亮 + 罗伯特 + 莉安娜 + 拉尔夫 + 克拉克 + 雅典娜 共 9 人各加 `4C` 投技（105~120 伤害，克拉克/拉尔夫更高）
+  - 为什么破防要两条路：只会 C+D 的话，玩家一直蹲着防就能全挡下来；投技不可防，逼玩家动起来
+  - 踩到的坑：①其余 7 个角色没有 `'2A':` 字面量（普通技是 `...buildNormals()` 展开的），锚点换成 `...buildNormals(...)` 那行；②11 个测试文件各自复制了一份 `MOTION_FRAMES`，加 `'4'` 时漏了 ikari / psycho / kim-team / yagami-team 四个（它们的表里没有 `'6'` 锚点，补在第一行才生效）
+  - 验证：新增 3 条测试（CPU 破防时「投技」与「吹飞」两种都出现且不是只用一种、9 个主力角色的 4C 都是 `kind: 'throw'` 且 motion 为 `'4'`、投技不消耗气）；`npm run check` **926 条全绿**
+  - 批次：20261025-2248
+
