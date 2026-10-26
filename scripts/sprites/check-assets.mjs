@@ -19,14 +19,23 @@ const SHEETS = join(ROOT, 'public/sheets');
 const PORTRAITS = join(ROOT, 'public/portraits');
 const STAGES = join(ROOT, 'public/stages');
 
-/** 姿势库里的动画名（从源码里抠，避免脚本和代码两处维护） */
+/**
+ * 姿势库里的动画名（从源码里抠，避免脚本和代码两处维护）。
+ *
+ * **排除角色专属姿势**（`kyspecial1`、`iorisuper` 这种）：它们只有那个角色有贴图，
+ * 不能要求全部 27 个角色都有。新增角色专属化时记得把前缀加进这个正则。
+ */
+const CHAR_EXCLUSIVE_RE = /^(kyspecial[0-9]|kysuper|iorispecial[0-9]|iorisuper)$/;
+
 function poseNames() {
   const src = readFileSync(join(ROOT, 'src/render/poses.ts'), 'utf8');
   const start = src.indexOf('export const POSE_LIBRARY');
   const body = src.slice(start);
   const end = body.indexOf('\n};');
   const block = body.slice(0, end);
-  return [...block.matchAll(/^  ([a-zA-Z0-9_]+): \{/gm)].map((m) => m[1]);
+  return [...block.matchAll(/^  ([a-zA-Z0-9_]+): \{/gm)]
+    .map((m) => m[1])
+    .filter((n) => !CHAR_EXCLUSIVE_RE.test(n));
 }
 
 /** 舞台 id（同样从源码抠） */
@@ -41,6 +50,7 @@ const VARIANTS = { orochi_iori: 'iori', orochi_leona: 'leona' };
 const problems = [];
 const warn = (msg) => problems.push(msg);
 
+// 角色专属姿势（如 kyspecial1）只有那个角色有贴图，不能要求全员都有
 const poses = poseNames();
 // 图集分两片：`<id>.json` 是核心片、`<id>-extra.json` 是扩展片。
 // 校验按「一个角色 = 两片合并」来做，否则扩展片会被当成独立角色报"缺一堆动画"。

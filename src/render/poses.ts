@@ -455,6 +455,27 @@ export const POSE_LIBRARY: Record<string, Pose> = {
     loop: false,
     frames: [f({ head: p(0, -70), neck: p(0, -60), armFront: [p(16, -56), p(32, -54)], armBack: [p(8, -56), p(20, -54)] })],
   },
+  // 八神庵专属必杀的兜底（形状接近，紫焰由特效层负责）
+  iorispecial1: {
+    frameDuration: 1,
+    loop: false,
+    frames: [f({ head: p(2, -60), neck: p(2, -52), hip: p(-2, -32), armFront: [p(12, -40), p(22, -30)], armBack: [p(-10, -52), p(-16, -46)] })],
+  },
+  iorispecial2: {
+    frameDuration: 1,
+    loop: false,
+    frames: [f({ head: p(1, -76), neck: p(1, -64), hip: p(0, -42), armFront: [p(8, -72), p(6, -88)], armBack: [p(-10, -50), p(-14, -42)] })],
+  },
+  iorispecial3: {
+    frameDuration: 1,
+    loop: false,
+    frames: [f({ head: p(2, -68), neck: p(2, -58), armFront: [p(14, -64), p(26, -66)], armBack: [p(-4, -58), p(-8, -60)] })],
+  },
+  iorisuper: {
+    frameDuration: 1,
+    loop: false,
+    frames: [f({ head: p(3, -66), neck: p(3, -56), hip: p(0, -36), armFront: [p(16, -58), p(30, -58)], armBack: [p(4, -56), p(16, -56)] })],
+  },
   /** 升龙系：整个人向上冲，手臂上举 */
   specialUppercut: {
     frameDuration: 1,
@@ -592,8 +613,23 @@ export function hasPose(anim: string): boolean {
   return Object.prototype.hasOwnProperty.call(POSE_LIBRARY, anim);
 }
 
+/**
+ * **角色专属**姿势：只有那个角色自己有贴图，别的角色不该有。
+ *
+ * 命名约定：`<角色id前缀>special<N>` / `<角色id前缀>super`。
+ * `art:check` 会把这些从"所有角色都必须有"的清单里排除，
+ * 否则每新增一个角色的专属招式，其余 26 个角色都会被报"缺动画"。
+ */
+const CHAR_EXCLUSIVE = /^(kyo|iori)special[0-9]$|^(kyo|iori)super$/;
+
+/** 所有程序化姿势名（含角色专属的，供绘制层查表） */
 export function poseNames(): string[] {
   return Object.keys(POSE_LIBRARY);
+}
+
+/** 只属于某个角色、不该要求全员都有的姿势 */
+export function exclusivePoseNames(): string[] {
+  return Object.keys(POSE_LIBRARY).filter((n) => CHAR_EXCLUSIVE.test(n));
 }
 
 /**

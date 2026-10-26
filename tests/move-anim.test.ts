@@ -20,7 +20,9 @@ describe('必杀技专属动作', () => {
     expect(poseForMotion('623')).toBe('specialUppercut');
     // 京现在是**专属化**过的角色（T258），超必杀用他自己的 kysuper；
     // 用还没专属化的 IORI 验证通用映射规则本身
-    expect(poseForMove(IORI.moves['236236A']!)).toBe('superCharge');
+    // 用"通用 anim 的假招式"测规则本身：角色专属化是趋势，任何角色的数据都可能改成专属名
+    const genericSuper = { ...IORI.moves['236236A']!, anim: 'special' };
+    expect(poseForMove(genericSuper)).toBe('superCharge');
   });
 
   it('映射出来的姿势必须真的存在（否则有贴图的角色会回落到程序化绘制）', () => {

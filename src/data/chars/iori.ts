@@ -128,7 +128,7 @@ export const IORI: CharDef = {
     }),
 
     // ---------------------------------------------------------------- 必杀技
-    '236A': mv('236A', '百八式・闇払い', 'special', 40, 'special', [], {
+    '236A': mv('236A', '百八式・闇払い', 'iorispecial1', 40, 'special', [], {
       input: { motion: '236', buttons: ['A'] },
       projectile: {
         anim: '闇払い',
@@ -148,7 +148,7 @@ export const IORI: CharDef = {
       },
     }),
 
-    '623A': mv('623A', '百式・鬼焼き', 'special', 42, 'special', [
+    '623A': mv('623A', '百式・鬼焼き', 'iorispecial2', 42, 'special', [
       hit('h1', {
         box: { x: 6, y: -88, w: 26, h: 62 },
         frames: [4, 11],
@@ -161,7 +161,7 @@ export const IORI: CharDef = {
       }),
     ], { input: { motion: '623', buttons: ['A'] }, invuln: [{ frames: [1, 6], kind: 'full' }] }),
 
-    '214A': mv('214A', '百弐拾七式・葵花', 'special', 34, 'special', [
+    '214A': mv('214A', '百弐拾七式・葵花', 'iorispecial3', 34, 'special', [
       hit('h1', {
         box: { x: 18, y: -70, w: 34, h: 24 },
         frames: [10, 13],
@@ -213,7 +213,7 @@ export const IORI: CharDef = {
     ], { input: { motion: '63214', buttons: ['A'] }, blockable: false }),
 
     // ---------------------------------------------------------------- 超必杀
-    '236236A': mv('236236A', '裏百八式・八酒杯', 'special', 56, 'super', [
+    '236236A': mv('236236A', '裏百八式・八酒杯', 'iorisuper', 56, 'super', [
       hit('h1', { box: { x: 14, y: -80, w: 44, h: 60 }, frames: [12, 16], damage: 60, hitStun: 20, hitstop: 10, meterGain: 0 }),
       hit('h2', {
         box: { x: 14, y: -80, w: 44, h: 60 },
@@ -226,7 +226,7 @@ export const IORI: CharDef = {
       }),
     ], { input: { motion: '236236', buttons: ['A'] }, meterCost: 50 }),
 
-    '2363214A': mv('2363214A', '禁千弐百拾壱式・八稚女', 'special', 78, 'super', [
+    '2363214A': mv('2363214A', '禁千弐百拾壱式・八稚女', 'iorisuper', 78, 'super', [
       hit('h1', { box: { x: 12, y: -76, w: 42, h: 56 }, frames: [10, 14], damage: 46, hitStun: 20, hitstop: 9, meterGain: 0 }),
       hit('h2', { box: { x: 12, y: -76, w: 42, h: 56 }, frames: [20, 24], damage: 40, hitStun: 20, hitstop: 9, meterGain: 0 }),
       hit('h3', { box: { x: 12, y: -76, w: 42, h: 56 }, frames: [30, 34], damage: 40, hitStun: 20, hitstop: 9, meterGain: 0 }),
