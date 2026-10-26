@@ -506,11 +506,18 @@ export const POSE_LIBRARY: Record<string, Pose> = {
       f({ head: p(2, -71), armFront: [p(7, -59), p(-2, -63)], armBack: [p(-7, -59), p(2, -61)], legBack: [p(-5, -22), p(-10, -1)] }),
     ],
   },
+  /**
+   * 败北：挨打 → 跪地。
+   * 帧数必须和图集一致（`lose: ['hit','losemid']` 两帧），高度递减是"垮下去"的关键。
+   */
   lose: {
     frameDuration: 10,
     loop: false,
     frames: [
+      // 挨打（还站着）
       f({ head: p(-2, -60), neck: p(-1, -50), hip: p(-2, -32), armFront: [p(6, -44), p(10, -36)], armBack: [p(-8, -44), p(-12, -36)] }),
+      // 跪地
+      f({ head: p(2, -38), neck: p(1, -32), hip: p(-3, -18), armFront: [p(8, -24), p(12, -20)], armBack: [p(-8, -24), p(-12, -20)] }),
     ],
   },
 };

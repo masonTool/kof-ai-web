@@ -67,6 +67,10 @@ const ANIMS = {
   // 被打倒后像"瞬间站起来"，现在补两帧过渡
   // 落地缓冲：蹲到底 → 吸收冲击后回弹。原来 `landing: 'crouch'` 别名（就是蹲姿静止）
   landing: ['crouch', 'landingmid'],
+  // 眩晕：两帧循环摇晃（原来借用站架，晕了却纹丝不动）
+  dizzy: ['idle', 'dizzymid'],
+  // 败北：受击 → 跪地（原来借用受击姿势，输了还在摆挨打造型）
+  lose: ['hit', 'losemid'],
   wakeup: ['crouch', 'wakeupmid', 'wakeuplast'],
   jump: ['jumpup', 'jumpdown', 'jumpup'],
   punchLight: ['punchwindup', 'punchout', 'punchout'],
@@ -104,8 +108,6 @@ const ALIAS = {
   block: 'guard', // 格挡：和"按住防御"是同一个姿势
   hitFall: 'hit', // 被打飞
   taunt: 'win', // 挑衅
-  lose: 'hit', // 败北
-  dizzy: 'idle', // 眩晕（暂时用站架，将来单独出图）
   roll: 'crouch', // 受身翻滚
   throwStart: 'special', // 投技起手
 };
@@ -304,6 +306,7 @@ const HEIGHT_TARGET = {
   crouchPunch: 66,
   crouchKick: 58,
   landing: [60, 72], // 蹲到底 → 回弹
+  lose: [62, 40], // 挨打 → 跪地（越跪越矮）
   wakeup: [58, 72, 84], // 蹲着 → 半起 → 站直
   win: 88,
   win2: 88,
