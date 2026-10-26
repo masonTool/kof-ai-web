@@ -193,8 +193,9 @@ describe('图集分片（首屏只下核心片）', () => {
     expect(overlap).toEqual([]);
   });
 
-  it('两片合起来覆盖全部 33 个动画（分片不能丢动作）', () => {
-    expect(Object.keys(sheetJson.anims).length).toBe(33);
+  it('两片合起来覆盖全部动画（分片不能丢动作）', () => {
+    // 33 个通用动画 + 京的 4 个专属必杀（T258 起，专属化会继续加）
+    expect(Object.keys(sheetJson.anims).length).toBeGreaterThanOrEqual(33);
   });
 });
 

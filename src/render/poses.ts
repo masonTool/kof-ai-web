@@ -428,6 +428,33 @@ export const POSE_LIBRARY: Record<string, Pose> = {
       f({ head: p(1, -70), neck: p(1, -60), armFront: [p(6, -56), p(10, -48)], armBack: [p(-4, -56), p(-6, -48)] }),
     ],
   },
+  /**
+   * 角色专属必杀的**程序化兜底**。
+   *
+   * 这些动画真正的样子来自出图（`kyspecial1` 等）；这里只是一帧兜底形状，
+   * 用于"贴图没加载/加载失败"时别画出个站架。形状尽量贴近该招的意图：
+   * 荒咬＝爪状上撩、毒咬＝低处上勾、鬼焼＝冲天、大蛇薙＝双手推出。
+   */
+  kyspecial1: {
+    frameDuration: 1,
+    loop: false,
+    frames: [f({ head: p(0, -68), neck: p(1, -58), armFront: [p(10, -62), p(22, -70)], armBack: [p(-6, -52), p(-10, -44)] })],
+  },
+  kyspecial2: {
+    frameDuration: 1,
+    loop: false,
+    frames: [f({ head: p(2, -64), neck: p(2, -54), hip: p(-1, -34), armFront: [p(8, -46), p(16, -54)], armBack: [p(-8, -50), p(-14, -44)] })],
+  },
+  kyspecial3: {
+    frameDuration: 1,
+    loop: false,
+    frames: [f({ head: p(1, -76), neck: p(1, -64), hip: p(0, -42), armFront: [p(6, -72), p(4, -86)], armBack: [p(-8, -52), p(-10, -44)] })],
+  },
+  kysuper: {
+    frameDuration: 1,
+    loop: false,
+    frames: [f({ head: p(0, -70), neck: p(0, -60), armFront: [p(16, -56), p(32, -54)], armBack: [p(8, -56), p(20, -54)] })],
+  },
   /** 升龙系：整个人向上冲，手臂上举 */
   specialUppercut: {
     frameDuration: 1,

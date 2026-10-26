@@ -18,7 +18,9 @@ describe('必杀技专属动作', () => {
   it('波动用推手、升龙用上挑、超必杀用蓄力（各有专属姿势）', () => {
     expect(poseForMotion('236')).toBe('specialProjectile');
     expect(poseForMotion('623')).toBe('specialUppercut');
-    expect(poseForMove(KYO.moves['236236AC']!)).toBe('superCharge');
+    // 京现在是**专属化**过的角色（T258），超必杀用他自己的 kysuper；
+    // 用还没专属化的 IORI 验证通用映射规则本身
+    expect(poseForMove(IORI.moves['236236A']!)).toBe('superCharge');
   });
 
   it('映射出来的姿势必须真的存在（否则有贴图的角色会回落到程序化绘制）', () => {

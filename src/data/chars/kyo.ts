@@ -156,7 +156,7 @@ export const KYO: CharDef = {
     ]),
 
     // ---------------------------------------------------------------- 必杀技
-    '236A': mv('236A', '百拾四式・荒咬み', 'special', 34, 'special', [
+    '236A': mv('236A', '百拾四式・荒咬み', 'kyspecial1', 34, 'special', [
       hit('h1', {
         box: { x: 22, y: -62, w: 36, h: 16 },
         frames: [10, 13],
@@ -193,7 +193,7 @@ export const KYO: CharDef = {
       }),
     ], { input: { motion: '236', buttons: ['A'] } }),
 
-    '236C': mv('236C', '百拾五式・毒咬み', 'special', 36, 'special', [
+    '236C': mv('236C', '百拾五式・毒咬み', 'kyspecial2', 36, 'special', [
       hit('h1', {
         box: { x: 24, y: -58, w: 38, h: 18 },
         frames: [11, 14],
@@ -230,7 +230,7 @@ export const KYO: CharDef = {
       }),
     ], { input: { motion: '236', buttons: ['C'] } }),
 
-    '623P': mv('623P', '百式・鬼焼き', 'special', 42, 'special', [
+    '623P': mv('623P', '百式・鬼焼き', 'kyspecial3', 42, 'special', [
       hit('h1', {
         box: { x: 6, y: -88, w: 26, h: 62 },
         frames: [4, 11],
@@ -280,7 +280,7 @@ export const KYO: CharDef = {
     ], { input: { motion: '421', buttons: ['B'] } }),
 
     // ---------------------------------------------------------------- 超必杀
-    '236236P': mv('236236P', '裏百八式・大蛇薙', 'special', 62, 'super', [
+    '236236P': mv('236236P', '裏百八式・大蛇薙', 'kysuper', 62, 'super', [
       hit('h1', {
         box: { x: 16, y: -88, w: 46, h: 80 },
         frames: [12, 16],
@@ -311,7 +311,7 @@ export const KYO: CharDef = {
       }),
     ], { input: { motion: '236236', buttons: ['A'] }, meterCost: 50 }),
 
-    '236236AC': mv('236236AC', '最終決戦奥義・無式', 'special', 74, 'super', [
+    '236236AC': mv('236236AC', '最終決戦奥義・無式', 'kysuper', 74, 'super', [
       hit('h1', { box: { x: 14, y: -80, w: 44, h: 60 }, frames: [10, 14], damage: 50, hitStun: 20, hitstop: 10, meterGain: 0 }),
       hit('h2', { box: { x: 14, y: -80, w: 44, h: 60 }, frames: [20, 24], damage: 45, hitStun: 20, hitstop: 10, meterGain: 0 }),
       hit('h3', { box: { x: 14, y: -80, w: 44, h: 60 }, frames: [30, 34], damage: 45, hitStun: 20, hitstop: 10, meterGain: 0 }),

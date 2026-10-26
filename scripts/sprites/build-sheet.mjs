@@ -96,6 +96,12 @@ const ANIMS = {
   specialProjectile: ['specialprojectilewindup', 'specialprojectile', 'specialprojectilerecover'],
   specialUppercut: ['specialuppercutwindup', 'specialuppercut', 'specialuppercutrecover'],
   specialRush: ['specialrushwindup', 'specialrush', 'specialrushrecover'],
+  // ---------------- 角色专属必杀（每角色自己的招式动作）
+  // 命名规则：<角色id>Special1..3 对应该角色的三个必杀指令，<角色id>Super 对应超必杀
+  kyspecial1: ['kyokuzushi'],
+  kyspecial2: ['kyodoku'],
+  kyspecial3: ['kyooniyaki'],
+  kysuper: ['kyosuper'],
   // 超必杀三段：起手（气汇聚）→ 蓄满（气浪最大）→ 释放收招
   superCharge: ['superchargewindup', 'supercharge', 'superchargerecover'],
   // 躺在地上：按"宽度"归一，锚点用包围盒中心（横躺的人没有"脚底"这个概念）
