@@ -224,7 +224,7 @@ describe('姿势库与图集的帧数一致', () => {
    */
   const MUST_MATCH = [
     'specialProjectile', 'specialUppercut', 'specialRush', 'superCharge',
-    'wakeup', 'landing', 'dizzy', 'lose',
+    'wakeup', 'landing', 'dizzy', 'lose', 'hitFall', 'taunt',
   ];
 
   for (const anim of MUST_MATCH) {
@@ -253,6 +253,19 @@ describe('落地缓冲（landing）', () => {
     const f = framesOf('landing');
     expect(f.length).toBe(2);
     expect(f[1]!.h).toBeGreaterThan(f[0]!.h);
+  });
+});
+
+describe('被打飞与挑衅', () => {
+  const framesOf = (anim: string): { w: number; h: number }[] =>
+    (sheetJson.anims as unknown as Record<string, { w: number; h: number }[]>)[anim]!;
+
+  it('被打飞两帧（原来借用受击姿势，飞出去人还站得笔直）', () => {
+    expect(framesOf('hitFall').length).toBe(2);
+  });
+
+  it('挑衅两帧（原来借用胜利姿势，挑衅和赢了分不清）', () => {
+    expect(framesOf('taunt').length).toBe(2);
   });
 });
 

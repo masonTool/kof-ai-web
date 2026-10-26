@@ -269,4 +269,5 @@
 - [x] T248 wakeup 起身改真三帧（蹲→半起→站直），29/29 完成；HEIGHT_TARGET 支持逐帧高度
 - [x] T249 落地缓冲补帧：landing 从借用 crouch 改成 ['crouch','landingmid'] 两帧（29/29）
 - [x] T250 dizzy / lose 补真帧：眩晕两帧循环摇晃、败北两帧跪地（29/29）
-- [ ] T251 剩余三个动作仍借用别人贴图（roll→crouch、taunt→win、hitFall→hit）→ roll 需要先支持横躺姿势
+- [x] T251 hitFall / taunt 补真帧：被打飞两帧后仰腾空、挑衅两帧抬手勾指（各 29/29）
+- [ ] T252 最后一个别名动作 roll→crouch（受身翻滚用蹲姿）→ 需要先让 LYING 支持横滚帧（按宽度归一 + 水平居中）

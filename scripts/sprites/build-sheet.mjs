@@ -71,6 +71,10 @@ const ANIMS = {
   dizzy: ['idle', 'dizzymid'],
   // 败北：受击 → 跪地（原来借用受击姿势，输了还在摆挨打造型）
   lose: ['hit', 'losemid'],
+  // 被打飞：受击 → 后仰腾空（原来借用受击姿势，飞出去还是站着的）
+  hitFall: ['hit', 'hitfallmid'],
+  // 挑衅：站架 → 抬手勾指（原来借用胜利姿势）
+  taunt: ['idle', 'tauntmid'],
   wakeup: ['crouch', 'wakeupmid', 'wakeuplast'],
   jump: ['jumpup', 'jumpdown', 'jumpup'],
   punchLight: ['punchwindup', 'punchout', 'punchout'],
@@ -106,8 +110,6 @@ const ALIAS = {
   win2: 'win',
   win3: 'win',
   block: 'guard', // 格挡：和"按住防御"是同一个姿势
-  hitFall: 'hit', // 被打飞
-  taunt: 'win', // 挑衅
   roll: 'crouch', // 受身翻滚
   throwStart: 'special', // 投技起手
 };
