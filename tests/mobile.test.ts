@@ -12,6 +12,8 @@ import {
 import {
   hitTestCell,
   selectGridRect,
+  OPT_ROW_GAP,
+  OPT_ROW_TOP,
   menuButtonRect,
   movesButtonRect,
   drawComboMeter,
@@ -64,12 +66,15 @@ describe('菜单点选（触屏）', () => {
     expect(hitTestModeItem(2, 76)).toBe(-1); // 左边距之外（留给摇杆）
   });
 
-  it('选项屏：含最后的"按键设置"一行', () => {
-    const rows = 8 + 1;
+  it('选项屏：每一行都能点中，且 12 行全部落在手台上沿之上', () => {
+    const rows = 11 + 1; // 11 项设置 + 「按键设置」
     for (let i = 0; i < rows; i++) {
-      expect(hitTestOptionRow(160, 44 + i * 15, rows)).toBe(i);
+      expect(hitTestOptionRow(160, OPT_ROW_TOP + i * OPT_ROW_GAP, rows)).toBe(i);
     }
     expect(hitTestOptionRow(160, 8, rows)).toBe(-1);
+    // 关键：最后一行不能被摇杆/四键盖住（手台上沿约在逻辑 y=159）
+    const lastRowY = OPT_ROW_TOP + (rows - 1) * OPT_ROW_GAP;
+    expect(lastRowY).toBeLessThan(155);
   });
 
   it('暂停菜单：点第 i 项返回 i', () => {

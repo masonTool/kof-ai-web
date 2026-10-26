@@ -191,7 +191,7 @@ export function drawDemoLabel(
   ctx.lineWidth = 1;
   ctx.strokeRect(4.5, 190.5, VIEW_WIDTH - 9, 15);
   const dmg = damage > 0 ? ` · 累计 ${damage} 伤` : '';
-  text(ctx, `演示 ${step + 1}/${total} · ${label}${dmg}`, VIEW_WIDTH / 2, 194, 'center', 6, SCREEN_COLORS.accent);
+  text(ctx, `演示 ${step + 1}/${total} · ${label}${dmg}`, VIEW_WIDTH / 2, 150, 'center', 6, SCREEN_COLORS.accent);
 }
 
 /**
@@ -431,8 +431,8 @@ export function drawTitle(ctx: Ctx2D, blinkOn: boolean): void {
     ctx.fillRect(0, 182, VIEW_WIDTH, VIEW_HEIGHT - 182);
     ctx.globalAlpha = 1;
   }
-  text(ctx, 'A 轻拳 B 轻脚 C 重拳 D 重脚 · A+B 回避 · C+D 吹飞 · ABC MAX', VIEW_WIDTH / 2, 190, 'center', 6, SCREEN_COLORS.text);
-  text(ctx, '方向键移动/跳蹲 · 236/623/214 出必杀', VIEW_WIDTH / 2, 200, 'center', 6, art ? SCREEN_COLORS.text : SCREEN_COLORS.dim);
+  text(ctx, 'A 轻拳 B 轻脚 C 重拳 D 重脚 · A+B 回避 · C+D 吹飞 · ABC MAX', VIEW_WIDTH / 2, 138, 'center', 6, SCREEN_COLORS.text);
+  text(ctx, '方向键移动/跳蹲 · 236/623/214 出必杀', VIEW_WIDTH / 2, 150, 'center', 6, art ? SCREEN_COLORS.text : SCREEN_COLORS.dim);
 }
 
 /**
@@ -587,8 +587,8 @@ export function drawVs(ctx: Ctx2D, flow: AppFlow): void {
     }
   }
 
-  text(ctx, a.name, 74, 172, 'center', 10, SCREEN_COLORS.text);
-  text(ctx, b.name, VIEW_WIDTH - 74, 172, 'center', 10, SCREEN_COLORS.text);
+  text(ctx, a.name, 74, 146, 'center', 10, SCREEN_COLORS.text);
+  text(ctx, b.name, VIEW_WIDTH - 74, 146, 'center', 10, SCREEN_COLORS.text);
   text(ctx, 'VS', VIEW_WIDTH / 2, 96, 'center', 26, SCREEN_COLORS.accent);
 }
 
@@ -685,14 +685,21 @@ export function drawMode(ctx: Ctx2D, flow: AppFlow, blinkOn: boolean): void {
   }
 }
 
-/** 选项屏行距：10 项设置 + "按键设置"一行，224 高的画面里只有这么多空间 */
-const OPT_ROW_TOP = 44;
-const OPT_ROW_GAP = 15;
+/**
+ * 选项屏行距。
+ *
+ * 实际有 11 项设置 + 1 行「按键设置」= 12 行。原来 TOP 44 / GAP 15，
+ * 最后一行落在 y=209 —— 整行都在手台（摇杆、四键）下面，等于看不到。
+ * 现在压到 26/11（12 行结束在 y≈147，手台上沿约 159），字号降到 6 保证不糊。
+ */
+export const OPT_ROW_TOP = 26;
+export const OPT_ROW_GAP = 11;
+const OPT_FONT = 6;
 
 export function drawOptions(ctx: Ctx2D, flow: AppFlow): void {
   ctx.fillStyle = SCREEN_COLORS.bg;
   ctx.fillRect(0, 0, VIEW_WIDTH, VIEW_HEIGHT);
-  text(ctx, 'OPTIONS', VIEW_WIDTH / 2, 20, 'center', 13, SCREEN_COLORS.gold);
+  text(ctx, 'OPTIONS', VIEW_WIDTH / 2, 14, 'center', 12, SCREEN_COLORS.gold);
 
   const rows = flow.options;
   rows.forEach((row, i) => {
@@ -700,10 +707,10 @@ export function drawOptions(ctx: Ctx2D, flow: AppFlow): void {
     const active = flow.optionCursor === i;
     if (active) {
       ctx.fillStyle = 'rgba(255,91,61,0.22)';
-      ctx.fillRect(24, y - 4, VIEW_WIDTH - 48, 14);
+      ctx.fillRect(20, y - 3, VIEW_WIDTH - 40, 11);
     }
-    text(ctx, row.label, 32, y, 'left', 7, active ? SCREEN_COLORS.text : SCREEN_COLORS.dim);
-    text(ctx, `${active ? '◀ ' : ''}${row.value}${active ? ' ▶' : ''}`, VIEW_WIDTH - 32, y, 'right', 7, active ? SCREEN_COLORS.accent : SCREEN_COLORS.text);
+    text(ctx, row.label, 26, y, 'left', OPT_FONT, active ? SCREEN_COLORS.text : SCREEN_COLORS.dim);
+    text(ctx, `${active ? '◀ ' : ''}${row.value}${active ? ' ▶' : ''}`, VIEW_WIDTH - 26, y, 'right', OPT_FONT, active ? SCREEN_COLORS.accent : SCREEN_COLORS.text);
   });
 
   // 最后一行：进"按键设置"
@@ -711,12 +718,10 @@ export function drawOptions(ctx: Ctx2D, flow: AppFlow): void {
   const active = flow.optionCursor >= rows.length;
   if (active) {
     ctx.fillStyle = 'rgba(255,91,61,0.22)';
-    ctx.fillRect(24, y - 4, VIEW_WIDTH - 48, 14);
+    ctx.fillRect(20, y - 3, VIEW_WIDTH - 40, 11);
   }
-  text(ctx, '按键设置', 32, y, 'left', 7, active ? SCREEN_COLORS.text : SCREEN_COLORS.dim);
-  text(ctx, '进入 ▶', VIEW_WIDTH - 32, y, 'right', 7, active ? SCREEN_COLORS.accent : SCREEN_COLORS.text);
-
-  text(ctx, '点击一行修改 · B 返回', VIEW_WIDTH / 2, 210, 'center', 6, SCREEN_COLORS.dim);
+  text(ctx, '按键设置', 26, y, 'left', OPT_FONT, active ? SCREEN_COLORS.text : SCREEN_COLORS.dim);
+  text(ctx, '进入 ▶', VIEW_WIDTH - 26, y, 'right', OPT_FONT, active ? SCREEN_COLORS.accent : SCREEN_COLORS.text);
 }
 
 export function drawContinue(ctx: Ctx2D, flow: AppFlow, blinkOn: boolean): void {
@@ -727,7 +732,7 @@ export function drawContinue(ctx: Ctx2D, flow: AppFlow, blinkOn: boolean): void 
   const seconds = Math.max(0, Math.ceil(flow.continueLeft / 60));
   text(ctx, `${seconds}`, VIEW_WIDTH / 2, 96, 'center', 30, SCREEN_COLORS.gold);
   text(ctx, `已续关 ${flow.continues} 次`, VIEW_WIDTH / 2, 138, 'center', 7, SCREEN_COLORS.dim);
-  if (blinkOn) text(ctx, '按 A 继续挑战', VIEW_WIDTH / 2, 162, 'center', 9, SCREEN_COLORS.text);
+  if (blinkOn) text(ctx, '按 A 继续挑战', VIEW_WIDTH / 2, 148, 'center', 9, SCREEN_COLORS.text);
 }
 
 export function drawKeyBind(ctx: Ctx2D, menu: KeyBindMenu, settings: GameSettings, blinkOn: boolean): void {
@@ -749,8 +754,8 @@ export function drawKeyBind(ctx: Ctx2D, menu: KeyBindMenu, settings: GameSetting
   });
 
   const hint = menu.capturing ? '按任意键绑定 · Esc 取消' : '↑↓ 选择 · A 改键 · B 返回';
-  if (blinkOn || menu.capturing) text(ctx, hint, VIEW_WIDTH / 2, 200, 'center', 6, SCREEN_COLORS.dim);
-  text(ctx, '左/右 切换 P1/P2 · C 恢复预设', VIEW_WIDTH / 2, 210, 'center', 6, SCREEN_COLORS.dim);
+  if (blinkOn || menu.capturing) text(ctx, hint, VIEW_WIDTH / 2, 140, 'center', 6, SCREEN_COLORS.dim);
+  text(ctx, '左/右 切换 P1/P2 · C 恢复预设', VIEW_WIDTH / 2, 152, 'center', 6, SCREEN_COLORS.dim);
 }
 
 export function drawChallengePanel(ctx: Ctx2D, board: ChallengeBoard): void {
@@ -819,7 +824,8 @@ export function hitTestOptionRow(x: number, y: number, rowCount: number): number
   if (x < 16 || x > VIEW_WIDTH - 16) return -1;
   for (let i = 0; i < rowCount; i++) {
     const rowY = OPT_ROW_TOP + i * OPT_ROW_GAP;
-    if (y >= rowY - 6 && y < rowY + 13) return i;
+    // 判定窗口要跟行距一致（11px），否则相邻行会互相抢点击
+    if (y >= rowY - 5 && y < rowY + 6) return i;
   }
   return -1;
 }
