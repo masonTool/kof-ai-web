@@ -446,8 +446,12 @@ export const POSE_LIBRARY: Record<string, Pose> = {
     frameDuration: 1,
     loop: false,
     frames: [
+      // 压到后腿（蓄势）
       f({ head: p(-4, -66), neck: p(-4, -56), hip: p(-2, -37), armFront: [p(-2, -54), p(-6, -48)], armBack: [p(-10, -52), p(-16, -48)] }),
+      // 撞出去（肩膀在前）
       f({ head: p(8, -64), neck: p(6, -55), hip: p(4, -36), armFront: [p(4, -52), p(10, -46)], armBack: [p(-14, -50), p(-22, -44)] }),
+      // 收招（刹住、拉起来站稳）
+      f({ head: p(2, -68), neck: p(2, -58), hip: p(0, -38), armFront: [p(2, -54), p(4, -46)], armBack: [p(-6, -52), p(-8, -44)] }),
     ],
   },
   /** 超必杀蓄力：双拳收腰，身体后仰 */

@@ -95,7 +95,7 @@ const ANIMS = {
   // 必杀专属动作（T200 出图）：波动推手 / 升龙上挑 / 前冲肩撞 / 超必杀蓄力
   specialProjectile: ['specialprojectilewindup', 'specialprojectile', 'specialprojectilerecover'],
   specialUppercut: ['specialuppercutwindup', 'specialuppercut', 'specialuppercutrecover'],
-  specialRush: ['specialrushwindup', 'specialrush'],
+  specialRush: ['specialrushwindup', 'specialrush', 'specialrushrecover'],
   // 超必杀三段：起手（气汇聚）→ 蓄满（气浪最大）→ 释放收招
   superCharge: ['superchargewindup', 'supercharge', 'superchargerecover'],
   // 躺在地上：按"宽度"归一，锚点用包围盒中心（横躺的人没有"脚底"这个概念）
@@ -332,6 +332,7 @@ const HEIGHT_TARGET = {
   superCharge: [80, 88, 82], // 蓄力压低 → 气浪撑起 → 收招回落
   specialProjectile: [82, 84, 80], // 微沉 → 推出 → 回正
   specialUppercut: [74, 92, 80], // 屈膝 → 冲天 → 落地缓冲
+  specialRush: [70, 76, 82], // 压到后腿 → 撞出去 → 刹住站直
   win: 88,
   win2: 88,
   win3: 88,
