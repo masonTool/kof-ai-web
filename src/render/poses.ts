@@ -388,7 +388,6 @@ export const POSE_LIBRARY: Record<string, Pose> = {
     frames: [
       f({ head: p(0, -62), neck: p(0, -52), hip: p(0, -32), armFront: [p(4, -50), p(6, -44)], legFront: [p(6, -18), p(8, -1)] }),
       f({ head: p(2, -78), neck: p(1, -66), hip: p(0, -42), armFront: [p(6, -70), p(4, -84)], legFront: [p(8, -26), p(10, -6)] }),
-      f({ head: p(2, -76), neck: p(1, -64), hip: p(0, -40), armFront: [p(5, -68), p(3, -80)] }),
     ],
   },
   /** 突进系：低身前冲，肩膀在前 */
@@ -398,7 +397,6 @@ export const POSE_LIBRARY: Record<string, Pose> = {
     frames: [
       f({ head: p(-4, -66), neck: p(-4, -56), hip: p(-2, -37), armFront: [p(-2, -54), p(-6, -48)], armBack: [p(-10, -52), p(-16, -48)] }),
       f({ head: p(8, -64), neck: p(6, -55), hip: p(4, -36), armFront: [p(4, -52), p(10, -46)], armBack: [p(-14, -50), p(-22, -44)] }),
-      f({ head: p(7, -64), neck: p(5, -55), hip: p(3, -36), armFront: [p(3, -52), p(8, -46)], armBack: [p(-12, -50), p(-20, -44)] }),
     ],
   },
   /** 超必杀蓄力：双拳收腰，身体后仰 */
@@ -408,7 +406,6 @@ export const POSE_LIBRARY: Record<string, Pose> = {
     frames: [
       f({ head: p(-3, -70), neck: p(-4, -60), armFront: [p(-4, -54), p(-10, -50)], armBack: [p(-10, -54), p(-16, -50)] }),
       f({ head: p(-6, -72), neck: p(-7, -62), armFront: [p(-8, -56), p(-14, -52)], armBack: [p(-14, -56), p(-20, -52)] }),
-      f({ head: p(-2, -71), neck: p(-2, -61), armFront: [p(-4, -56), p(-8, -52)], armBack: [p(-10, -56), p(-16, -52)] }),
     ],
   },
   throwStart: {

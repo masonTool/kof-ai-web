@@ -79,9 +79,9 @@ const ANIMS = {
   special: ['special'],
   // 必杀专属动作（T200 出图）：波动推手 / 升龙上挑 / 前冲肩撞 / 超必杀蓄力
   specialProjectile: ['specialprojectilewindup', 'specialprojectile'],
-  specialUppercut: ['specialuppercut'],
-  specialRush: ['specialrush'],
-  superCharge: ['supercharge'],
+  specialUppercut: ['specialuppercutwindup', 'specialuppercut'],
+  specialRush: ['specialrushwindup', 'specialrush'],
+  superCharge: ['superchargewindup', 'supercharge'],
   // 躺在地上：按"宽度"归一，锚点用包围盒中心（横躺的人没有"脚底"这个概念）
   down: ['down'],
 };
