@@ -343,7 +343,17 @@ for (const [anim, list] of Object.entries(ANIMS)) {
   const targetH = HEIGHT_TARGET[anim];
   const available = list.filter((p) => raws.has(p));
   if (available.length === 0) throw new Error(`动画 ${anim} 一帧都找不到`);
-  frames[anim] = available.map((pose, frameIdx) => {
+  // 缺帧兜底：某个角色的某帧还没出图时，**复制最后一帧补齐**，
+  // 而不是让它少一帧。少一帧会让"同一招在不同角色上帧数不同"，
+  // 播放时节奏对不上（看起来像卡了一下）；复制一帧只是多停 1/60 秒，几乎看不出来。
+  const padded = available.length < list.length
+    ? [...available, ...Array(list.length - available.length).fill(available[available.length - 1])]
+    : available;
+  if (available.length < list.length) {
+    console.log(`  ${anim}: 只出了 ${available.length}/${list.length} 帧，用最后一帧补齐`);
+  }
+
+  frames[anim] = padded.map((pose, frameIdx) => {
     const lying = isLying(anim, frameIdx);
     const raw = raws.get(pose);
     // 目标身高可以是数组（逐帧），起身就是靠这个做出"越来越高"
