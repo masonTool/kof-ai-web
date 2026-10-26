@@ -869,3 +869,37 @@ export function hitTestPauseItem(x: number, y: number, itemCount: number): numbe
   return -1;
 }
 
+
+/**
+ * 全屏加载进度：显示百分比 + 进度条。
+ *
+ * 为什么要它：之前是"先装场上 2 人、其余后台补"——玩家进场先看到程序化像素人，
+ * 几秒后才变成贴图，观感像"画面在加载中抖"。现在改成阻塞式：加载完才让战斗开始。
+ *
+ * 只统计**图集**（核心片 + 扩展片）：标题图/舞台/头像一个比一个小、几秒就绪，
+ * 缺失也只是回落程序化背景，不会出现"人物变像素人"这种刺眼的问题。
+ */
+export function drawLoadingScreen(ctx: Ctx2D, progress: number, label: string): void {
+  ctx.fillStyle = '#05070a';
+  ctx.fillRect(0, 0, VIEW_WIDTH, VIEW_HEIGHT);
+
+  const p = Math.max(0, Math.min(1, progress));
+  text(ctx, 'LOADING', VIEW_WIDTH / 2, 86, 'center', 14, SCREEN_COLORS.gold);
+
+  // 进度条：320 宽的屏，条长 220
+  const barW = 220;
+  const barH = 10;
+  const x = (VIEW_WIDTH - barW) / 2;
+  const y = 108;
+  ctx.fillStyle = 'rgba(255,255,255,0.12)';
+  ctx.fillRect(x, y, barW, barH);
+  ctx.fillStyle = SCREEN_COLORS.accent;
+  ctx.fillRect(x, y, Math.round(barW * p), barH);
+  ctx.strokeStyle = SCREEN_COLORS.dim;
+  ctx.lineWidth = 1;
+  ctx.strokeRect(x + 0.5, y + 0.5, barW - 1, barH - 1);
+
+  // 百分比用大字号：这是玩家唯一想看的数字
+  text(ctx, `${Math.round(p * 100)}%`, VIEW_WIDTH / 2, y + barH + 8, 'center', 12, SCREEN_COLORS.text);
+  text(ctx, label, VIEW_WIDTH / 2, y + barH + 26, 'center', 6, SCREEN_COLORS.dim);
+}

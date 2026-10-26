@@ -180,10 +180,21 @@ export function installSheetProvider(): void {
  * 和 `ensureCharSheets` 分开放：主片决定"能不能出画面"，必须有；
  * 扩展片晚到只是某些动作短暂回落程序化，**不阻塞开局**。
  */
-export async function ensureCharExtras(charIds: readonly string[]): Promise<void> {
+export async function ensureCharExtras(
+  charIds: readonly string[],
+  onProgress?: (done: number, total: number) => void,
+): Promise<void> {
+  let done = 0;
+  const bump = (): void => {
+    done++;
+    onProgress?.(done, charIds.length);
+  };
   const jobs = charIds.map(async (charId) => {
     const entry = sheets.get(charId);
-    if (!entry || entry.extra) return;
+    if (!entry || entry.extra) {
+      bump();
+      return;
+    }
     const running = extraPending.get(charId);
     if (running) return running;
     const job = (async () => {
@@ -192,6 +203,7 @@ export async function ensureCharExtras(charIds: readonly string[]): Promise<void
       );
       const cur = sheets.get(charId);
       if (extra && cur) sheets.set(charId, { main: cur.main, extra });
+      bump();
     })();
     extraPending.set(charId, job);
     try {
@@ -244,10 +256,19 @@ export function sheetReady(charId: string): boolean {
   return sheets.has(charId);
 }
 
-export async function ensureCharSheets(charIds: readonly string[]): Promise<void> {
+export async function ensureCharSheets(
+  charIds: readonly string[],
+  onProgress?: (done: number, total: number) => void,
+): Promise<void> {
+  let done = 0;
+  const bump = (): void => {
+    done++;
+    onProgress?.(done, charIds.length);
+  };
   const jobs = charIds.map(async (charId) => {
     if (sheets.has(charId)) {
       touch(charId);
+      bump();
       return;
     }
     const running = pending.get(charId);
@@ -259,6 +280,7 @@ export async function ensureCharSheets(charIds: readonly string[]): Promise<void
         sheets.set(charId, { main: provider, extra: prev?.extra ?? null });
         touch(charId);
       }
+      bump();
     })();
     pending.set(charId, job);
     try {

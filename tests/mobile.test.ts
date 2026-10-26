@@ -23,6 +23,7 @@ import {
   drawDemoResult,
   drawLoadingHint,
   drawStageBadge,
+  drawLoadingScreen,
   drawTrainingBadge,
   MOVE_HINT_TEXT,
   drawMoveHint,
@@ -407,5 +408,25 @@ describe('手台位置调整（分别拖动 + 保存按钮）', () => {
     // 摇杆移到左侧 20%、按键 A 移到右侧 80%——两者互不影响
     expect(l.stick.cx / 1280).toBeCloseTo(0.2, 1);
     expect(l.buttons.A.cx / 1280).toBeCloseTo(0.8, 1);
+  });
+});
+
+describe('加载屏', () => {
+  it('显示百分比，且数字跟着进度走', () => {
+    for (const p of [0, 0.37, 1]) {
+      const ctx = new FakeCtx();
+      drawLoadingScreen(ctx, p, '正在加载角色图集');
+      const pct = `${Math.round(p * 100)}%`;
+      expect(ctx.texts.some((t) => t.text === pct), `进度 ${p} 应有 ${pct}`).toBe(true);
+    }
+  });
+
+  it('进度超出 0~1 会夹住（不会画出条外的方块）', () => {
+    const ctx = new FakeCtx();
+    drawLoadingScreen(ctx, 1.8, 'x');
+    expect(ctx.texts.some((t) => t.text === '100%')).toBe(true);
+    const ctx2 = new FakeCtx();
+    drawLoadingScreen(ctx2, -0.5, 'x');
+    expect(ctx2.texts.some((t) => t.text === '0%')).toBe(true);
   });
 });

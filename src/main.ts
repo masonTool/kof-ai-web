@@ -40,6 +40,7 @@ import {
   drawComboMeter,
   drawStageBadge,
   drawLoadingHint,
+  drawLoadingScreen,
   drawDemoResult,
   drawDemoLabel,
   drawPadAdjustHint,
@@ -225,9 +226,26 @@ function browserStorage(): StorageLike | null {
  * `?art=proc` 强制走程序化绘制，方便跟贴图版左右对比。
  * 素材是**按角色**加载的：开局只装场上这 6 个人的图集，没素材的角色自然回落。
  */
+/**
+ * 阻塞式加载状态：`loadingTotal > 0` 时画面被加载屏覆盖，且不推进对局。
+ *
+ * 图集分核心片和扩展片两轮加载，所以 total 是 2×人数；done 累加。
+ */
+let loadingTotal = 0;
+let loadingDone = 0;
+let loadingLabel = '正在加载角色图集';
+
 if (new URLSearchParams(window.location.search).get('art') !== 'proc') {
   installSheetProvider();
-  void ensureCharSheets(['kyo']);
+  // 首屏也要等图集：标题屏背后的角色是 kyo，不等的话会先看到程序化像素人
+  loadingTotal = 1;
+  loadingDone = 0;
+  loadingLabel = '正在加载资源';
+  void ensureCharSheets(['kyo'], () => {
+    loadingDone++;
+  }).then(() => {
+    loadingTotal = 0;
+  });
 }
 
 // 头像很小（~25KB/张），选人屏要一次显示二十多个，所以开局一次性预载整套
@@ -309,15 +327,28 @@ function startMatch(): void {
   const rules = inArcade ? arcadeRules(arcade!) : { cpuLevel: cfg.cpuLevel, hpScale: 1 };
   cpuHpScaledFor = -1;
 
-  // 图集加载分两批：**先装场上两个人**，画面才能尽快出贴图；其余 4 人后台补。
-  // 线上（GitHub Pages）单张图集 2MB、冷缓存要 20~30 秒，6 个一起请求会互相拖慢，
-  // 结果就是玩家进场先看到程序化像素人。
-  const firstTwo = [playerTeam[0]!, enemyTeam[0]!].map((c) => c.id);
+  // 图集**加载完才开局**：显示进度条，避免玩家进场先看到程序化像素人再"变成贴图"。
+  // 两轮：核心片（站架/移动/轻攻击/蹲防）→ 扩展片（跳跃/必杀/胜利姿势）。
   const allIds = [...playerTeam, ...enemyTeam].map((c) => c.id);
-  void ensureCharSheets(firstTwo).then(() => {
-    // 主片（站架/移动/轻攻击）优先到；剩下的人和扩展片（跳跃/必杀/胜利姿势）后台补
-    void ensureCharSheets(allIds).then(() => ensureCharExtras(allIds));
-  });
+  const missing = allIds.filter((id) => !sheetReady(id));
+  if (missing.length > 0) {
+    loadingTotal = missing.length * 2;
+    loadingDone = 0;
+    loadingLabel = '正在加载角色图集';
+    const step = (): void => {
+      loadingDone++;
+    };
+    void ensureCharSheets(missing, step)
+      .then(() => {
+        loadingLabel = '正在加载必杀与胜利动作';
+        return ensureCharExtras(missing, step);
+      })
+      .then(() => {
+        loadingTotal = 0;
+        startMatch(); // 递归一次：这次 missing 为空，直接构造
+      });
+    return;
+  }
   match = new Match(playerTeam, enemyTeam, {
     roundsToWin: cfg.roundsToWin,
     roundSeconds: cfg.roundSeconds,
@@ -1083,6 +1114,8 @@ startAnimationLoop(
       }
 
       if (flow.screen === 'fight' && match && training) {
+        // 加载中不推进对局：图集没到位时让人站着不动，比"打到一半突然换皮"好
+        if (loadingTotal > 0) return;
         // 回放模式：输入只来自录像，播完就冻住画面（不能继续走，否则"看结局"会把状态改掉）
         if (replayPlayer) {
           if (replayPlayer.done) return;
@@ -1131,6 +1164,13 @@ startAnimationLoop(
       raw.fillRect(0, 0, VIEW_WIDTH, VIEW_HEIGHT);
 
       const blink = (uiTick >> 5) % 2 === 0;
+
+      // 加载中：整屏只画进度条，其余一律不画（避免"旧画面 + 加载条"的错位感）
+      if (loadingTotal > 0) {
+        drawLoadingScreen(ctx, loadingDone / loadingTotal, loadingLabel);
+        return;
+      }
+
       switch (flow.screen) {
         case 'title':
           drawTitle(ctx, blink);
