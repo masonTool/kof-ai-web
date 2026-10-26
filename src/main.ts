@@ -49,6 +49,8 @@ import {
   drawMovesButton,
   drawResult,
   HELP_BUTTON,
+  PAD_RESET_BUTTON,
+  PAD_SAVE_BUTTON,
   hitTestCell,
   hitTestModeItem,
   hitTestOptionRow,
@@ -112,6 +114,16 @@ function openMenu(): void {
 }
 
 /** 进入手台位置调整（暂停菜单与选项屏共用） */
+/** 手台调整：确认（把草稿写进设置并落盘） */
+function confirmPadAdjust(reset = false): void {
+  settings.settings.padCustom = reset ? {} : { ...padDraft };
+  settings.save();
+  padAdjusting = false;
+  controls.setAdjusting(false);
+  controls.setCustom(settings.settings.padCustom);
+  audio.play('confirm');
+}
+
 function enterPadAdjust(): void {
   padAdjusting = true;
   padDraft = { ...settings.settings.padCustom };
@@ -662,6 +674,13 @@ canvas.addEventListener('pointerdown', (e) => {
   const inside = (r: { x: number; y: number; w: number; h: number }): boolean =>
     x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h;
 
+  // 手台调整模式：只认「保存」和「用默认」两个按钮（别的地方点了不算）
+  if (padAdjusting) {
+    if (inside(PAD_SAVE_BUTTON)) confirmPadAdjust();
+    else if (inside(PAD_RESET_BUTTON)) confirmPadAdjust(true);
+    return;
+  }
+
   // 列表类界面：点击 = **只选中**（确认一律要按 A，不点两次确认）
   // 暂停菜单的选中由摇杆驱动，不响应点击
   if (pause.open) return;
@@ -900,14 +919,7 @@ startAnimationLoop(
 
       // 调整手台位置时冻结世界：只等玩家点画面确认，别让 CPU 趁机打你
       if (padAdjusting) {
-        if (p1In.held !== 0) {
-          // 确认：草稿写进设置并落盘
-          settings.settings.padCustom = { ...padDraft };
-          settings.save();
-          padAdjusting = false;
-          controls.setAdjusting(false);
-          controls.setCustom(settings.settings.padCustom);
-        }
+        if (p1In.held !== 0) confirmPadAdjust();
         prevPauseHeld = p1In.held;
         return;
       }

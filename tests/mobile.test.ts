@@ -1,6 +1,7 @@
 import { FakeCtx } from './helpers/fake-ctx';
 import { describe, expect, it } from 'vitest';
 import { LOGICAL_HEIGHT, LOGICAL_WIDTH, computeViewport } from '../src/render/scale';
+import { NO_PAD_INSETS, padLayout } from '../src/ui/pad-layout';
 import { HUD_LAYOUT } from '../src/render/hud';
 import {
   setViewWidthByAspect,
@@ -12,6 +13,8 @@ import {
 import {
   hitTestCell,
   selectGridRect,
+  PAD_RESET_BUTTON,
+  PAD_SAVE_BUTTON,
   OPT_ROW_GAP,
   OPT_ROW_TOP,
   menuButtonRect,
@@ -384,5 +387,25 @@ describe('选人屏网格（全角色列出 + 左侧大特写）', () => {
     }
     // 网格外的位置不命中
     expect(hitTestCell(VIEW_WIDTH / 2, 200, count)).toBe(-1);
+  });
+});
+
+describe('手台位置调整（分别拖动 + 保存按钮）', () => {
+  it('「保存」和「用默认」两个按钮都在提示条里、互不重叠、不超出屏宽', () => {
+    for (const b of [PAD_SAVE_BUTTON, PAD_RESET_BUTTON]) {
+      expect(b.y).toBeGreaterThanOrEqual(0);
+      expect(b.y + b.h).toBeLessThanOrEqual(44); // 提示条高 44
+      expect(b.x).toBeGreaterThanOrEqual(0);
+      expect(b.x + b.w).toBeLessThanOrEqual(VIEW_WIDTH);
+    }
+    expect(PAD_SAVE_BUTTON.x + PAD_SAVE_BUTTON.w).toBeLessThanOrEqual(PAD_RESET_BUTTON.x);
+  });
+
+  it('自定义位置按控件分别记录（摇杆和 A~D 各存各的）', () => {
+    const custom = { stick: { x: 0.2, y: 0.8 }, A: { x: 0.8, y: 0.9 } };
+    const l = padLayout(1280, 720, NO_PAD_INSETS, custom);
+    // 摇杆移到左侧 20%、按键 A 移到右侧 80%——两者互不影响
+    expect(l.stick.cx / 1280).toBeCloseTo(0.2, 1);
+    expect(l.buttons.A.cx / 1280).toBeCloseTo(0.8, 1);
   });
 });

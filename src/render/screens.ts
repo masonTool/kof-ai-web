@@ -145,13 +145,35 @@ export function drawMenuButton(ctx: Ctx2D): void {
 }
 
 /** 手台位置调整时的顶部提示 */
+/** 手台调整模式的两个按钮（画面内，唯一的可点区域） */
+export const PAD_SAVE_BUTTON = { x: 76, y: 22, w: 74, h: 16 } as const;
+export const PAD_RESET_BUTTON = { x: 170, y: 22, w: 74, h: 16 } as const;
+
+/**
+ * 手台位置调整时的提示条。
+ *
+ * 摇杆和四键是**分别拖动**的（`makeDraggable` 按控件绑定），
+ * 但原来保存靠"点画面任意处"，玩家不知道什么时候算数；这里给两个明确按钮。
+ */
 export function drawPadAdjustHint(ctx: Ctx2D, blinkOn: boolean): void {
-  ctx.globalAlpha = 0.86;
+  ctx.globalAlpha = 0.9;
   ctx.fillStyle = '#05070a';
-  ctx.fillRect(0, 0, VIEW_WIDTH, 40);
+  ctx.fillRect(0, 0, VIEW_WIDTH, 44);
   ctx.globalAlpha = 1;
-  text(ctx, '拖动摇杆和按键调整位置', VIEW_WIDTH / 2, 12, 'center', 8, SCREEN_COLORS.gold);
-  if (blinkOn) text(ctx, '点画面任意处保存', VIEW_WIDTH / 2, 26, 'center', 6, SCREEN_COLORS.text);
+  text(ctx, '拖动摇杆和按键各自调整位置', VIEW_WIDTH / 2, 6, 'center', 7, SCREEN_COLORS.gold);
+
+  for (const [btn, label, active] of [
+    [PAD_SAVE_BUTTON, '保存', true],
+    [PAD_RESET_BUTTON, '用默认', false],
+  ] as const) {
+    ctx.fillStyle = active ? 'rgba(255,91,61,0.28)' : 'rgba(120,140,170,0.22)';
+    ctx.fillRect(btn.x, btn.y, btn.w, btn.h);
+    ctx.strokeStyle = active ? SCREEN_COLORS.accent : SCREEN_COLORS.dim;
+    ctx.lineWidth = 1;
+    ctx.strokeRect(btn.x + 0.5, btn.y + 0.5, btn.w - 1, btn.h - 1);
+    text(ctx, label, btn.x + btn.w / 2, btn.y + 5, 'center', 6, SCREEN_COLORS.text);
+  }
+  if (blinkOn) text(ctx, '键盘：按任意键 = 保存', VIEW_WIDTH / 2, 40, 'center', 5, SCREEN_COLORS.dim);
 }
 
 /**
