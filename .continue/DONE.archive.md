@@ -1546,3 +1546,13 @@
   - 验证：文档里的每条都注明了实现位置，抽查 3 条确认对得上（`QUICK_WAKEUP_MIN` 在 `constants.ts:78`、`trail` 在 `hud.ts:154`、`smallJumpVy` 在 `fighter.ts` getter）
   - 批次：20261025-2239
 
+## 批次 20261025-2244 · 2026-10-25 · 会话 59bce766
+
+**这批的目标**：补上盘点出来的唯一真缺口——投技。
+
+- [x] [T218] 投技：← + C，贴脸抓取、**不可防御**、空中/受击中/无敌都抓不到 → 单测
+  - 做了什么：①`hit.ts` 的 `isGuarding()` 加 `moveKind === 'throw'` 时一律返回 false（投技存在的意义就是破防）；②`collect()` 加"投技只能抓站立/蹲防的对手"——`airborne`、`isAttacking`、`state === 'hit'` 三种情况直接跳过；③京新增 `4C`「一尺焙烙」（`kind: 'throw'`、motion `'4'`、110 伤害、`knockdown: 'slam'`）
+  - 为什么用 `attacker.move?.kind` 而不是 `hit.kind`：`HitDef` 上没有 kind 字段（`kind: 'full'|'air'|'throw'|'low'` 是 `InvulnWindow` 的），第一次写直接编译不过——类型系统省了一次线上事故
+  - 验证：新增 3 条测试（贴脸抓到并掉血、对手按住防御也会被抓、距离 120 抓不到）；`npm run check` **923 条全绿**
+  - 批次：20261025-2244
+
