@@ -137,6 +137,14 @@ const ANIMS = {
   robspecial2: ['robgenei'],
   robspecial3: ['robshouryuu'],
   robsuper: ['robsuper'],
+  yurispecial1: ['yurikouken'],
+  yurispecial2: ['yurihyakuretsu'],
+  yurispecial3: ['yuriyuri'],
+  yurisuper: ['yurisuper'],
+  leonaspecial1: ['leonavoltec'],
+  leonaspecial2: ['leonamoon'],
+  leonaspecial3: ['leonaground'],
+  leonasuper: ['leonasuper'],
   // 超必杀三段：起手（气汇聚）→ 蓄满（气浪最大）→ 释放收招
   superCharge: ['superchargewindup', 'supercharge', 'superchargerecover'],
   // 躺在地上：按"宽度"归一，锚点用包围盒中心（横躺的人没有"脚底"这个概念）
@@ -397,6 +405,8 @@ const EXCLUSIVE_OWNER = {
   joespecial1: 'joe', joespecial2: 'joe', joespecial3: 'joe', joesuper: 'joe',
   ryospecial1: 'ryo', ryospecial2: 'ryo', ryospecial3: 'ryo', ryosuper: 'ryo',
   robspecial1: 'robert', robspecial2: 'robert', robspecial3: 'robert', robsuper: 'robert',
+  yurispecial1: 'yuri', yurispecial2: 'yuri', yurispecial3: 'yuri', yurisuper: 'yuri',
+  leonaspecial1: 'leona', leonaspecial2: 'leona', leonaspecial3: 'leona', leonasuper: 'leona',
 };
 
 const frames = {};

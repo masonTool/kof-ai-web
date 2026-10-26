@@ -27,7 +27,7 @@ export const LEONA: CharDef = {
 
     // ---------------------------------------------------------------- 必杀技
     // ボルテックランチャー：长距气刃（近身判定很长）
-    '236A': mv('236A', 'ボルテックランチャー', 'special', 40, 'special', [
+    '236A': mv('236A', 'ボルテックランチャー', 'leonaspecial1', 40, 'special', [
       hit('h1', {
         box: { x: 18, y: -62, w: 54, h: 26 },
         frames: [12, 16],
@@ -41,7 +41,7 @@ export const LEONA: CharDef = {
     ], { input: { motion: '236', buttons: ['A'] } }),
 
     // ムーンスラッシャー：突进斜斩
-    '214B': mv('214B', 'ムーンスラッシャー', 'kickHeavy', 38, 'special', [
+    '214B': mv('214B', 'ムーンスラッシャー', 'leonaspecial2', 38, 'special', [
       hit('h1', {
         box: { x: 14, y: -70, w: 36, h: 34 },
         frames: [10, 14],
@@ -55,7 +55,7 @@ export const LEONA: CharDef = {
     ], { input: { motion: '214', buttons: ['B'] }, travel: 58, travelFrames: 15 }),
 
     // グランドセイバー：无敌升龙斩
-    '623A': mv('623A', 'グランドセイバー', 'special', 42, 'special', [
+    '623A': mv('623A', 'グランドセイバー', 'leonaspecial3', 42, 'special', [
       hit('h1', {
         box: { x: 6, y: -90, w: 30, h: 64 },
         frames: [4, 11],
@@ -91,7 +91,7 @@ export const LEONA: CharDef = {
     }),
 
     // ---------------------------------------------------------------- 超必杀
-    '236236A': mv('236236A', 'Vスラッシャー', 'special', 66, 'super', [
+    '236236A': mv('236236A', 'Vスラッシャー', 'leonasuper', 66, 'super', [
       hit('h1', { box: { x: 10, y: -76, w: 40, h: 34 }, frames: [8, 12], damage: 44, hitStun: 18, hitstop: 8, meterGain: 0 }),
       hit('h2', { box: { x: 10, y: -78, w: 42, h: 40 }, frames: [18, 22], damage: 40, hitStun: 18, hitstop: 8, meterGain: 0 }),
       hit('h3', { box: { x: 10, y: -80, w: 44, h: 50 }, frames: [28, 32], damage: 40, hitStun: 18, hitstop: 8, meterGain: 0 }),
@@ -106,7 +106,7 @@ export const LEONA: CharDef = {
       }),
     ], { input: { motion: '236236', buttons: ['A'] }, meterCost: 100, travel: 60, travelFrames: 12 }),
 
-    '214214A': mv('214214A', 'リボルブブラスター', 'special', 60, 'super', [], {
+    '214214A': mv('214214A', 'リボルブブラスター', 'leonasuper', 60, 'super', [], {
       input: { motion: '214214', buttons: ['A'] },
       meterCost: 50,
       projectile: {

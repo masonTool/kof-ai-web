@@ -601,6 +601,15 @@ export const POSE_LIBRARY: Record<string, Pose> = {
   robspecial2: { frameDuration: 1, loop: false, exclusive: 'robert', frames: [f({ head: p(3, -70), neck: p(2, -60), hip: p(0, -38), legFront: [p(18, -50), p(28, -44)], legBack: [p(-8, -26), p(-10, -6)] })] },
   robspecial3: { frameDuration: 1, loop: false, exclusive: 'robert', frames: [f({ head: p(1, -74), neck: p(1, -64), hip: p(0, -41), legFront: [p(14, -58), p(16, -82)], legBack: [p(-6, -22), p(-6, -1)] })] },
   robsuper: { frameDuration: 1, loop: false, exclusive: 'robert', frames: [f({ head: p(3, -68), neck: p(3, -58), hip: p(0, -37), armFront: [p(16, -56), p(28, -50)], armBack: [p(-6, -54), p(-12, -48)] })] },
+  // Yuri / Leona 专属必杀的兜底（key 必须与 anim 名一致）
+  yurispecial1: { frameDuration: 1, loop: false, exclusive: 'yuri', frames: [f({ head: p(4, -68), neck: p(4, -58), hip: p(1, -37), armFront: [p(16, -58), p(30, -56)], armBack: [p(-10, -52), p(-16, -46)] })] },
+  yurispecial2: { frameDuration: 1, loop: false, exclusive: 'yuri', frames: [f({ head: p(5, -68), neck: p(5, -58), hip: p(1, -37), armFront: [p(18, -56), p(30, -54)], armBack: [p(6, -56), p(18, -54)] })] },
+  yurispecial3: { frameDuration: 1, loop: false, exclusive: 'yuri', frames: [f({ head: p(-1, -72), neck: p(-1, -62), hip: p(0, -40), legFront: [p(16, -54), p(22, -74)], legBack: [p(-6, -22), p(-6, -1)] })] },
+  yurisuper: { frameDuration: 1, loop: false, exclusive: 'yuri', frames: [f({ head: p(-1, -70), neck: p(-1, -60), hip: p(0, -38), armFront: [p(16, -58), p(32, -56)], armBack: [p(8, -58), p(22, -56)] })] },
+  leonaspecial1: { frameDuration: 1, loop: false, exclusive: 'leona', frames: [f({ head: p(2, -64), neck: p(2, -54), hip: p(-1, -34), armFront: [p(14, -52), p(24, -46)], armBack: [p(-14, -52), p(-24, -46)] })] },
+  leonaspecial2: { frameDuration: 1, loop: false, exclusive: 'leona', frames: [f({ head: p(3, -66), neck: p(3, -56), hip: p(0, -36), armFront: [p(12, -60), p(18, -30)], armBack: [p(-8, -50), p(-12, -42)] })] },
+  leonaspecial3: { frameDuration: 1, loop: false, exclusive: 'leona', frames: [f({ head: p(4, -54), neck: p(4, -46), hip: p(-2, -28), armFront: [p(14, -34), p(24, -20)], armBack: [p(-10, -46), p(-16, -38)] })] },
+  leonasuper: { frameDuration: 1, loop: false, exclusive: 'leona', frames: [f({ head: p(0, -70), neck: p(0, -60), hip: p(0, -38), armFront: [p(16, -58), p(30, -54)], armBack: [p(-14, -58), p(-28, -54)] })] },
   /** 升龙系：整个人向上冲，手臂上举 */
   specialUppercut: {
     frameDuration: 1,
