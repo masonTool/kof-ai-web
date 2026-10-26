@@ -11,9 +11,7 @@ import {
 } from '../src/sim/constants';
 import {
   hitTestCell,
-  SEL_BAR,
-  selectBarStart,
-  selectBarX,
+  selectGridRect,
   menuButtonRect,
   movesButtonRect,
   drawComboMeter,
@@ -346,33 +344,40 @@ describe('画面内按钮位置（从左上角挪到右上）', () => {
   });
 });
 
-describe('选人屏缩略条（大特写 + 底部条）', () => {
-  it('光标在中间时，窗口以光标为中心', () => {
-    expect(selectBarStart(29, 0)).toBe(0);
-    expect(selectBarStart(29, 14)).toBe(14 - Math.floor(SEL_BAR.visible / 2));
-    // 靠右时窗口贴住末尾，不会越界
-    expect(selectBarStart(29, 28)).toBe(29 - SEL_BAR.visible);
+describe('选人屏网格（全角色列出 + 左侧大特写）', () => {
+  it('29 个角色排成 6 列网格，格子互不重叠', () => {
+    const count = 29;
+    const seen = new Set<string>();
+    for (let i = 0; i < count; i++) {
+      const r = selectGridRect(i, count);
+      const key = `${r.x},${r.y}`;
+      expect(seen.has(key), `第 ${i} 个和前面重了`).toBe(false);
+      seen.add(key);
+    }
+    // 6 列：第 0 和第 5 个应该在同一行，第 6 个换行
+    const a = selectGridRect(0, count);
+    const b = selectGridRect(5, count);
+    const c = selectGridRect(6, count);
+    expect(b.y).toBe(a.y);
+    expect(c.y).toBeGreaterThan(a.y);
   });
 
-  it('点缩略条能命中对应索引（含间距上的点）', () => {
+  it('整个网格在手台上沿之上（不手台压住格子）', () => {
     const count = 29;
-    const cursor = 10;
-    const start = selectBarStart(count, cursor);
-    const barX = selectBarX(count);
-    for (let k = 0; k < Math.min(count, SEL_BAR.visible); k++) {
-      const x = barX + k * (SEL_BAR.cell + SEL_BAR.gap) + 3;
-      expect(hitTestCell(x, SEL_BAR.y + 5, count, cursor)).toBe(start + k);
-      // 格间空隙里的点也必须命中某一格（不点空），归到左邻或右邻都行
-      const gapX = barX + k * (SEL_BAR.cell + SEL_BAR.gap) + SEL_BAR.cell + 1;
-      if (k + 1 < Math.min(count, SEL_BAR.visible)) {
-        const hit = hitTestCell(gapX, SEL_BAR.y + 5, count, cursor);
-        expect(hit === start + k || hit === start + k + 1).toBe(true);
-      }
+    for (let i = 0; i < count; i++) {
+      const r = selectGridRect(i, count);
+      expect(r.y + r.h, `第 ${i} 个太低`).toBeLessThan(140);
+      expect(r.x + r.w).toBeLessThanOrEqual(VIEW_WIDTH);
     }
   });
 
-  it('缩略条以外的位置不命中（避免误触上方大图区）', () => {
-    expect(hitTestCell(VIEW_WIDTH / 2, 60, 29, 10)).toBe(-1);
-    expect(hitTestCell(VIEW_WIDTH / 2, SEL_BAR.y - 5, 29, 10)).toBe(-1);
+  it('点格子能命中对应角色（含间隙）', () => {
+    const count = 29;
+    for (let i = 0; i < count; i++) {
+      const r = selectGridRect(i, count);
+      expect(hitTestCell(r.x + 2, r.y + 2, count)).toBe(i);
+    }
+    // 网格外的位置不命中
+    expect(hitTestCell(VIEW_WIDTH / 2, 200, count)).toBe(-1);
   });
 });

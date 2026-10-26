@@ -49,6 +49,9 @@ import {
   drawMovesButton,
   drawResult,
   HELP_BUTTON,
+  hitTestCell,
+  hitTestModeItem,
+  hitTestOptionRow,
   HELP_PAGE_COUNT,
   drawSelect,
   drawTitle,
@@ -652,6 +655,35 @@ canvas.addEventListener('pointerdown', (e) => {
   const inside = (r: { x: number; y: number; w: number; h: number }): boolean =>
     x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h;
 
+  // 列表类界面：点击 = **只选中**（确认一律要按 A，不点两次确认）
+  // 暂停菜单的选中由摇杆驱动，不响应点击
+  if (pause.open) return;
+  if (flow.screen === 'mode') {
+    const hit = hitTestModeItem(x, y);
+    if (hit >= 0) {
+      flow.modeCursor = hit;
+      audio.play('menu');
+    }
+    return;
+  }
+  if (flow.screen === 'options') {
+    const rows = flow.options.length + 1;
+    const hit = hitTestOptionRow(x, y, rows);
+    if (hit >= 0) {
+      flow.optionCursor = hit;
+      audio.play('menu');
+    }
+    return;
+  }
+  if (flow.screen === 'select') {
+    const cell = hitTestCell(x, y, flow.rosterSize, flow.cursor[0]);
+    if (cell >= 0) {
+      flow.cursor[0] = cell;
+      audio.play('menu');
+    }
+    return;
+  }
+
   if (flow.screen === 'title') {
     if (inside(HELP_BUTTON)) {
       helpPage = 0;
@@ -1138,8 +1170,10 @@ startAnimationLoop(
               : null;
         if (shown) drawMoveList(ctx, shown.name, moveListFor(shown));
       }
-      if (flow.screen === 'fight' || flow.screen === 'select') drawMovesButton(ctx, moveListOpen);
-      if (flow.screen !== 'title') drawMenuButton(ctx);
+      // 「招式」只在真正开打时显示（选人屏有右侧招式速览，不需要这个按钮）
+      if (flow.screen === 'fight') drawMovesButton(ctx, moveListOpen);
+      // 「暂停」也只在开打时显示：其它界面用 B 返回就够了
+      if (flow.screen === 'fight') drawMenuButton(ctx);
       if (demoFrames && flow.screen === 'fight') {
         const steps = (comboSets(match?.p1.char)[demoSegment] ?? comboSets()[0]!).steps;
         const at = stepAt(demoStarts, Math.max(0, demoIndex - 1));

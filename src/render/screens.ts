@@ -435,29 +435,51 @@ export function drawTitle(ctx: Ctx2D, blinkOn: boolean): void {
   text(ctx, '方向键移动/跳蹲 · 236/623/214 出必杀', VIEW_WIDTH / 2, 200, 'center', 6, art ? SCREEN_COLORS.text : SCREEN_COLORS.dim);
 }
 
-/** 选人屏底部缩略条：格子边长 / 间距 / 一屏显示几个 */
-export const SEL_BAR = { y: 176, cell: 24, gap: 3, visible: 11 } as const;
+/**
+ * 选人屏网格：右侧把**所有角色**一次列出来。
+ *
+ * 上一版是「底部横向缩略条」，翻人要一格格挪，29 个人要按十几次方向键——太慢。
+ * 现在回到网格（一眼看全），但左边保留大特写：选中的那位放大展示。
+ * 网格整体压在上半屏（y 到 128），下面留给手台，避免摇杆压住格子。
+ */
+export const SEL_GRID = { x: 100, y: 30, cols: 6, cellW: 24, cellH: 18, gap: 2 } as const;
 
-/** 缩略条要显示的第几个开始的索引（让光标尽量居中） */
-export function selectBarStart(count: number, cursor: number): number {
-  const vis = SEL_BAR.visible;
-  if (count <= vis) return 0;
-  return Math.max(0, Math.min(count - vis, cursor - Math.floor(vis / 2)));
+/** 第 i 个角色在选人网格里的矩形 */
+export function selectGridRect(i: number, count: number): { x: number; y: number; w: number; h: number } {
+  const cols = SEL_GRID.cols;
+  const rows = Math.max(1, Math.ceil(count / cols));
+  // 角色少于一行时居中，避免挤在左边
+  const rowCount = Math.min(rows, Math.ceil(count / cols));
+  const rowInGrid = Math.floor(i / cols);
+  const totalW = cols * SEL_GRID.cellW + (cols - 1) * SEL_GRID.gap;
+  const totalH = rowCount * SEL_GRID.cellH + (rowCount - 1) * SEL_GRID.gap;
+  const originX = SEL_GRID.x + Math.round((SEL_GRID.cellW * cols + SEL_GRID.gap * (cols - 1) - totalW) / 2);
+  const originY = SEL_GRID.y + Math.round((SEL_GRID.cellH * rowCount + SEL_GRID.gap * (rowCount - 1) - totalH) / 2);
+  return {
+    x: originX + (i % cols) * (SEL_GRID.cellW + SEL_GRID.gap),
+    y: originY + rowInGrid * (SEL_GRID.cellH + SEL_GRID.gap),
+    w: SEL_GRID.cellW,
+    h: SEL_GRID.cellH,
+  };
 }
 
-/** 缩略条横向起点（居中） */
-export function selectBarX(count: number): number {
-  const n = Math.min(count, SEL_BAR.visible);
-  const total = n * SEL_BAR.cell + (n - 1) * SEL_BAR.gap;
-  return Math.round((VIEW_WIDTH - total) / 2);
+/** 网格里点到了第几个角色（-1 = 没点中） */
+export function hitTestCell(x: number, y: number, count: number, _cursor = 0): number {
+  for (let i = 0; i < count; i++) {
+    const r = selectGridRect(i, count);
+    // 格子间隙也算命中，手指点偏 1~2px 不该点空
+    if (x >= r.x - SEL_GRID.gap && x < r.x + r.w + SEL_GRID.gap && y >= r.y - SEL_GRID.gap && y < r.y + r.h + SEL_GRID.gap) {
+      return i;
+    }
+  }
+  return -1;
 }
 
 /**
- * 选人屏：左边大特写、右边资料、底部缩略条。
+ * 选人屏：左边大特写、右边全角色网格。
  *
- * 为什么改成这样：原来 29 个格子铺满一屏，每个只有 40×18 左右——
- * 头像被压到看不清、名字要塞省略号，用户反馈"画面太拥挤、头像又小又糊"。
- * 现在一屏只突出一个人，其余用底部缩略条浏览。
+ * 两边的取舍：网格负责"快"（一眼看全、方向键挪两下就到），
+ * 大特写负责"看清楚这人是谁"（半身像 + 名字 + 属性 + 招式）。
  */
 export function drawSelect(ctx: Ctx2D, flow: AppFlow, blinkOn: boolean): void {
   ctx.fillStyle = SCREEN_COLORS.bg;
@@ -467,9 +489,9 @@ export function drawSelect(ctx: Ctx2D, flow: AppFlow, blinkOn: boolean): void {
   const cursor = flow.cursor[0];
   const char = flow.roster[cursor] ?? flow.roster[0]!;
 
-  const ART = { x: 8, y: 30, w: 105, h: 140 }; // 3:4，和 480×640 的素材同比例
+  const ART = { x: 6, y: 26, w: 88, h: 117 }; // 3:4，和 480×640 的素材同比例
 
-  // 大特写：有半身像就贴，没有先贴小头像（拉伸会糊，但比空白强），再没有就画程序化小人
+  // 大特写：有半身像就贴，没有回落小头像，再没有画程序化小人
   const big = bigPortraitFor(char.id);
   ctx.fillStyle = '#0b0f16';
   ctx.fillRect(ART.x, ART.y, ART.w, ART.h);
@@ -483,8 +505,8 @@ export function drawSelect(ctx: Ctx2D, flow: AppFlow, blinkOn: boolean): void {
       ctx.drawImage(small, 0, 0, 128, 128, ART.x, ART.y, ART.w, ART.h);
     } else {
       ctx.save();
-      ctx.translate(ART.x + ART.w / 2, ART.y + ART.h - 10);
-      ctx.scale(0.85, 0.85);
+      ctx.translate(ART.x + ART.w / 2, ART.y + ART.h - 8);
+      ctx.scale(0.7, 0.7);
       drawFighter(ctx, {
         palette: char.palette,
         facing: 1,
@@ -501,59 +523,48 @@ export function drawSelect(ctx: Ctx2D, flow: AppFlow, blinkOn: boolean): void {
   ctx.lineWidth = 1;
   ctx.strokeRect(ART.x + 0.5, ART.y + 0.5, ART.w - 1, ART.h - 1);
 
-  // 右侧资料
-  const infoX = ART.x + ART.w + 10;
-  text(ctx, 'P1', infoX, 34, 'left', 7, '#ffd9cf');
-  text(ctx, char.name, infoX, 52, 'left', Math.min(14, Math.max(9, Math.floor(150 / Math.max(2, char.name.length)))), SCREEN_COLORS.gold);
+  // 大图下方：名字 + 属性
+  text(ctx, char.name, ART.x + ART.w / 2, ART.y + ART.h + 6, 'center', 9, SCREEN_COLORS.gold);
   const styleLabel: Record<string, string> = { fire: '炎', darkfire: '暗炎', thunder: '雷', ki: '气', none: '体术' };
   const fx = (char as unknown as { fx?: string }).fx ?? 'none';
-  text(ctx, styleLabel[fx] ?? '体术', infoX, 72, 'left', 8, SCREEN_COLORS.text);
+  text(ctx, styleLabel[fx] ?? '体术', ART.x + ART.w / 2, ART.y + ART.h + 17, 'center', 7, SCREEN_COLORS.text);
 
-  // 招式速览：只列必杀和超必杀，超出一屏就省略
-  const specials = Object.values(char.moves).filter((m) => m.kind === 'special' || m.kind === 'super');
-  text(ctx, '招式', infoX, 92, 'left', 7, SCREEN_COLORS.dim);
-  specials.slice(0, 4).forEach((m, i) => {
-    const name = m.name.length > 12 ? `${m.name.slice(0, 11)}…` : m.name;
-    text(ctx, name, infoX, 104 + i * 11, 'left', 6, m.kind === 'super' ? SCREEN_COLORS.gold : SCREEN_COLORS.text);
-  });
-
-  // 底部缩略条
-  const start = selectBarStart(count, cursor);
-  const barX = selectBarX(count);
-  const n = Math.min(count, SEL_BAR.visible);
-  for (let k = 0; k < n; k++) {
-    const i = start + k;
+  // 右侧全角色网格
+  for (let i = 0; i < count; i++) {
     const c = flow.roster[i];
-    if (!c) break;
-    const x = barX + k * (SEL_BAR.cell + SEL_BAR.gap);
-    const y = SEL_BAR.y;
+    if (!c) continue;
+    const r = selectGridRect(i, count);
     const face = portraitFor(c.id);
     ctx.fillStyle = face ? '#0b0f16' : c.palette.primary;
-    ctx.fillRect(x, y, SEL_BAR.cell, SEL_BAR.cell);
-    if (face) ctx.drawImage(face, 0, 0, 128, 128, x, y, SEL_BAR.cell, SEL_BAR.cell);
-    // 光标 / 已选：P1 红框、P2 蓝框
+    ctx.fillRect(r.x, r.y, r.w, r.h);
+    if (face) ctx.drawImage(face, 0, 0, 128, 128, r.x, r.y, r.w, r.h);
     if (flow.cursor[0] === i) {
       ctx.strokeStyle = SCREEN_COLORS.accent;
       ctx.lineWidth = 2;
-      ctx.strokeRect(x - 1, y - 1, SEL_BAR.cell + 2, SEL_BAR.cell + 2);
-    }
-    if (flow.locked[0] && flow.cursor[0] === i) {
-      ctx.fillStyle = SCREEN_COLORS.accent;
-      ctx.fillRect(x + SEL_BAR.cell - 5, y + 1, 4, 4);
-    }
-    if (flow.cursor[1] === i) {
+      ctx.strokeRect(r.x - 1, r.y - 1, r.w + 2, r.h + 2);
+    } else if (flow.cursor[1] === i) {
       ctx.strokeStyle = '#5aa9ff';
       ctx.lineWidth = 1;
-      ctx.strokeRect(x + 0.5, y + 0.5, SEL_BAR.cell - 1, SEL_BAR.cell - 1);
+      ctx.strokeRect(r.x + 0.5, r.y + 0.5, r.w - 1, r.h - 1);
+    }
+    // 已锁定：右上角一个小实心方块
+    if (flow.locked[0] && flow.cursor[0] === i) {
+      ctx.fillStyle = SCREEN_COLORS.accent;
+      ctx.fillRect(r.x + r.w - 5, r.y + 1, 4, 4);
     }
   }
-  // 缩略条两端的小箭头：暗示还有更多
-  if (start > 0) text(ctx, '‹', barX - 7, SEL_BAR.y + 7, 'center', 9, SCREEN_COLORS.dim);
-  if (start + n < count) text(ctx, '›', barX + n * (SEL_BAR.cell + SEL_BAR.gap) + 4, SEL_BAR.y + 7, 'center', 9, SCREEN_COLORS.dim);
 
-  // 底部状态
-  const label = flow.locked[0] ? '已确定 · B/D 重选' : 'A 确定 · 方向键换人';
-  if (blinkOn || flow.locked[0]) text(ctx, label, VIEW_WIDTH / 2, 210, 'center', 7, SCREEN_COLORS.text);
+  // 招式速览：网格右边一窄条（只列必杀/超必杀，超出的省略）
+  const specials = Object.values(char.moves).filter((m) => m.kind === 'special' || m.kind === 'super');
+  text(ctx, '招式', 262, 32, 'left', 6, SCREEN_COLORS.dim);
+  specials.slice(0, 5).forEach((m, i) => {
+    const name = m.name.length > 8 ? `${m.name.slice(0, 7)}…` : m.name;
+    text(ctx, name, 262, 42 + i * 10, 'left', 5, m.kind === 'super' ? SCREEN_COLORS.gold : SCREEN_COLORS.text);
+  });
+
+  // 底部提示（放在手台上沿之上，避免被摇杆压住）
+  const label = flow.locked[0] ? '已确定 · B/D 重选' : '方向键选人 · A 确定';
+  if (blinkOn || flow.locked[0]) text(ctx, label, VIEW_WIDTH / 2, 138, 'center', 7, SCREEN_COLORS.text);
 }
 
 export function drawVs(ctx: Ctx2D, flow: AppFlow): void {
@@ -807,20 +818,3 @@ export function hitTestPauseItem(x: number, y: number, itemCount: number): numbe
   return -1;
 }
 
-/** 选人格子命中测试（鼠标/触屏点选） */
-/**
- * 选人屏点选：命中底部缩略条里的第几格。
- *
- * `cursor` 用来算滚动起点——条上只显示 11 个，光标在哪决定窗口从谁开始。
- */
-export function hitTestCell(x: number, y: number, count: number, cursor = 0): number {
-  if (y < SEL_BAR.y || y >= SEL_BAR.y + SEL_BAR.cell) return -1;
-  const start = selectBarStart(count, cursor);
-  const barX = selectBarX(count);
-  const n = Math.min(count, SEL_BAR.visible);
-  const k = Math.floor((x - barX) / (SEL_BAR.cell + SEL_BAR.gap));
-  // 落在格间空隙上也算最近的那一格（手指点偏 1~2px 不该点空）
-  if (k < 0 || k >= n) return -1;
-  const idx = start + k;
-  return idx < count ? idx : -1;
-}
