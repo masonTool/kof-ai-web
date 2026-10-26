@@ -267,3 +267,4 @@
 - [x] T246 升龙/突进/超必杀蓄力补起手帧（波动 29/29 完成；其余 15/29，后 14 角色限流待重跑）
 - [x] T247 补齐三个专属必杀起手帧：44 张全部到位，四个必杀 29/29 均 2 帧
 - [x] T248 wakeup 起身改真三帧（蹲→半起→站直），29/29 完成；HEIGHT_TARGET 支持逐帧高度
+- [ ] T249 六个动作仍借用别人贴图（ALIAS 表：landing→crouch、roll→crouch、dizzy→idle、taunt→win、lose→hit、hitFall→hit）→ 按频率逐个补真帧，landing/roll 优先

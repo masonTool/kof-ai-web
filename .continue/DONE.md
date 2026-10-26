@@ -41,6 +41,24 @@
 
 <!-- 实际归档放下面，最新的放最上面 -->
 
+## 批次 20261026-2253 · 2026-10-26 · 会话 59bce766
+
+**这批的目标**：「起身」从借用蹲姿变成真三帧。
+
+- [x] [T248] wakeup 补两帧：`wakeup: 'crouch'` 别名 → `['crouch','wakeupmid','wakeuplast']` 三帧 → 单测 + 29/29 验证
+  - 结果：**29/29 角色 wakeup 全部 3 帧**，三帧高度 464 → 576 → 672（递增），`art:check` 通过
+  - 做了什么：①`gen-poses.mjs` 加 `wakeupmid`（单膝跪地撑手、身体前倾）与 `wakeuplast`（刚站起、膝盖仍微弯）；②`build-sheet.mjs` 把 `wakeup` 从 ALIAS 表**移除**、在 ANIMS 里新增 `['crouch','wakeupmid','wakeuplast']`；③`poses.ts` 的 wakeup 从 1 帧扩到 3 帧（高度 -40 → -56 → -70）；④**`HEIGHT_TARGET` 支持逐帧数组**（`wakeup: [58, 72, 84]`）
+  - **踩到一个真坑（差点白做）**：`build-sheet` 把所有非躺姿**统一缩放到 `CHAR_H * RES`（672 高）**，三帧起身被抹成一样高——测试断言"高度递增"直接报 `expected 672 to be greater than 672`。不修的话，起身就是"原地抖三下"，跟原来借用蹲姿没本质区别。改成 `HEIGHT_TARGET` 支持数组后才有高度差
+  - 为什么先做 wakeup 而不是其它别名：起身是最高频的（每次被打倒都经历）；`landing` 用蹲姿其实合理（落地缓冲），`taunt`/`lose` 是低频
+  - 顺手修的：`check-assets.mjs` 与 `sprite-loader.test.ts` 各自有个"两片坐标混用"的 bug（T240 分片引入），会把扩展片的矩形按主片尺寸判成越界（kyo/joe/shermie 的 superCharge 全在误报）
+  - 验证：`npm run check` **975 条全绿**（新增 wakeup 三帧高度递增、末帧比蹲姿高 1.2 倍两条）；`art:check` 通过；逐角色统计 `{"3":29}`
+  - 批次：20261026-2253
+  - **背景（重要发现）**：`build-sheet.mjs` 的 ALIAS 表里有一批动画**根本没有专属贴图**，全是借用别人的图：`landing → crouch`（落地用蹲姿）、`wakeup → crouch`（起身用蹲姿）、`hitFall → hit`、`taunt → win`（挑衅用胜利姿势）、`lose → hit`（败北用受击姿势）、`dizzy → idle`、`roll → crouch`。这是"不像原版"的又一个大缺口，覆盖面比必杀补帧更广——每次倒地/翻滚/眩晕都会看到
+  - 做了什么：①`gen-poses.mjs` 加 `wakeupmid`（单膝跪地撑手、身体前倾）与 `wakeuplast`（刚站起、膝盖仍微弯）两条提示词；②`build-sheet.mjs` 把 `wakeup` 从 ALIAS 表**移除**、在 ANIMS 里新增 `wakeup: ['crouch','wakeupmid','wakeuplast']`；③`poses.ts` 的 `wakeup` 从 1 帧扩到 3 帧（高度递增：-40 → -56 → -70，这是"起身"的视觉关键）
+  - 进行中：后台出图 27 角色 × 2 张（日志 `/tmp/gen-wakeup.log`，每角色间隔 60 秒防限流，约 50 分钟）
+  - 为什么先起身而不是其它别名：起身是**最高频**的（每次被打倒都经历），落地用蹲姿其实合理（缓冲），挑衅/败北是低频
+  - 批次：20261026-2253
+
 ## 批次 20261026-2214 · 2026-10-26 · 会话 59bce766
 
 **这批的目标**：把被限流截断的 44 张起手帧补齐。
@@ -271,27 +289,4 @@
   - 为什么不用"每角色固定基准"：那个假设本身是错的（见上），照它改只会引入新的偏差
   - 验证：新增 2 条测试（从最远拉到最近**至少 10 帧**、全角色图集没有比待机大 25% 的帧）；改常量后原本断言"30 帧内到 1.45"的超必杀运镜用例失败，已改成"200 帧内单调逼近"——这条连锁变化正好证明步长真的变慢了；`npm run check` **931 条全绿**
   - 批次：20261026-0221
-
-## 批次 20261026-0101 · 2026-10-26 · 会话 59bce766
-
-**这批的目标**：线上"人物还是像素风"。根因是图集加载太慢导致回落程序化。
-
-- [x] [T223] 线上贴图加载优化：并发限 2 + 先装场上 2 人 + 「加载中」提示
-  - **根因（实测）**：GitHub Pages 的 CDN 对 2MB 的图集冷缓存极慢。在线上页面里逐个探测：kyo/iori 已缓存 1~2ms，terry **23.2s**、ryo **30.0s**、leona **17.8s**、orochi **34.0s**。而 `ensureCharSheets` 是**六个并发**，互相抢带宽 → 玩家进对局时图还没到，`loadCharSheet` 静默回落程序化像素人。刷新一次就正常（命中缓存），所以现象看起来"时好时坏"
-  - 做了什么：①`ensureCharSheets` 加信号量 `MAX_PARALLEL = 2`（避免 6 路争抢）；②`startMatch` 分两批——先装场上两个人（`playerTeam[0]` / `enemyTeam[0]`）让画面尽快出贴图，其余 4 人后台补；③新增 `sheetReady()` + `drawLoadingHint()`：当前出场角色贴图没到位时，画面底部显示「角色贴图加载中…」
-  - 为什么加提示：这 20~30 秒里角色是像素人，玩家会以为"这游戏画风就这样"；明确说在加载，体验完全不同
-  - 验证：`npm run check` **927 条全绿**（新增 1 条测加载提示的文案与 alpha 还原）；本地进对局确认贴图正常（雪神社 + 高清角色）
-  - **还没根治**：体积仍是问题。2MB × 6 人 = 12MB 首屏下载，限流后首屏约 2 人并行 ≈ 20 秒。真正的解法是减体积（降 RES 8→6 可到 56%，或把图集按动画分片，首屏只装 idle+常用攻击）
-  - 批次：20261026-0127
-
-## 批次 20261026-0033 · 2026-10-26 · 会话 59bce766
-
-**这批的目标**：把 CI 与部署合并成一个 workflow。
-
-- [x] [T222] 合并 CI 与部署：单 workflow 内 `npm ci` + `build` 只跑一遍，产物直接交给 Pages；PR 只校验不发布
-  - 做了什么：删掉 `deploy.yml`，重写 `ci.yml`——`build` job 串起「安装 → typecheck → test → art:check → build →（仅 main）configure-pages + upload-pages-artifact」，`deploy` job 只有一步 `deploy-pages`，`if: github.ref == 'refs/heads/main'` 且 `needs: build`
-  - 为什么合并：两个 workflow 各跑一遍 `npm ci` + `npm run build`，等于白花一顿；合并进一个 job 才共享 `node_modules`
-  - 并发策略分两层：workflow 级 `group: <workflow>-<ref>` + `cancel-in-progress: true`（同分支连推取消旧的，省额度）；`deploy` job 级 `group: pages` + `cancel-in-progress: false`（部署不能被打断，否则线上会出现半个站点）
-  - 验证：`ruby -ryaml` 解析通过（jobs: build 9 步 / deploy 1 步，只有一个 workflow 文件）；本地按合并后的顺序跑完整链路——typecheck 通过、`npm run test` **926 条全绿**、`art:check` 通过、`npm run build` 成功（2.62s）；README 的「持续集成」章节改写为单 workflow 说明
-  - 批次：20261026-0033
 

@@ -1591,3 +1591,26 @@
   - **还需要你做一步**：仓库 Settings → Pages → Source 改成 **GitHub Actions**（现在是 Deploy from a branch，我改不了仓库设置）
   - 批次：20261026-0019
 
+## 批次 20261026-0101 · 2026-10-26 · 会话 59bce766
+
+**这批的目标**：线上"人物还是像素风"。根因是图集加载太慢导致回落程序化。
+
+- [x] [T223] 线上贴图加载优化：并发限 2 + 先装场上 2 人 + 「加载中」提示
+  - **根因（实测）**：GitHub Pages 的 CDN 对 2MB 的图集冷缓存极慢。在线上页面里逐个探测：kyo/iori 已缓存 1~2ms，terry **23.2s**、ryo **30.0s**、leona **17.8s**、orochi **34.0s**。而 `ensureCharSheets` 是**六个并发**，互相抢带宽 → 玩家进对局时图还没到，`loadCharSheet` 静默回落程序化像素人。刷新一次就正常（命中缓存），所以现象看起来"时好时坏"
+  - 做了什么：①`ensureCharSheets` 加信号量 `MAX_PARALLEL = 2`（避免 6 路争抢）；②`startMatch` 分两批——先装场上两个人（`playerTeam[0]` / `enemyTeam[0]`）让画面尽快出贴图，其余 4 人后台补；③新增 `sheetReady()` + `drawLoadingHint()`：当前出场角色贴图没到位时，画面底部显示「角色贴图加载中…」
+  - 为什么加提示：这 20~30 秒里角色是像素人，玩家会以为"这游戏画风就这样"；明确说在加载，体验完全不同
+  - 验证：`npm run check` **927 条全绿**（新增 1 条测加载提示的文案与 alpha 还原）；本地进对局确认贴图正常（雪神社 + 高清角色）
+  - **还没根治**：体积仍是问题。2MB × 6 人 = 12MB 首屏下载，限流后首屏约 2 人并行 ≈ 20 秒。真正的解法是减体积（降 RES 8→6 可到 56%，或把图集按动画分片，首屏只装 idle+常用攻击）
+  - 批次：20261026-0127
+
+## 批次 20261026-0033 · 2026-10-26 · 会话 59bce766
+
+**这批的目标**：把 CI 与部署合并成一个 workflow。
+
+- [x] [T222] 合并 CI 与部署：单 workflow 内 `npm ci` + `build` 只跑一遍，产物直接交给 Pages；PR 只校验不发布
+  - 做了什么：删掉 `deploy.yml`，重写 `ci.yml`——`build` job 串起「安装 → typecheck → test → art:check → build →（仅 main）configure-pages + upload-pages-artifact」，`deploy` job 只有一步 `deploy-pages`，`if: github.ref == 'refs/heads/main'` 且 `needs: build`
+  - 为什么合并：两个 workflow 各跑一遍 `npm ci` + `npm run build`，等于白花一顿；合并进一个 job 才共享 `node_modules`
+  - 并发策略分两层：workflow 级 `group: <workflow>-<ref>` + `cancel-in-progress: true`（同分支连推取消旧的，省额度）；`deploy` job 级 `group: pages` + `cancel-in-progress: false`（部署不能被打断，否则线上会出现半个站点）
+  - 验证：`ruby -ryaml` 解析通过（jobs: build 9 步 / deploy 1 步，只有一个 workflow 文件）；本地按合并后的顺序跑完整链路——typecheck 通过、`npm run test` **926 条全绿**、`art:check` 通过、`npm run build` 成功（2.62s）；README 的「持续集成」章节改写为单 workflow 说明
+  - 批次：20261026-0033
+
