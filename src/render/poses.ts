@@ -32,6 +32,13 @@ export interface Pose {
   /** 循环播放（待机/走/晕眩）还是停在最后一帧（出招/受击） */
   loop: boolean;
   frames: PoseFrame[];
+  /**
+   * **角色专属**：只有这个角色有对应贴图，别的角色不该有。
+   *
+   * 声明在这里而不是让校验脚本用正则猜角色前缀——之前用正则，每专属化一个角色
+   * 都要记得往 `check-assets.mjs` 里加前缀，漏了就会误报 26 个角色"缺动画"（踩过三次）。
+   */
+  exclusive?: string;
 }
 
 const p = (x: number, y: number): Point => [x, y];
@@ -438,84 +445,143 @@ export const POSE_LIBRARY: Record<string, Pose> = {
   kyspecial1: {
     frameDuration: 1,
     loop: false,
+    exclusive: 'kyo',
     frames: [f({ head: p(0, -68), neck: p(1, -58), armFront: [p(10, -62), p(22, -70)], armBack: [p(-6, -52), p(-10, -44)] })],
   },
   kyspecial2: {
     frameDuration: 1,
     loop: false,
+    exclusive: 'kyo',
     frames: [f({ head: p(2, -64), neck: p(2, -54), hip: p(-1, -34), armFront: [p(8, -46), p(16, -54)], armBack: [p(-8, -50), p(-14, -44)] })],
   },
   kyspecial3: {
     frameDuration: 1,
     loop: false,
+    exclusive: 'kyo',
     frames: [f({ head: p(1, -76), neck: p(1, -64), hip: p(0, -42), armFront: [p(6, -72), p(4, -86)], armBack: [p(-8, -52), p(-10, -44)] })],
   },
   kysuper: {
     frameDuration: 1,
     loop: false,
+    exclusive: 'kyo',
     frames: [f({ head: p(0, -70), neck: p(0, -60), armFront: [p(16, -56), p(32, -54)], armBack: [p(8, -56), p(20, -54)] })],
   },
   // 八神庵专属必杀的兜底（形状接近，紫焰由特效层负责）
   iorispecial1: {
     frameDuration: 1,
     loop: false,
+    exclusive: 'iori',
     frames: [f({ head: p(2, -60), neck: p(2, -52), hip: p(-2, -32), armFront: [p(12, -40), p(22, -30)], armBack: [p(-10, -52), p(-16, -46)] })],
   },
   iorispecial2: {
     frameDuration: 1,
     loop: false,
+    exclusive: 'iori',
     frames: [f({ head: p(1, -76), neck: p(1, -64), hip: p(0, -42), armFront: [p(8, -72), p(6, -88)], armBack: [p(-10, -50), p(-14, -42)] })],
   },
   iorispecial3: {
     frameDuration: 1,
     loop: false,
+    exclusive: 'iori',
     frames: [f({ head: p(2, -68), neck: p(2, -58), armFront: [p(14, -64), p(26, -66)], armBack: [p(-4, -58), p(-8, -60)] })],
   },
   iorisuper: {
     frameDuration: 1,
     loop: false,
+    exclusive: 'iori',
     frames: [f({ head: p(3, -66), neck: p(3, -56), hip: p(0, -36), armFront: [p(16, -58), p(30, -58)], armBack: [p(4, -56), p(16, -56)] })],
   },
   // Terry / Athena 专属必杀的兜底（形状接近，光效由贴图和特效层负责）
   terryspecial1: {
     frameDuration: 1,
     loop: false,
+    exclusive: 'terry',
     frames: [f({ head: p(3, -62), neck: p(3, -54), hip: p(-3, -34), armFront: [p(10, -34), p(20, -22)], armBack: [p(-12, -50), p(-18, -42)] })],
   },
   terryspecial2: {
     frameDuration: 1,
     loop: false,
+    exclusive: 'terry',
     frames: [f({ head: p(6, -66), neck: p(6, -56), hip: p(2, -36), armFront: [p(16, -56), p(28, -54)], armBack: [p(-14, -50), p(-22, -44)] })],
   },
   terryspecial3: {
     frameDuration: 1,
     loop: false,
+    exclusive: 'terry',
     frames: [f({ head: p(2, -74), neck: p(2, -62), hip: p(1, -40), armFront: [p(8, -64), p(14, -72)], armBack: [p(-8, -48), p(-12, -40)] })],
   },
   terrysuper: {
     frameDuration: 1,
     loop: false,
+    exclusive: 'terry',
     frames: [f({ head: p(-2, -72), neck: p(-2, -62), hip: p(0, -40), armFront: [p(6, -70), p(8, -86)], armBack: [p(-8, -70), p(-10, -86)] })],
   },
   athenaspecial1: {
     frameDuration: 1,
     loop: false,
+    exclusive: 'athena',
     frames: [f({ head: p(-1, -68), neck: p(-1, -58), armFront: [p(8, -56), p(4, -50)], armBack: [p(-8, -56), p(-4, -50)] })],
   },
   athenaspecial2: {
     frameDuration: 1,
     loop: false,
+    exclusive: 'athena',
     frames: [f({ head: p(0, -70), neck: p(0, -60), armFront: [p(6, -68), p(6, -86)], armBack: [p(-10, -50), p(-16, -44)] })],
   },
   athenaspecial3: {
     frameDuration: 1,
     loop: false,
+    exclusive: 'athena',
     frames: [f({ head: p(2, -72), neck: p(2, -62), hip: p(0, -40), legFront: [p(10, -26), p(12, -4)], legBack: [p(-8, -30), p(-10, -12)] })],
   },
   athenasuper: {
     frameDuration: 1,
     loop: false,
+    exclusive: 'athena',
     frames: [f({ head: p(0, -72), neck: p(0, -62), hip: p(0, -40), armFront: [p(8, -70), p(10, -88)], armBack: [p(-8, -70), p(-10, -88)] })],
+  },
+  // 红丸 / 大门专属必杀的兜底
+  benispecial1: {
+    frameDuration: 1,
+    loop: false,
+    frames: [f({ head: p(5, -70), neck: p(5, -60), hip: p(1, -38), armFront: [p(16, -58), p(28, -56)], armBack: [p(-12, -52), p(-18, -46)] })],
+    exclusive: 'benimaru',
+  },
+  benispecial2: {
+    frameDuration: 1,
+    loop: false,
+    frames: [f({ head: p(-2, -74), neck: p(-2, -64), hip: p(0, -42), legFront: [p(14, -60), p(18, -84)], legBack: [p(-6, -22), p(-6, -1)] })],
+    exclusive: 'benimaru',
+  },
+  benispecial3: {
+    frameDuration: 1,
+    loop: false,
+    frames: [f({ head: p(4, -68), neck: p(3, -58), hip: p(-1, -36), armFront: [p(14, -56), p(26, -52)], armBack: [p(-6, -54), p(-10, -48)] })],
+    exclusive: 'benimaru',
+  },
+  benisuper: {
+    frameDuration: 1,
+    loop: false,
+    frames: [f({ head: p(3, -70), neck: p(3, -60), hip: p(0, -38), armFront: [p(18, -58), p(30, -56)], armBack: [p(6, -58), p(18, -56)] })],
+    exclusive: 'benimaru',
+  },
+  daimonspecial1: {
+    frameDuration: 1,
+    loop: false,
+    frames: [f({ head: p(2, -54), neck: p(2, -46), hip: p(-2, -28), armFront: [p(10, -30), p(14, -8)], armBack: [p(-10, -30), p(-14, -8)] })],
+    exclusive: 'daimon',
+  },
+  daimonspecial2: {
+    frameDuration: 1,
+    loop: false,
+    frames: [f({ head: p(4, -64), neck: p(4, -54), hip: p(0, -34), armFront: [p(16, -50), p(26, -40)], armBack: [p(-8, -52), p(-14, -44)] })],
+    exclusive: 'daimon',
+  },
+  daimonsuper: {
+    frameDuration: 1,
+    loop: false,
+    frames: [f({ head: p(-2, -74), neck: p(-2, -64), hip: p(0, -42), armFront: [p(8, -76), p(10, -92)], armBack: [p(-8, -76), p(-10, -92)] })],
+    exclusive: 'daimon',
   },
   /** 升龙系：整个人向上冲，手臂上举 */
   specialUppercut: {
@@ -661,16 +727,18 @@ export function hasPose(anim: string): boolean {
  * `art:check` 会把这些从"所有角色都必须有"的清单里排除，
  * 否则每新增一个角色的专属招式，其余 26 个角色都会被报"缺动画"。
  */
-const CHAR_EXCLUSIVE = /^(kyo|iori)special[0-9]$|^(kyo|iori)super$/;
+
 
 /** 所有程序化姿势名（含角色专属的，供绘制层查表） */
 export function poseNames(): string[] {
   return Object.keys(POSE_LIBRARY);
 }
 
-/** 只属于某个角色、不该要求全员都有的姿势 */
+/** 只属于某个角色、不该要求全员都有的姿势（读 `exclusive` 字段，不靠名字猜） */
 export function exclusivePoseNames(): string[] {
-  return Object.keys(POSE_LIBRARY).filter((n) => CHAR_EXCLUSIVE.test(n));
+  return Object.entries(POSE_LIBRARY)
+    .filter(([, pose]) => pose.exclusive !== undefined)
+    .map(([name]) => name);
 }
 
 /**

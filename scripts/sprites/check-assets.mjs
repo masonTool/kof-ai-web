@@ -22,20 +22,24 @@ const STAGES = join(ROOT, 'public/stages');
 /**
  * 姿势库里的动画名（从源码里抠，避免脚本和代码两处维护）。
  *
- * **排除角色专属姿势**（`kyspecial1`、`iorisuper` 这种）：它们只有那个角色有贴图，
- * 不能要求全部 27 个角色都有。新增角色专属化时记得把前缀加进这个正则。
+ * **排除角色专属姿势**：它们只有那个角色有贴图，不能要求全部 27 个角色都有。
+ * 判断依据是姿势块里的 `exclusive: '角色id'` 字段——之前用名字前缀正则，
+ * 每专属化一个角色都要记得改，漏一次就误报 26 条（踩过三次）。
  */
-const CHAR_EXCLUSIVE_RE = /^(ky|iori|terry|athena)(special[0-9]|super)$/;
-
 function poseNames() {
   const src = readFileSync(join(ROOT, 'src/render/poses.ts'), 'utf8');
   const start = src.indexOf('export const POSE_LIBRARY');
   const body = src.slice(start);
   const end = body.indexOf('\n};');
   const block = body.slice(0, end);
-  return [...block.matchAll(/^  ([a-zA-Z0-9_]+): \{/gm)]
-    .map((m) => m[1])
-    .filter((n) => !CHAR_EXCLUSIVE_RE.test(n));
+  const out = [];
+  const parts = block.split(/^  ([a-zA-Z0-9_]+): \{/gm);
+  for (let i = 1; i < parts.length; i += 2) {
+    const name = parts[i];
+    const body2 = (parts[i + 1] ?? '').split(/^  [a-zA-Z0-9_]+: \{/m)[0];
+    if (!/exclusive:\s*'/.test(body2)) out.push(name);
+  }
+  return out;
 }
 
 /** 舞台 id（同样从源码抠） */

@@ -114,6 +114,13 @@ const ANIMS = {
   athenaspecial2: ['athenasword'],
   athenaspecial3: ['athenaarrow'],
   athenasuper: ['athenasuper'],
+  benispecial1: ['benidenkou'],
+  benispecial2: ['beniiai'],
+  benispecial3: ['benishinkuu'],
+  benisuper: ['benisuper'],
+  daimonspecial1: ['daimonjiraishin'],
+  daimonspecial2: ['daimonoguruma'],
+  daimonsuper: ['daimonsuper'],
   // 超必杀三段：起手（气汇聚）→ 蓄满（气浪最大）→ 释放收招
   superCharge: ['superchargewindup', 'supercharge', 'superchargerecover'],
   // 躺在地上：按"宽度"归一，锚点用包围盒中心（横躺的人没有"脚底"这个概念）

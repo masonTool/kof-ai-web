@@ -113,7 +113,7 @@ export const BENIMARU: CharDef = {
     }),
 
     // ---------------------------------------------------------------- 必杀技
-    '236A': mv('236A', '雷靭拳', 'special', 38, 'special', [], {
+    '236A': mv('236A', '雷靭拳', 'benispecial1', 38, 'special', [], {
       input: { motion: '236', buttons: ['A'] },
       projectile: {
         anim: '雷靭拳',
@@ -132,7 +132,7 @@ export const BENIMARU: CharDef = {
       },
     }),
 
-    '214B': mv('214B', '居合い蹴り', 'kickHeavy', 34, 'special', [
+    '214B': mv('214B', '居合い蹴り', 'benispecial2', 34, 'special', [
       hit('h1', {
         box: { x: 14, y: -60, w: 34, h: 18 },
         frames: [10, 14],
@@ -158,7 +158,7 @@ export const BENIMARU: CharDef = {
       }),
     ], { input: { motion: '236', buttons: ['B'] } }),
 
-    '63214B': mv('63214B', '真空片手駒', 'special', 44, 'special', [
+    '63214B': mv('63214B', '真空片手駒', 'benispecial3', 44, 'special', [
       hit('h1', { box: { x: 4, y: -70, w: 36, h: 50 }, frames: [8, 11], damage: 34, hitStun: 14, hitstop: 6, meterGain: 4 }),
       hit('h2', { box: { x: 4, y: -70, w: 36, h: 50 }, frames: [14, 17], damage: 32, hitStun: 14, hitstop: 6, meterGain: 4 }),
       hit('h3', {
@@ -173,7 +173,7 @@ export const BENIMARU: CharDef = {
     ], { input: { motion: '63214', buttons: ['B'] } }),
 
     // ---------------------------------------------------------------- 超必杀
-    '236236A': mv('236236A', '雷光拳', 'special', 58, 'super', [
+    '236236A': mv('236236A', '雷光拳', 'benisuper', 58, 'super', [
       hit('h1', { box: { x: 10, y: -80, w: 40, h: 60 }, frames: [10, 14], damage: 50, hitStun: 18, hitstop: 9, meterGain: 0 }),
       hit('h2', { box: { x: 10, y: -80, w: 40, h: 60 }, frames: [22, 26], damage: 45, hitStun: 18, hitstop: 9, meterGain: 0 }),
       hit('h3', {
@@ -187,7 +187,7 @@ export const BENIMARU: CharDef = {
       }),
     ], { input: { motion: '236236', buttons: ['A'] }, meterCost: 50 }),
 
-    '236236AC': mv('236236AC', '真・雷光拳', 'special', 70, 'super', [
+    '236236AC': mv('236236AC', '真・雷光拳', 'benisuper', 70, 'super', [
       hit('h1', { box: { x: 8, y: -82, w: 44, h: 62 }, frames: [8, 12], damage: 42, hitStun: 18, hitstop: 9, meterGain: 0 }),
       hit('h2', { box: { x: 8, y: -82, w: 44, h: 62 }, frames: [18, 22], damage: 40, hitStun: 18, hitstop: 9, meterGain: 0 }),
       hit('h3', { box: { x: 8, y: -82, w: 44, h: 62 }, frames: [28, 32], damage: 40, hitStun: 18, hitstop: 9, meterGain: 0 }),

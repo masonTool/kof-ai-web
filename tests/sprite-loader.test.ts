@@ -12,7 +12,7 @@ const sheetJson = {
   flash: { ...(mainSheet.flash ?? {}), ...(extraSheet.flash ?? {}) },
 } as typeof mainSheet;
 import { frameListProvider, type FrameListSheet, type SpriteFrame } from '../src/render/assets';
-import { POSE_LIBRARY, poseNames } from '../src/render/poses';
+import { POSE_LIBRARY, exclusivePoseNames, poseNames } from '../src/render/poses';
 import { isSheetJson, providerFromSheetJson, type SheetJson } from '../src/render/sprite-loader';
 
 const IMG = {} as unknown as CanvasImageSource;
@@ -99,11 +99,12 @@ describe('京的贴图产物（build-kyo.mjs 的输出）', () => {
   if (!isSheetJson(raw)) throw new Error('public/sheets/kyo.json 形状不合法，先跑 node scripts/sprites/build-kyo.mjs');
   const sheet = raw;
 
-  // 角色专属姿势（kyspecial1 / iorisuper…）只有那个角色有，不能要求京的图集全都有
-  const EXCLUSIVE_RE = /^(ky|iori|terry|athena)(special[0-9]|super)$/;
+  // 角色专属姿势只有那个角色有，不能要求京的图集全都有——
+  // 用姿势自己的 exclusive 字段判断，不靠名字前缀（那要每加一个角色改一次正则）
+  const EXCLUSIVE = new Set(exclusivePoseNames());
 
   it('姿势库里的每个通用动画都有贴图（少一个就会在那一下闪回程序化像素人）', () => {
-    const generic = poseNames().filter((n) => !EXCLUSIVE_RE.test(n));
+    const generic = poseNames().filter((n) => !EXCLUSIVE.has(n));
     // 格挡用 block 而不是 guard、蹲重拳用 crouchPunch 而不是 punchHeavy——
     // 名字对不上就是"闪一下旧动画"，所以这里按姿势库全量核对，而不是挑几个抽查。
     //

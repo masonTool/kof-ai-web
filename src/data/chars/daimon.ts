@@ -115,7 +115,7 @@ export const DAIMON: CharDef = {
 
     // ---------------------------------------------------------------- 必杀技
     // 地雷震：砸地，下段、击倒，打不到空中
-    '214A': mv('214A', '地雷震', 'crouchPunch', 40, 'special', [
+    '214A': mv('214A', '地雷震', 'daimonspecial1', 40, 'special', [
       hit('h1', {
         box: { x: 0, y: -10, w: 96, h: 14 },
         frames: [14, 20],
@@ -131,7 +131,7 @@ export const DAIMON: CharDef = {
     ], { input: { motion: '214', buttons: ['A'] } }),
 
     // 超大外刈：贴身抓，不可防
-    '63214B': mv('63214B', '超大外刈', 'throwStart', 48, 'throw', [
+    '63214B': mv('63214B', '超大外刈', 'daimonspecial2', 48, 'throw', [
       hit('h1', {
         box: { x: 4, y: -62, w: 30, h: 46 },
         frames: [6, 9],
@@ -147,7 +147,7 @@ export const DAIMON: CharDef = {
 
     // ---------------------------------------------------------------- 超必杀
     // 地獄極楽落とし：不可防的抓取超必杀
-    '236236A': mv('236236A', '地獄極楽落とし', 'throwStart', 66, 'super', [
+    '236236A': mv('236236A', '地獄極楽落とし', 'daimonsuper', 66, 'super', [
       hit('h1', {
         box: { x: 4, y: -62, w: 32, h: 48 },
         frames: [8, 12],
