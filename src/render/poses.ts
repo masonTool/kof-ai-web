@@ -610,6 +610,15 @@ export const POSE_LIBRARY: Record<string, Pose> = {
   leonaspecial2: { frameDuration: 1, loop: false, exclusive: 'leona', frames: [f({ head: p(3, -66), neck: p(3, -56), hip: p(0, -36), armFront: [p(12, -60), p(18, -30)], armBack: [p(-8, -50), p(-12, -42)] })] },
   leonaspecial3: { frameDuration: 1, loop: false, exclusive: 'leona', frames: [f({ head: p(4, -54), neck: p(4, -46), hip: p(-2, -28), armFront: [p(14, -34), p(24, -20)], armBack: [p(-10, -46), p(-16, -38)] })] },
   leonasuper: { frameDuration: 1, loop: false, exclusive: 'leona', frames: [f({ head: p(0, -70), neck: p(0, -60), hip: p(0, -38), armFront: [p(16, -58), p(30, -54)], armBack: [p(-14, -58), p(-28, -54)] })] },
+  // Ralf / Clark 专属必杀的兜底（key 与 anim 名一致）
+  ralfspecial1: { frameDuration: 1, loop: false, exclusive: 'ralf', frames: [f({ head: p(6, -68), neck: p(6, -58), hip: p(2, -37), armFront: [p(20, -56), p(32, -54)], armBack: [p(8, -56), p(20, -54)] })] },
+  ralfspecial2: { frameDuration: 1, loop: false, exclusive: 'ralf', frames: [f({ head: p(4, -66), neck: p(3, -56), hip: p(0, -36), armFront: [p(18, -58), p(30, -62)], armBack: [p(-14, -48), p(-20, -40)] })] },
+  ralfspecial3: { frameDuration: 1, loop: false, exclusive: 'ralf', frames: [f({ head: p(8, -64), neck: p(8, -54), hip: p(3, -34), armFront: [p(18, -50), p(30, -46)], armBack: [p(-10, -46), p(-16, -40)] })] },
+  ralfsuper: { frameDuration: 1, loop: false, exclusive: 'ralf', frames: [f({ head: p(6, -68), neck: p(6, -58), hip: p(2, -37), armFront: [p(20, -56), p(34, -54)], armBack: [p(10, -56), p(24, -54)] })] },
+  clarkspecial1: { frameDuration: 1, loop: false, exclusive: 'clark', frames: [f({ head: p(6, -64), neck: p(6, -54), hip: p(2, -34), armFront: [p(16, -52), p(26, -48)], armBack: [p(-10, -52), p(-20, -48)] })] },
+  clarkspecial2: { frameDuration: 1, loop: false, exclusive: 'clark', frames: [f({ head: p(-4, -60), neck: p(-4, -52), hip: p(-2, -32), armFront: [p(10, -62), p(14, -78)], armBack: [p(-8, -56), p(-12, -72)] })] },
+  clarkspecial3: { frameDuration: 1, loop: false, exclusive: 'clark', frames: [f({ head: p(4, -52), neck: p(4, -44), hip: p(0, -26), armFront: [p(12, -38), p(18, -30)], armBack: [p(-8, -38), p(-14, -30)] })] },
+  clarksuper: { frameDuration: 1, loop: false, exclusive: 'clark', frames: [f({ head: p(-2, -66), neck: p(-2, -56), hip: p(0, -38), armFront: [p(8, -78), p(10, -94)], armBack: [p(-8, -78), p(-10, -94)] })] },
   /** 升龙系：整个人向上冲，手臂上举 */
   specialUppercut: {
     frameDuration: 1,

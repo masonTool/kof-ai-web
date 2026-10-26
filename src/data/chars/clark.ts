@@ -27,7 +27,7 @@ export const CLARK: CharDef = {
 
     // ---------------------------------------------------------------- 必杀技
     // マウントタックル：贴身抓取（摔投）
-    '236A': mv('236A', 'マウントタックル', 'throwStart', 46, 'throw', [
+    '236A': mv('236A', 'マウントタックル', 'clarkspecial1', 46, 'throw', [
       hit('h1', {
         box: { x: 4, y: -62, w: 32, h: 46 },
         frames: [6, 10],
@@ -42,7 +42,7 @@ export const CLARK: CharDef = {
     ], { input: { motion: '236', buttons: ['A'] }, blockable: false }),
 
     // フランケンシュタイナー：反摔
-    '63214B': mv('63214B', 'フランケンシュタイナー', 'throwStart', 52, 'throw', [
+    '63214B': mv('63214B', 'フランケンシュタイナー', 'clarkspecial2', 52, 'throw', [
       hit('h1', {
         box: { x: 4, y: -64, w: 32, h: 48 },
         frames: [8, 12],
@@ -57,7 +57,7 @@ export const CLARK: CharDef = {
     ], { input: { motion: '63214', buttons: ['B'] }, blockable: false }),
 
     // スーパーアルゼンチンバックブリーカー：更大伤害的抓取
-    '63214A': mv('63214A', 'スーパーアルゼンチン', 'throwStart', 56, 'throw', [
+    '63214A': mv('63214A', 'スーパーアルゼンチン', 'clarksuper', 56, 'throw', [
       hit('h1', {
         box: { x: 4, y: -64, w: 32, h: 48 },
         frames: [10, 14],
@@ -72,7 +72,7 @@ export const CLARK: CharDef = {
     ], { input: { motion: '63214', buttons: ['A'] }, blockable: false }),
 
     // ローリングクレイドル：突进摔（这段是打判定，不是抓）
-    '623A': mv('623A', 'ローリングクレイドル', 'punchHeavy', 40, 'special', [
+    '623A': mv('623A', 'ローリングクレイドル', 'clarkspecial3', 40, 'special', [
       hit('h1', {
         box: { x: 6, y: -86, w: 28, h: 58 },
         frames: [5, 11],
@@ -87,7 +87,7 @@ export const CLARK: CharDef = {
 
     // ---------------------------------------------------------------- 超必杀
     // アルティメットアルゼンチン：不可防的抓取超必杀
-    '236236A': mv('236236A', 'アルティメットアルゼンチン', 'throwStart', 72, 'super', [
+    '236236A': mv('236236A', 'アルティメットアルゼンチン', 'clarksuper', 72, 'super', [
       hit('h1', {
         box: { x: 4, y: -64, w: 34, h: 50 },
         frames: [8, 12],

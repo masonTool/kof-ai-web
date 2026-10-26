@@ -27,7 +27,7 @@ export const RALF: CharDef = {
 
     // ---------------------------------------------------------------- 必杀技
     // バルカンパンチ：原地连打五段
-    '236A': mv('236A', 'バルカンパンチ', 'punchLight', 48, 'special', [
+    '236A': mv('236A', 'バルカンパンチ', 'ralfspecial1', 48, 'special', [
       hit('h1', { box: { x: 10, y: -64, w: 28, h: 14 }, frames: [7, 9], damage: 22, hitStun: 12, hitstop: 5, meterGain: 4 }),
       hit('h2', { box: { x: 10, y: -64, w: 28, h: 14 }, frames: [12, 14], damage: 20, hitStun: 12, hitstop: 5, meterGain: 4 }),
       hit('h3', { box: { x: 10, y: -64, w: 28, h: 14 }, frames: [17, 19], damage: 20, hitStun: 12, hitstop: 5, meterGain: 4 }),
@@ -44,7 +44,7 @@ export const RALF: CharDef = {
     ], { input: { motion: '236', buttons: ['A'] } }),
 
     // ラリアット：突进球
-    '214A': mv('214A', 'ラリアット', 'punchHeavy', 38, 'special', [
+    '214A': mv('214A', 'ラリアット', 'ralfspecial2', 38, 'special', [
       hit('h1', {
         box: { x: 14, y: -64, w: 34, h: 20 },
         frames: [10, 14],
@@ -58,7 +58,7 @@ export const RALF: CharDef = {
     ], { input: { motion: '214', buttons: ['A'] }, travel: 64, travelFrames: 15 }),
 
     // ダイビングパンチ：跳起下砸（中段）
-    '214B': mv('214B', 'ダイビングパンチ', 'punchHeavy', 40, 'special', [
+    '214B': mv('214B', 'ダイビングパンチ', 'ralfspecial3', 40, 'special', [
       hit('h1', {
         box: { x: 12, y: -62, w: 32, h: 24 },
         frames: [13, 17],
@@ -88,7 +88,7 @@ export const RALF: CharDef = {
     ], { input: { motion: '623', buttons: ['A'] }, invuln: [{ frames: [1, 5], kind: 'full' }] }),
 
     // ---------------------------------------------------------------- 超必杀
-    '236236A': mv('236236A', 'バリバリバルカンパンチ', 'special', 64, 'super', [
+    '236236A': mv('236236A', 'バリバリバルカンパンチ', 'ralfsuper', 64, 'super', [
       hit('h1', { box: { x: 10, y: -66, w: 30, h: 16 }, frames: [8, 10], damage: 30, hitStun: 14, hitstop: 6, meterGain: 0 }),
       hit('h2', { box: { x: 10, y: -66, w: 30, h: 16 }, frames: [14, 16], damage: 28, hitStun: 14, hitstop: 6, meterGain: 0 }),
       hit('h3', { box: { x: 10, y: -68, w: 32, h: 18 }, frames: [20, 22], damage: 28, hitStun: 14, hitstop: 6, meterGain: 0 }),
@@ -103,7 +103,7 @@ export const RALF: CharDef = {
       }),
     ], { input: { motion: '236236', buttons: ['A'] }, meterCost: 50 }),
 
-    '2363214A': mv('2363214A', 'ギャラクティカファントム', 'special', 72, 'super', [
+    '2363214A': mv('2363214A', 'ギャラクティカファントム', 'ralfsuper', 72, 'super', [
       hit('h1', {
         box: { x: 10, y: -66, w: 34, h: 22 },
         frames: [12, 16],
