@@ -21,9 +21,15 @@ export type GameMode = 'arcade' | 'versus' | 'training' | 'watch';
 /** `step()` 返回给外层的动作 */
 export type FlowAction = 'none' | 'start-match' | 'to-title';
 
-export const MODE_ITEMS: readonly { id: GameMode | 'options'; label: string }[] = [
+/**
+ * 模式菜单项。
+ *
+ * `locked` 的项选中后按 A 不会进入，而是弹一句提示——线上对战还没做，
+ * 但入口先留着（比"双人对战"更有未来感，也避免玩家以为本地双人没了）。
+ */
+export const MODE_ITEMS: readonly { id: GameMode | 'options'; label: string; locked?: boolean }[] = [
   { id: 'arcade', label: '街机模式（单人）' },
-  { id: 'versus', label: '双人对战' },
+  { id: 'versus', label: '线上对战', locked: true },
   { id: 'training', label: '训练模式' },
   { id: 'watch', label: '观战（CPU 对 CPU）' },
   { id: 'options', label: '选项' },
@@ -73,6 +79,9 @@ export class AppFlow {
   locked: [boolean, boolean] = [false, false];
   /** 当前屏已经停留的帧数 */
   timer = 0;
+  /** 一行临时提示（未开放的入口、操作被拒等），`noticeFrames` 归零时清空 */
+  notice = '';
+  noticeFrames = 0;
   /** 本场选定的角色（进入 VS 时固定下来） */
   picks: [CharDef, CharDef] | null = null;
   /** 续关倒计时剩余帧 */
@@ -126,6 +135,11 @@ export class AppFlow {
     inputs: readonly [InputSample, InputSample],
     opts: { matchOver?: boolean; matchWinner?: 0 | 1 | 2 } = {},
   ): FlowAction {
+    // 临时提示倒计时：到 0 就清空（提示只活 2.5 秒左右）
+    if (this.noticeFrames > 0) {
+      this.noticeFrames--;
+      if (this.noticeFrames === 0) this.notice = '';
+    }
     const pressed = this.pressedOf(0, inputs[0]);
     const pressed2 = this.pressedOf(1, inputs[1]);
     const start = (pressed & (Btn.A | Btn.Start)) !== 0;
@@ -144,6 +158,12 @@ export class AppFlow {
         if ((pressed & Btn.Down) !== 0) this.modeCursor = this.wrap(this.modeCursor, 1, MODE_ITEMS.length);
         if ((pressed & (Btn.A | Btn.Start)) !== 0) {
           const item = MODE_ITEMS[this.modeCursor]!;
+          if (item.locked) {
+            // 入口留着但没做完：明确告一声，别让人以为是坏了
+            this.notice = `${item.label}还在开发中，先和 CPU 打一场吧`;
+            this.noticeFrames = 150;
+            break;
+          }
           if (item.id === 'options') {
             this.screen = 'options';
             this.timer = 0;
@@ -290,7 +310,8 @@ export class AppFlow {
     this.cursor[who] = this.wrap(this.cursor[who], delta, this.rosterSize);
   }
 
-  private enterSelect(): void {
+  /** 进入选人屏（public：测试与将来的线上对战要能直接跳进来） */
+  enterSelect(): void {
     this.screen = 'select';
     this.timer = 0;
     this.locked = [false, false];

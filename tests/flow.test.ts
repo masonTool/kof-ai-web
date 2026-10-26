@@ -85,11 +85,13 @@ describe('模式选择', () => {
     expect(flow.mode).toBe('arcade');
   });
 
-  it('选双人后 P2 由第二个输入源选人', () => {
+  it('双人模式下 P2 由第二个输入源选人（入口已锁，直接构造模式）', () => {
     const { flow, tap } = makeFlow();
     tap(Btn.A); // 标题 → 模式
-    tap(Btn.Down); // 光标到"双人对战"
-    tap(Btn.A); // 进入选人
+    // 菜单里的「线上对战」是 locked 的，进不去；双人内部能力还留着（将来接线上要用），
+    // 所以这里直接设 mode 再进选人屏
+    flow.mode = 'versus';
+    flow.enterSelect();
     expect(flow.mode).toBe('versus');
 
     tap(Btn.A); // P1 确定
@@ -332,8 +334,9 @@ describe('续关（街机模式输掉）', () => {
   it('双人对战输掉不进续关', () => {
     const h = makeFlow();
     h.tap(Btn.A);
-    h.tap(Btn.Down); // 双人
-    h.tap(Btn.A);
+    // 入口已锁，直接构造双人模式（内部能力保留）
+    h.flow.mode = 'versus';
+    h.flow.enterSelect();
     h.tap(Btn.A);
     h.tap(Btn.A, Btn.A);
     h.idle(DEFAULT_FLOW.vsFrames + 3);
@@ -365,5 +368,21 @@ describe('流程状态干净', () => {
       return `${flow.screen}|${flow.picks?.map((c) => c.id).join(',')}`;
     };
     expect(run()).toBe(run());
+  });
+});
+
+describe('线上对战入口（占位）', () => {
+  it('选中「线上对战」按 A 不进入，而是给一句提示', () => {
+    const { flow, tap } = makeFlow();
+    tap(Btn.A); // 标题 → 模式
+    tap(Btn.Down); // 光标到第二项（线上对战）
+    expect(MODE_ITEMS[flow.modeCursor]!.label).toBe('线上对战');
+    tap(Btn.A);
+    expect(flow.screen).toBe('mode'); // 没进去
+    expect(flow.notice).toContain('开发中');
+
+    // 提示会自己消失（不会一直挂着）
+    for (let i = 0; i < 200; i++) flow.step([{ held: 0 }, { held: 0 }]);
+    expect(flow.notice).toBe('');
   });
 });

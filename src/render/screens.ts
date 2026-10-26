@@ -655,19 +655,34 @@ export function wrapText(text: string, perLine: number): string[] {
 export function drawMode(ctx: Ctx2D, flow: AppFlow, blinkOn: boolean): void {
   ctx.fillStyle = SCREEN_COLORS.bg;
   ctx.fillRect(0, 0, VIEW_WIDTH, VIEW_HEIGHT);
-  text(ctx, 'SELECT MODE', VIEW_WIDTH / 2, 34, 'center', 13, SCREEN_COLORS.gold);
+  text(ctx, 'SELECT MODE', VIEW_WIDTH / 2, 30, 'center', 13, SCREEN_COLORS.gold);
 
+  // 5 项压在上半屏（到手台上沿为止），底部只留一行提示——
+  // 原来项铺到 y=180、提示压到 y=194，都被摇杆和四键盖住
   MODE_ITEMS.forEach((item, i) => {
-    const y = 76 + i * 26;
+    const y = 56 + i * 21;
     const active = flow.modeCursor === i;
     if (active) {
       ctx.fillStyle = 'rgba(255,91,61,0.22)';
-      ctx.fillRect(60, y - 4, VIEW_WIDTH - 120, 20);
+      ctx.fillRect(50, y - 4, VIEW_WIDTH - 100, 17);
     }
-    text(ctx, item.label, VIEW_WIDTH / 2, y, 'center', active ? 11 : 9, active ? SCREEN_COLORS.text : SCREEN_COLORS.dim);
+    const lock = item.locked ? '（开发中）' : '';
+    text(
+      ctx,
+      `${item.label}${lock}`,
+      VIEW_WIDTH / 2,
+      y,
+      'center',
+      active ? 10 : 8,
+      active ? SCREEN_COLORS.text : SCREEN_COLORS.dim,
+    );
   });
 
-  if (blinkOn) text(ctx, '点击选项 · A 确定', VIEW_WIDTH / 2, 194, 'center', 7, SCREEN_COLORS.dim);
+  if (flow.notice) {
+    text(ctx, flow.notice, VIEW_WIDTH / 2, 152, 'center', 6, SCREEN_COLORS.accent);
+  } else if (blinkOn) {
+    text(ctx, '方向键选择 · A 确定', VIEW_WIDTH / 2, 152, 'center', 6, SCREEN_COLORS.dim);
+  }
 }
 
 /** 选项屏行距：10 项设置 + "按键设置"一行，224 高的画面里只有这么多空间 */
