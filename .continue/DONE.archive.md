@@ -1736,3 +1736,15 @@
   - 验证：新增 2 条测试（两个按钮都在提示条内、不重叠、不超屏宽；`padLayout` 传 `{stick, A}` 分别生效——摇杆在 20%、A 在 80% 互不影响）；`npm run check` **951 条全绿**
   - 批次：20261026-0815
 
+## 批次 20261026-0853 · 2026-10-26 · 会话 59bce766
+
+**这批的目标**：图集分片——首屏不再等一个角色的全部 33 个动画。
+
+- [x] [T240] 图集分片：build-sheet 按「核心片/扩展片」输出，loader 先主片后台补扩展片 → 单测 + 体积统计
+  - 做了什么：①`build-sheet.mjs` 抽出 `packAndWrite(subset, ...)`，`CORE_ANIMS` 定义核心片（idle/walkF/walkB/crouch/guard/hit/down/punchLight/kickLight/crouchPunch/crouchKick，共 11 个），其余进 `<id>-extra.json/png`；②`sprite-loader` 的 `sheets` 改成 `{ main, extra }` 结构，`installSheetProvider` 先查 main 再查 extra；③新增 `ensureCharExtras()`（后台补扩展片）+ `hasExtraSheet()`；④`main` 里 `ensureCharSheets(firstTwo) → ensureCharSheets(all) → ensureCharExtras(all)` 三段式
+  - 实测体积：核心片合计 35.3MB（人均 1.22MB）、扩展片 28.9MB；**首屏 2 人 3.7MB → 2.4MB（-35%）**，配合已有的「先装 2 人」策略
+  - 为什么核心片要留这么多：必杀姿势如果在扩展片，放必杀那一下会闪回程序化像素人（比首屏慢更刺眼）；蹲（crouch）漏过一次——它在扩展片里，而蹲防是第一秒就会用到的动作，测试直接报 `crouch: expected undefined to be truthy`
+  - 为什么不干脆只留 idle：能压到 0.3MB，但攻击/跳跃全部会闪回；1.22MB 是"零闪回"前提下的最小值
+  - 验证：新增 3 条测试（核心片含所有进场即用到的动作、两片不重复、两片合起来仍是 33 个动画）；`npm run check` **954 条全绿**；`npm run art:check` 通过
+  - 批次：20261026-0853
+
