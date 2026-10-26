@@ -41,7 +41,7 @@ export const ROBERT: CharDef = {
 
     // ---------------------------------------------------------------- 必杀技
     // 龍撃拳：气弹
-    '236A': mv('236A', '龍撃拳', 'special', 36, 'special', [], {
+    '236A': mv('236A', '龍撃拳', 'robspecial1', 36, 'special', [], {
       input: { motion: '236', buttons: ['A'] },
       projectile: {
         anim: '龍撃拳',
@@ -76,7 +76,7 @@ export const ROBERT: CharDef = {
     ], { input: { motion: '214', buttons: ['B'] }, travel: 62, travelFrames: 15 }),
 
     // 幻影脚・連：二段回旋（可取消接龍撃拳）
-    '214A': mv('214A', '幻影脚・連', 'kickLight', 34, 'special', [
+    '214A': mv('214A', '幻影脚・連', 'robspecial2', 34, 'special', [
       hit('h1', { box: { x: 12, y: -60, w: 32, h: 18 }, frames: [8, 11], damage: 34, hitStun: 15, hitstop: 7, meterGain: 5 }),
       hit('h2', {
         box: { x: 12, y: -66, w: 34, h: 20 },
@@ -90,7 +90,7 @@ export const ROBERT: CharDef = {
     ], { input: { motion: '214', buttons: ['A'] }, cancel: { onHit: ['236A'] } }),
 
     // 昇龍脚：对空
-    '623B': mv('623B', '昇龍脚', 'kickHeavy', 40, 'special', [
+    '623B': mv('623B', '昇龍脚', 'robspecial3', 40, 'special', [
       hit('h1', {
         box: { x: 6, y: -90, w: 28, h: 64 },
         frames: [4, 11],
@@ -104,7 +104,7 @@ export const ROBERT: CharDef = {
     ], { input: { motion: '623', buttons: ['B'] }, invuln: [{ frames: [1, 6], kind: 'full' }] }),
 
     // ---------------------------------------------------------------- 超必杀
-    '236236B': mv('236236B', '龍虎乱舞', 'special', 70, 'super', [
+    '236236B': mv('236236B', '龍虎乱舞', 'robsuper', 70, 'super', [
       hit('h1', { box: { x: 12, y: -70, w: 38, h: 30 }, frames: [8, 12], damage: 40, hitStun: 18, hitstop: 8, meterGain: 0 }),
       hit('h2', { box: { x: 12, y: -70, w: 38, h: 30 }, frames: [16, 20], damage: 36, hitStun: 18, hitstop: 8, meterGain: 0 }),
       hit('h3', { box: { x: 12, y: -76, w: 40, h: 40 }, frames: [24, 28], damage: 36, hitStun: 18, hitstop: 8, meterGain: 0 }),
@@ -120,7 +120,7 @@ export const ROBERT: CharDef = {
       }),
     ], { input: { motion: '236236', buttons: ['B'] }, meterCost: 100, travel: 70, travelFrames: 12 }),
 
-    '2363214B': mv('2363214B', '覇王翔吼拳', 'special', 58, 'super', [], {
+    '2363214B': mv('2363214B', '覇王翔吼拳', 'robsuper', 58, 'super', [], {
       input: { motion: '2363214', buttons: ['B'] },
       meterCost: 50,
       projectile: {

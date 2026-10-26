@@ -41,7 +41,7 @@ export const RYO: CharDef = {
 
     // ---------------------------------------------------------------- 必杀技
     // 虎煌拳：气弹
-    '236A': mv('236A', '虎煌拳', 'special', 38, 'special', [], {
+    '236A': mv('236A', '虎煌拳', 'ryospecial1', 38, 'special', [], {
       input: { motion: '236', buttons: ['A'] },
       projectile: {
         anim: '虎煌拳',
@@ -62,7 +62,7 @@ export const RYO: CharDef = {
     }),
 
     // 暫烈拳：贴身连打（三段，原地）
-    '236C': mv('236C', '暫烈拳', 'punchHeavy', 44, 'special', [
+    '236C': mv('236C', '暫烈拳', 'ryospecial2', 44, 'special', [
       hit('h1', { box: { x: 12, y: -64, w: 30, h: 16 }, frames: [9, 12], damage: 32, hitStun: 14, hitstop: 6, meterGain: 5 }),
       hit('h2', { box: { x: 12, y: -64, w: 30, h: 16 }, frames: [15, 18], damage: 30, hitStun: 14, hitstop: 6, meterGain: 5 }),
       hit('h3', {
@@ -77,7 +77,7 @@ export const RYO: CharDef = {
     ], { input: { motion: '236', buttons: ['C'] } }),
 
     // 飛燕疾風脚：空中回旋踢（中段）
-    '214B': mv('214B', '飛燕疾風脚', 'kickHeavy', 40, 'special', [
+    '214B': mv('214B', '飛燕疾風脚', 'ryospecial3', 40, 'special', [
       hit('h1', {
         box: { x: 12, y: -70, w: 34, h: 26 },
         frames: [12, 16],
@@ -107,7 +107,7 @@ export const RYO: CharDef = {
     ], { input: { motion: '623', buttons: ['A'] }, invuln: [{ frames: [1, 5], kind: 'full' }] }),
 
     // ---------------------------------------------------------------- 超必杀
-    '236236A': mv('236236A', '覇王翔吼拳', 'special', 62, 'super', [], {
+    '236236A': mv('236236A', '覇王翔吼拳', 'ryosuper', 62, 'super', [], {
       input: { motion: '236236', buttons: ['A'] },
       meterCost: 50,
       projectile: {
@@ -128,7 +128,7 @@ export const RYO: CharDef = {
       },
     }),
 
-    '236236C': mv('236236C', '天地覇煌拳', 'special', 74, 'super', [
+    '236236C': mv('236236C', '天地覇煌拳', 'ryosuper', 74, 'super', [
       hit('h1', { box: { x: 10, y: -80, w: 42, h: 58 }, frames: [10, 14], damage: 45, hitStun: 20, hitstop: 9, meterGain: 0 }),
       hit('h2', { box: { x: 10, y: -80, w: 42, h: 58 }, frames: [20, 24], damage: 42, hitStun: 20, hitstop: 9, meterGain: 0 }),
       hit('h3', { box: { x: 10, y: -80, w: 42, h: 58 }, frames: [30, 34], damage: 42, hitStun: 20, hitstop: 9, meterGain: 0 }),

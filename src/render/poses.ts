@@ -592,6 +592,15 @@ export const POSE_LIBRARY: Record<string, Pose> = {
   joespecial2: { frameDuration: 1, loop: false, exclusive: 'joe', frames: [f({ head: p(-1, -72), neck: p(-1, -62), hip: p(0, -41), legFront: [p(14, -56), p(20, -76)], legBack: [p(-6, -22), p(-6, -1)] })] },
   joespecial3: { frameDuration: 1, loop: false, exclusive: 'joe', frames: [f({ head: p(3, -70), neck: p(2, -60), hip: p(0, -40), legFront: [p(20, -48), p(30, -44)], legBack: [p(-8, -26), p(-10, -6)] })] },
   joesuper: { frameDuration: 1, loop: false, exclusive: 'joe', frames: [f({ head: p(-2, -72), neck: p(-2, -62), hip: p(0, -40), armFront: [p(10, -62), p(8, -80)], armBack: [p(-12, -50), p(-18, -42)] })] },
+  // 獠 / Robert 专属必杀的兜底
+  ryospecial1: { frameDuration: 1, loop: false, exclusive: 'ryo', frames: [f({ head: p(4, -68), neck: p(4, -58), hip: p(1, -37), armFront: [p(16, -58), p(30, -56)], armBack: [p(-10, -52), p(-16, -46)] })] },
+  ryospecial2: { frameDuration: 1, loop: false, exclusive: 'ryo', frames: [f({ head: p(5, -68), neck: p(5, -58), hip: p(1, -37), armFront: [p(18, -56), p(30, -54)], armBack: [p(6, -56), p(18, -54)] })] },
+  ryospecial3: { frameDuration: 1, loop: false, exclusive: 'ryo', frames: [f({ head: p(0, -72), neck: p(0, -62), hip: p(0, -40), legFront: [p(16, -54), p(22, -76)], legBack: [p(-8, -24), p(-8, -2)] })] },
+  ryosuper: { frameDuration: 1, loop: false, exclusive: 'ryo', frames: [f({ head: p(-1, -70), neck: p(-1, -60), hip: p(0, -38), armFront: [p(16, -58), p(32, -56)], armBack: [p(8, -58), p(22, -56)] })] },
+  robspecial1: { frameDuration: 1, loop: false, exclusive: 'robert', frames: [f({ head: p(4, -68), neck: p(4, -58), hip: p(1, -37), armFront: [p(16, -58), p(28, -58)], armBack: [p(-10, -52), p(-16, -46)] })] },
+  robspecial2: { frameDuration: 1, loop: false, exclusive: 'robert', frames: [f({ head: p(3, -70), neck: p(2, -60), hip: p(0, -38), legFront: [p(18, -50), p(28, -44)], legBack: [p(-8, -26), p(-10, -6)] })] },
+  robspecial3: { frameDuration: 1, loop: false, exclusive: 'robert', frames: [f({ head: p(1, -74), neck: p(1, -64), hip: p(0, -41), legFront: [p(14, -58), p(16, -82)], legBack: [p(-6, -22), p(-6, -1)] })] },
+  robsuper: { frameDuration: 1, loop: false, exclusive: 'robert', frames: [f({ head: p(3, -68), neck: p(3, -58), hip: p(0, -37), armFront: [p(16, -56), p(28, -50)], armBack: [p(-6, -54), p(-12, -48)] })] },
   /** 升龙系：整个人向上冲，手臂上举 */
   specialUppercut: {
     frameDuration: 1,
