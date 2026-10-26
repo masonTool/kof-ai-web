@@ -371,13 +371,14 @@ export const POSE_LIBRARY: Record<string, Pose> = {
     ],
   },
   /** 波动系：双手从腰侧推出（贴图缺失时用这个程序化版本） */
+  // 两帧：蓄力 → 出手。帧数必须和图集**一致**（图集现在是 2 帧），
+  // 否则程序化版本会多播一帧、贴图那边取模绕回蓄力，看起来像"出手后又缩回去"
   specialProjectile: {
     frameDuration: 1,
     loop: false,
     frames: [
       f({ head: p(-2, -70), neck: p(-3, -60), armFront: [p(-2, -56), p(-8, -52)], armBack: [p(-8, -54), p(-14, -50)] }),
       f({ head: p(2, -70), neck: p(1, -60), armFront: [p(14, -58), p(30, -56)], armBack: [p(6, -58), p(18, -56)] }),
-      f({ head: p(3, -70), neck: p(2, -60), armFront: [p(12, -58), p(26, -56)], armBack: [p(4, -58), p(14, -56)] }),
     ],
   },
   /** 升龙系：整个人向上冲，手臂上举 */

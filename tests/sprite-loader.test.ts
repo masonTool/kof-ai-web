@@ -12,7 +12,7 @@ const sheetJson = {
   flash: { ...(mainSheet.flash ?? {}), ...(extraSheet.flash ?? {}) },
 } as typeof mainSheet;
 import { frameListProvider, type FrameListSheet, type SpriteFrame } from '../src/render/assets';
-import { poseNames } from '../src/render/poses';
+import { POSE_LIBRARY, poseNames } from '../src/render/poses';
 import { isSheetJson, providerFromSheetJson, type SheetJson } from '../src/render/sprite-loader';
 
 const IMG = {} as unknown as CanvasImageSource;
@@ -187,5 +187,32 @@ describe('图集分片（首屏只下核心片）', () => {
 
   it('两片合起来覆盖全部 33 个动画（分片不能丢动作）', () => {
     expect(Object.keys(sheetJson.anims).length).toBe(33);
+  });
+});
+
+describe('必杀起手帧（1 帧 → 2 帧）', () => {
+  // 合并后的 anims 是运行时拼的，类型推断只认 main 片，这里按字典访问
+  const animsOf = (): Record<string, { w: number; h: number }[]> =>
+    sheetJson.anims as unknown as Record<string, { w: number; h: number }[]>;
+
+  it('波动必杀至少两帧：起手 + 出手（单帧放招像"瞬移"，没有发力过程）', () => {
+    const frames = animsOf()['specialProjectile'];
+    expect(frames).toBeTruthy();
+    expect(frames!.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('两帧的包围盒不一样（真是两个不同姿势，不是复制了一份）', () => {
+    const frames = animsOf()['specialProjectile']!;
+    expect(frames[0]!.w === frames[1]!.w && frames[0]!.h === frames[1]!.h).toBe(false);
+  });
+});
+
+describe('姿势库与图集的帧数一致', () => {
+  it('波动的程序化姿势帧数 = 图集帧数（多了会绕回蓄力，少了会少播）', () => {
+    const p = POSE_LIBRARY['specialProjectile']!;
+    const frames = (sheetJson.anims as unknown as Record<string, unknown[]>)['specialProjectile']!;
+    // 图集每帧对应姿势库一帧：图集取模到自己的长度，
+    // 姿势库帧数多于图集时，贴图那边播到多出来的帧会绕回第 0 帧（非循环动画不该绕回）
+    expect(p.frames.length).toBe(frames.length);
   });
 });
