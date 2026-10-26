@@ -78,7 +78,7 @@ const ANIMS = {
   // 必杀技：所有必杀/超必杀共用一个起手姿势
   special: ['special'],
   // 必杀专属动作（T200 出图）：波动推手 / 升龙上挑 / 前冲肩撞 / 超必杀蓄力
-  specialProjectile: ['specialprojectile'],
+  specialProjectile: ['specialprojectilewindup', 'specialprojectile'],
   specialUppercut: ['specialuppercut'],
   specialRush: ['specialrush'],
   superCharge: ['supercharge'],
@@ -268,7 +268,15 @@ if (FROM) {
 // ---------- 主流程 ----------
 const raws = new Map();
 for (const list of Object.values(ANIMS)) {
-  for (const pose of list) if (!raws.has(pose)) raws.set(pose, loadPose(pose));
+  for (const pose of list) {
+    if (raws.has(pose)) continue;
+    try {
+      raws.set(pose, loadPose(pose));
+    } catch {
+      // 可选帧（比如刚加的 specialprojectilewindup）还没出图：跳过它，
+      // 这个动画就用剩下的帧——绝不能让整个角色打包失败
+    }
+  }
 }
 // 统一 scale：以 idle 第一帧的身高为"角色身高"
 const refPose = ANIMS.idle[0];
@@ -295,7 +303,9 @@ const frames = {};
 for (const [anim, list] of Object.entries(ANIMS)) {
   const lying = LYING.has(anim);
   const targetH = HEIGHT_TARGET[anim];
-  frames[anim] = list.map((pose) => {
+  const available = list.filter((p) => raws.has(p));
+  if (available.length === 0) throw new Error(`动画 ${anim} 一帧都找不到`);
+  frames[anim] = available.map((pose) => {
     const raw = raws.get(pose);
     // 站姿一律按目标身高缩放；蹲姿给更矮的目标；躺姿按宽度
     const sized = lying
