@@ -19,7 +19,7 @@ import { drawPose, setPixelSize } from './render/fighter-draw';
 import { downloadCanvas, renderSheet, type SheetSpec } from './render/sheet-export';
 import { POSE_LIBRARY } from './render/poses';
 import { lookFor } from './render/looks';
-import { drawFrame } from './render/renderer';
+import { drawFrame, setFxIntensity } from './render/renderer';
 import { ensureBigPortraits, ensurePortraits } from './render/portraits';
 import { ensureStageArt } from './render/stage-art';
 import { setWeatherEnabled, stageForIndex, stageForSeed } from './render/stage-draw';
@@ -1052,6 +1052,7 @@ startAnimationLoop(
         }
       }
       setWeatherEnabled(settings.settings.weatherFx);
+      setFxIntensity(settings.settings.fxIntensity !== 'retro');
       preloadNextOpponent();
       cueInterfaceSounds();
       bgm.setTrack(trackFor(flow.screen));

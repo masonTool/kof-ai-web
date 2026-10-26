@@ -63,6 +63,7 @@ describe('消毒（读盘必过）', () => {
       weatherFx: true,
       padCustom: {},
       showFrameData: true,
+      fxIntensity: 'full',
       showBoxes: false,
       keyPreset: 0,
       pixelSize: 0.5,
@@ -141,11 +142,12 @@ describe('循环切换', () => {
 });
 
 describe('选项屏的行', () => {
-  it('十一行、有标签有值，音量为 0 显示静音', () => {
+  it('十二行、有标签有值，音量为 0 显示静音', () => {
     const rows = optionRows({ ...DEFAULT_SETTINGS, sfxVolume: 0 });
-    expect(rows).toHaveLength(11);
-    // 天气开关单独断言存在（顺序见 settings.ts，不在这里钉死整张表）
+    expect(rows).toHaveLength(12);
+    // 开关类单独断言存在（顺序见 settings.ts，不在这里钉死整张表）
     expect(rows.some((r) => r.key === 'weatherFx')).toBe(true);
+    expect(rows.some((r) => r.key === 'fxIntensity')).toBe(true);
     expect(rows.map((r) => r.key)).toEqual([
       'roundsToWin',
       'roundSeconds',
@@ -154,6 +156,7 @@ describe('选项屏的行', () => {
       'bgmVolume',
       'showFrameData',
       'weatherFx',
+      'fxIntensity',
       'showBoxes',
       'keyPreset',
       'pixelSize',
@@ -251,5 +254,14 @@ describe('手台位置设置', () => {
     // 再按还是空，不会变出别的值
     store.cycle('padCustom');
     expect(store.settings.padCustom).toEqual({});
+  });
+});
+
+describe('演出强度', () => {
+  it('默认全特效，可以切成原版克制（读盘也认得）', () => {
+    expect(DEFAULT_SETTINGS.fxIntensity).toBe('full');
+    expect(sanitize({ fxIntensity: 'retro' }).fxIntensity).toBe('retro');
+    // 乱填的值回落成全特效，而不是崩掉
+    expect(sanitize({ fxIntensity: 'wild' }).fxIntensity).toBe('full');
   });
 });

@@ -82,6 +82,14 @@ export function drawDebugBoxes(ctx: Ctx2D, match: Match): void {
  * 挤压拉伸与惯性：让动作有重量。
  * 出招的判定帧纵向拉长（冲刺感），受击前两帧横向压扁（被顶住），落地压一下。
  */
+/** 演出强度开关：false = 原版克制（关掉命中泛色 / 超必杀压暗 / 残影） */
+let fxFull = true;
+
+/** 由设置驱动；每帧同步一次（和天气开关同样的做法） */
+export function setFxIntensity(full: boolean): void {
+  fxFull = full;
+}
+
 export function squashFor(f: Fighter): { squash: number; lag: number } {
   if (f.state === FighterState.Hit && f.stateFrame < 2) return { squash: -0.8, lag: 0.15 };
   if (f.state === FighterState.Landing) return { squash: -0.5, lag: 0.1 };
@@ -307,7 +315,7 @@ export function drawFrame(ctx: Ctx2D, match: Match, opts: RenderOptions = {}): v
 
   // 超必杀演出：先把背景压暗，人物才会从画面里"跳出来"。
   // 只压背景不压人——所以这层必须画在角色之前。
-  if (match.superFlash > 0 || match.superHit > 0) {
+  if (fxFull && (match.superFlash > 0 || match.superHit > 0)) {
     const k = match.superHit > 0 ? match.superHit / SUPER_HIT_FRAMES : match.superFlash / SUPER_FLASH_FRAMES;
     ctx.globalAlpha = 0.42 * k;
     ctx.fillStyle = '#05070a';
@@ -322,7 +330,7 @@ export function drawFrame(ctx: Ctx2D, match: Match, opts: RenderOptions = {}): v
     const motion = squashFor(f);
     const pm = poseMotion(f, elapsed);
     // 残影：先画拖影（半透明、同一姿势），再画本体——快攻时才有速度感
-    for (let gi = 0; gi < f.ghosts.length; gi++) {
+    for (let gi = 0; fxFull && gi < f.ghosts.length; gi++) {
       const g = f.ghosts[gi]!;
       drawFighter(ctx, {
         palette: f.char.palette,
@@ -395,7 +403,7 @@ export function drawFrame(ctx: Ctx2D, match: Match, opts: RenderOptions = {}): v
   drawMoveBanner(ctx, match.moveBanner);
 
   // 普通命中的属性泛色：极短（3 帧）且很淡，只是为了"打到了"那一下有体温
-  if (match.hitTintFrames > 0) {
+  if (fxFull && match.hitTintFrames > 0) {
     const a = 0.16 * (match.hitTintFrames / 3);
     ctx.globalAlpha = a;
     ctx.fillStyle = match.hitTintColor;

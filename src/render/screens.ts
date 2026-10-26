@@ -720,10 +720,10 @@ export function drawMode(ctx: Ctx2D, flow: AppFlow, blinkOn: boolean): void {
  *
  * 实际有 11 项设置 + 1 行「按键设置」= 12 行。原来 TOP 44 / GAP 15，
  * 最后一行落在 y=209 —— 整行都在手台（摇杆、四键）下面，等于看不到。
- * 现在压到 26/11（12 行结束在 y≈147，手台上沿约 159），字号降到 6 保证不糊。
+ * 现在压到 26/10（12 项设置 + 「按键设置」= 13 行，结束在 y≈146，手台上沿约 159）。
  */
 export const OPT_ROW_TOP = 26;
-export const OPT_ROW_GAP = 11;
+export const OPT_ROW_GAP = 10;
 const OPT_FONT = 6;
 
 export function drawOptions(ctx: Ctx2D, flow: AppFlow): void {
@@ -855,7 +855,7 @@ export function hitTestOptionRow(x: number, y: number, rowCount: number): number
   for (let i = 0; i < rowCount; i++) {
     const rowY = OPT_ROW_TOP + i * OPT_ROW_GAP;
     // 判定窗口要跟行距一致（11px），否则相邻行会互相抢点击
-    if (y >= rowY - 5 && y < rowY + 6) return i;
+    if (y >= rowY - 5 && y < rowY + 5) return i;
   }
   return -1;
 }

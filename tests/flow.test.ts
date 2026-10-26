@@ -152,9 +152,10 @@ describe('选项屏', () => {
     tap(Btn.A);
     for (let i = 0; i < MODE_ITEMS.length - 1; i++) tap(Btn.Down);
     tap(Btn.A);
-    // 10 项设置（含"手台位置""天气效果"）+ 1 条"按键设置 →"
-    expect(flow.options.length).toBe(11);
-    expect(flow.optionCount).toBe(12);
+    // 12 项以上设置（含"手台位置""天气效果""演出强度"）+ 1 条"按键设置 →"
+    // 用 >= 而不是精确值：这条测的是"每一行都能选到"，不是行数快照
+    expect(flow.options.length).toBeGreaterThanOrEqual(12);
+    expect(flow.optionCount).toBeGreaterThanOrEqual(13);
     for (let i = 0; i < flow.optionCount; i++) tap(Btn.Down);
     expect(flow.optionCursor).toBe(0); // 转一圈回到第一行
   });

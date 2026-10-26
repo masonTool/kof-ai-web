@@ -29,6 +29,15 @@ export interface GameSettings {
   showBoxes: boolean;
   /** 天气粒子（雨/落花/浮尘）：有人嫌挡视线，也给省电留个开关 */
   weatherFx: boolean;
+  /**
+   * 演出强度。
+   *
+   * - `full`：全特效（命中泛色、超必杀背景压暗、残影、属性残留）——现代重制版观感
+   * - `retro`：只留原版 KOF97 那几样（火花 + 闪白 + 顿帧 + 震屏），泛色/压暗/残影全关
+   *
+   * 原版其实很克制，靠动作节奏做手感；这个开关让"想要原版"和"想要炫"两种人都能满足。
+   */
+  fxIntensity: 'full' | 'retro';
   /** 键盘预设下标（见 input/keyboard.ts 的 KEY_PRESETS） */
   keyPreset: number;
   /** 像素粒度：1 = 最细（默认）、2/4 = 越来越粗 */
@@ -48,6 +57,7 @@ export const DEFAULT_SETTINGS: GameSettings = {
   showFrameData: false,
   showBoxes: false,
   weatherFx: true,
+  fxIntensity: 'full',
   keyPreset: 0,
   pixelSize: 0.5,
   customKeys: { p1: {}, p2: {} },
@@ -70,6 +80,7 @@ export type OptionKey =
   | 'showFrameData'
   | 'showBoxes'
   | 'weatherFx'
+  | 'fxIntensity'
   | 'keyPreset'
   | 'pixelSize'
   | 'padCustom';
@@ -203,6 +214,7 @@ export function sanitize(raw: unknown): GameSettings {
     showFrameData: typeof obj['showFrameData'] === 'boolean' ? obj['showFrameData'] : DEFAULT_SETTINGS.showFrameData,
     showBoxes: typeof obj['showBoxes'] === 'boolean' ? obj['showBoxes'] : DEFAULT_SETTINGS.showBoxes,
     weatherFx: typeof obj['weatherFx'] === 'boolean' ? obj['weatherFx'] : DEFAULT_SETTINGS.weatherFx,
+    fxIntensity: obj['fxIntensity'] === 'retro' ? 'retro' : 'full',
     keyPreset: Math.round(clampNumber(obj['keyPreset'], [0, KEY_PRESETS.length - 1], DEFAULT_SETTINGS.keyPreset)),
     pixelSize: PIXEL_SIZES.includes(Number(obj['pixelSize'])) ? Number(obj['pixelSize']) : DEFAULT_SETTINGS.pixelSize,
     customKeys: sanitizeCustom(obj['customKeys']),
@@ -243,6 +255,7 @@ export function optionRows(s: GameSettings): OptionRow[] {
     { key: 'bgmVolume', label: '音量·音乐', value: pct(s.bgmVolume) },
     { key: 'showFrameData', label: '帧数面板', value: s.showFrameData ? '开' : '关' },
     { key: 'weatherFx', label: '天气效果', value: s.weatherFx ? '开' : '关' },
+    { key: 'fxIntensity', label: '演出强度', value: s.fxIntensity === 'retro' ? '原版克制' : '全特效' },
     { key: 'showBoxes', label: '判定框', value: s.showBoxes ? '开' : '关' },
     { key: 'keyPreset', label: '键盘布局', value: KEY_PRESETS[s.keyPreset]?.name ?? '默认' },
     { key: 'pixelSize', label: '像素粒度', value: `${s.pixelSize}×${s.pixelSize}` },

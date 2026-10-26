@@ -70,7 +70,7 @@ describe('菜单点选（触屏）', () => {
   });
 
   it('选项屏：每一行都能点中，且 12 行全部落在手台上沿之上', () => {
-    const rows = 11 + 1; // 11 项设置 + 「按键设置」
+    const rows = 12 + 1; // 12 项设置 + 「按键设置」
     for (let i = 0; i < rows; i++) {
       expect(hitTestOptionRow(160, OPT_ROW_TOP + i * OPT_ROW_GAP, rows)).toBe(i);
     }
