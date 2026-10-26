@@ -36,7 +36,7 @@ export const ANDY: CharDef = {
 
     // ---------------------------------------------------------------- 必杀技
     // 飛翔拳：飞行道具（升龙弧线感用速度和高度近似）
-    '236A': mv('236A', '飛翔拳', 'special', 36, 'special', [], {
+    '236A': mv('236A', '飛翔拳', 'andyspecial1', 36, 'special', [], {
       input: { motion: '236', buttons: ['A'] },
       projectile: {
         anim: '飛翔拳',
@@ -57,7 +57,7 @@ export const ANDY: CharDef = {
     }),
 
     // 斬影拳：带位移的连打
-    '41236A': mv('41236A', '斬影拳', 'punchLight', 40, 'special', [
+    '41236A': mv('41236A', '斬影拳', 'andyspecial2', 40, 'special', [
       hit('h1', { box: { x: 12, y: -62, w: 30, h: 16 }, frames: [8, 11], damage: 34, hitStun: 15, hitstop: 7, meterGain: 5 }),
       hit('h2', { box: { x: 14, y: -60, w: 32, h: 16 }, frames: [14, 17], damage: 32, hitStun: 16, hitstop: 7, meterGain: 5 }),
       hit('h3', {
@@ -72,7 +72,7 @@ export const ANDY: CharDef = {
     ], { input: { motion: '41236', buttons: ['A'] }, travel: 78, travelFrames: 22, cancel: { onHit: ['214A'] } }),
 
     // 昇龍弾：对空升龙
-    '623A': mv('623A', '昇龍弾', 'special', 42, 'special', [
+    '623A': mv('623A', '昇龍弾', 'andyspecial3', 42, 'special', [
       hit('h1', {
         box: { x: 6, y: -90, w: 28, h: 64 },
         frames: [4, 11],
@@ -99,7 +99,7 @@ export const ANDY: CharDef = {
     ], { input: { motion: '214', buttons: ['A'] } }),
 
     // ---------------------------------------------------------------- 超必杀
-    '236236A': mv('236236A', '撃壁背水掌', 'special', 56, 'super', [
+    '236236A': mv('236236A', '撃壁背水掌', 'andysuper', 56, 'super', [
       hit('h1', { box: { x: 10, y: -78, w: 40, h: 56 }, frames: [10, 14], damage: 50, hitStun: 20, hitstop: 10, meterGain: 0 }),
       hit('h2', { box: { x: 10, y: -78, w: 40, h: 56 }, frames: [22, 26], damage: 45, hitStun: 20, hitstop: 10, meterGain: 0 }),
       hit('h3', {
@@ -113,7 +113,7 @@ export const ANDY: CharDef = {
       }),
     ], { input: { motion: '236236', buttons: ['A'] }, meterCost: 50 }),
 
-    '2363214A': mv('2363214A', '超裂破弾', 'special', 74, 'super', [
+    '2363214A': mv('2363214A', '超裂破弾', 'andysuper', 74, 'super', [
       hit('h1', { box: { x: 12, y: -80, w: 44, h: 60 }, frames: [10, 14], damage: 45, hitStun: 20, hitstop: 9, meterGain: 0 }),
       hit('h2', { box: { x: 12, y: -80, w: 44, h: 60 }, frames: [20, 24], damage: 40, hitStun: 20, hitstop: 9, meterGain: 0 }),
       hit('h3', { box: { x: 12, y: -80, w: 44, h: 60 }, frames: [32, 36], damage: 40, hitStun: 20, hitstop: 9, meterGain: 0 }),

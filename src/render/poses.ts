@@ -583,6 +583,15 @@ export const POSE_LIBRARY: Record<string, Pose> = {
     frames: [f({ head: p(-2, -74), neck: p(-2, -64), hip: p(0, -42), armFront: [p(8, -76), p(10, -92)], armBack: [p(-8, -76), p(-10, -92)] })],
     exclusive: 'daimon',
   },
+  // Andy / Joe 专属必杀的兜底
+  andyspecial1: { frameDuration: 1, loop: false, exclusive: 'andy', frames: [f({ head: p(5, -68), neck: p(5, -58), hip: p(1, -37), armFront: [p(16, -56), p(28, -54)], armBack: [p(-10, -52), p(-16, -46)] })] },
+  andyspecial2: { frameDuration: 1, loop: false, exclusive: 'andy', frames: [f({ head: p(8, -60), neck: p(8, -52), hip: p(2, -32), armFront: [p(14, -46), p(28, -40)], armBack: [p(-12, -46), p(-20, -40)] })] },
+  andyspecial3: { frameDuration: 1, loop: false, exclusive: 'andy', frames: [f({ head: p(1, -76), neck: p(1, -64), hip: p(0, -42), armFront: [p(8, -72), p(6, -88)], armBack: [p(-10, -50), p(-14, -42)] })] },
+  andysuper: { frameDuration: 1, loop: false, exclusive: 'andy', frames: [f({ head: p(2, -68), neck: p(2, -58), hip: p(0, -37), armFront: [p(16, -56), p(30, -54)], armBack: [p(8, -56), p(20, -54)] })] },
+  joespecial1: { frameDuration: 1, loop: false, exclusive: 'joe', frames: [f({ head: p(5, -68), neck: p(5, -58), hip: p(1, -37), armFront: [p(18, -56), p(30, -56)], armBack: [p(6, -56), p(18, -56)] })] },
+  joespecial2: { frameDuration: 1, loop: false, exclusive: 'joe', frames: [f({ head: p(-1, -72), neck: p(-1, -62), hip: p(0, -41), legFront: [p(14, -56), p(20, -76)], legBack: [p(-6, -22), p(-6, -1)] })] },
+  joespecial3: { frameDuration: 1, loop: false, exclusive: 'joe', frames: [f({ head: p(3, -70), neck: p(2, -60), hip: p(0, -40), legFront: [p(20, -48), p(30, -44)], legBack: [p(-8, -26), p(-10, -6)] })] },
+  joesuper: { frameDuration: 1, loop: false, exclusive: 'joe', frames: [f({ head: p(-2, -72), neck: p(-2, -62), hip: p(0, -40), armFront: [p(10, -62), p(8, -80)], armBack: [p(-12, -50), p(-18, -42)] })] },
   /** 升龙系：整个人向上冲，手臂上举 */
   specialUppercut: {
     frameDuration: 1,

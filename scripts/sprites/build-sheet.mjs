@@ -121,6 +121,14 @@ const ANIMS = {
   daimonspecial1: ['daimonjiraishin'],
   daimonspecial2: ['daimonoguruma'],
   daimonsuper: ['daimonsuper'],
+  andyspecial1: ['andihishou'],
+  andyspecial2: ['andizaneiken'],
+  andyspecial3: ['andishouryudan'],
+  andysuper: ['andisuper'],
+  joespecial1: ['joebakuretsu'],
+  joespecial2: ['joetiger'],
+  joespecial3: ['joetatsumaki'],
+  joesuper: ['joesuper'],
   // 超必杀三段：起手（气汇聚）→ 蓄满（气浪最大）→ 释放收招
   superCharge: ['superchargewindup', 'supercharge', 'superchargerecover'],
   // 躺在地上：按"宽度"归一，锚点用包围盒中心（横躺的人没有"脚底"这个概念）
@@ -363,8 +371,29 @@ const HEIGHT_TARGET = {
   win3: 88,
 };
 
+/**
+ * 角色专属动画的归属。
+ *
+ * 打包某个角色时，**只能**打他自己的专属动画；否则会去加载别的角色的原图，
+ * 找不到就抛「一帧都找不到」——这个错误在 `> /dev/null` 里被吞了整整几批，
+ * 导致图集一直是旧的（art:check 只校验通用动画，发现不了）。
+ */
+const EXCLUSIVE_OWNER = {
+  kyspecial1: 'kyo', kyspecial2: 'kyo', kyspecial3: 'kyo', kysuper: 'kyo',
+  iorispecial1: 'iori', iorispecial2: 'iori', iorispecial3: 'iori', iorisuper: 'iori',
+  terryspecial1: 'terry', terryspecial2: 'terry', terryspecial3: 'terry', terrysuper: 'terry',
+  athenaspecial1: 'athena', athenaspecial2: 'athena', athenaspecial3: 'athena', athenasuper: 'athena',
+  benispecial1: 'benimaru', benispecial2: 'benimaru', benispecial3: 'benimaru', benisuper: 'benimaru',
+  daimonspecial1: 'daimon', daimonspecial2: 'daimon', daimonsuper: 'daimon',
+  andyspecial1: 'andy', andyspecial2: 'andy', andyspecial3: 'andy', andysuper: 'andy',
+  joespecial1: 'joe', joespecial2: 'joe', joespecial3: 'joe', joesuper: 'joe',
+};
+
 const frames = {};
 for (const [anim, list] of Object.entries(ANIMS)) {
+  // 别人的专属动画：跳过（本角色没有这张图）
+  const owner = EXCLUSIVE_OWNER[anim];
+  if (owner !== undefined && owner !== CHAR_ID) continue;
   const targetH = HEIGHT_TARGET[anim];
   const available = list.filter((p) => raws.has(p));
   if (available.length === 0) throw new Error(`动画 ${anim} 一帧都找不到`);
