@@ -57,34 +57,66 @@ if (ids.length === 0) {
 const heights = new Map();
 
 for (const id of ids) {
-  const json = JSON.parse(readFileSync(join(SHEETS, `${id}.json`), 'utf8'));
-  // 扩展片合并进来再校验（缺了也不致命，只是那些动作会回落程序化）
+  const mainJson = JSON.parse(readFileSync(join(SHEETS, `${id}.json`), 'utf8'));
   const extraPath = join(SHEETS, `${id}-extra.json`);
-  if (existsSync(extraPath)) {
-    const extra = JSON.parse(readFileSync(extraPath, 'utf8'));
-    json.anims = { ...json.anims, ...extra.anims };
-    json.flash = { ...(json.flash ?? {}), ...(extra.flash ?? {}) };
-  }
+  const extraJson = existsSync(extraPath) ? JSON.parse(readFileSync(extraPath, 'utf8')) : null;
+
+  // 动画"存在性"用两片合并后的集合判断；**矩形越界必须分开校验**——
+  // 两片是两张不同的图，坐标各用各的，混在一起查会把 extra 的矩形按主片尺寸判成越界
+  const json = {
+    ...mainJson,
+    anims: { ...mainJson.anims, ...(extraJson?.anims ?? {}) },
+    flash: { ...(mainJson.flash ?? {}), ...(extraJson?.flash ?? {}) },
+  };
+
   const pngPath = join(SHEETS, `${id}.png`);
   if (!existsSync(pngPath)) {
     warn(`${id}: 有 json 没有 png`);
     continue;
   }
   const atlas = decodePng(readFileSync(pngPath));
-  if (atlas.width !== json.width || atlas.height !== json.height) {
-    warn(`${id}: json 声明 ${json.width}×${json.height}，实际 ${atlas.width}×${atlas.height}`);
+  if (atlas.width !== mainJson.width || atlas.height !== mainJson.height) {
+    warn(`${id}: json 声明 ${mainJson.width}×${mainJson.height}，实际 ${atlas.width}×${atlas.height}`);
+  }
+  // 扩展片的尺寸单独对
+  if (extraJson) {
+    const extraPng = join(SHEETS, `${id}-extra.png`);
+    if (!existsSync(extraPng)) {
+      warn(`${id}: 有 extra.json 没有 extra.png`);
+    } else {
+      const ea = decodePng(readFileSync(extraPng));
+      if (ea.width !== extraJson.width || ea.height !== extraJson.height) {
+        warn(`${id}-extra: json 声明 ${extraJson.width}×${extraJson.height}，实际 ${ea.width}×${ea.height}`);
+      }
+    }
   }
 
   // 动画覆盖
   const missing = poses.filter((p) => !(json.anims?.[p]?.length > 0));
   if (missing.length) warn(`${id}: 缺动画 ${missing.join(',')}（这几个动作会闪回程序化绘制）`);
 
-  // 矩形与脚底
+  // 矩形与脚底：主片用主片 png 校验，扩展片单独跑一遍（见上）
+  const checkRects = (animsObj, w, h, label) => {
+    for (const [anim, list] of Object.entries(animsObj ?? {})) {
+      for (const f of list) {
+        if (f.x < 0 || f.y < 0 || f.x + f.w > w || f.y + f.h > h) {
+          warn(`${label}/${anim}: 矩形越界`);
+        }
+      }
+    }
+  };
+  checkRects(mainJson.anims, atlas.width, atlas.height, id);
+  if (extraJson) {
+    const extraPng = join(SHEETS, `${id}-extra.png`);
+    if (existsSync(extraPng)) {
+      const ea = decodePng(readFileSync(extraPng));
+      checkRects(extraJson.anims, ea.width, ea.height, `${id}-extra`);
+    }
+  }
+
+  // 脚底对齐：两片合并后一起查（这个和坐标系无关，只看 oy + h）
   for (const [anim, list] of Object.entries(json.anims ?? {})) {
     for (const f of list) {
-      if (f.x < 0 || f.y < 0 || f.x + f.w > atlas.width || f.y + f.h > atlas.height) {
-        warn(`${id}/${anim}: 矩形越界`);
-      }
       if (f.oy + f.h !== 0) warn(`${id}/${anim}: 脚底没对齐原点（oy + h = ${f.oy + f.h}）`);
     }
   }

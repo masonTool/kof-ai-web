@@ -63,6 +63,9 @@ const ANIMS = {
   walkB: ['walk2', 'walk1'],
   guard: ['guard', 'guard'],
   crouch: ['crouch'],
+  // 起身：蹲着 → 半起 → 站直。原来是 `wakeup: 'crouch'` 别名（直接用蹲姿），
+  // 被打倒后像"瞬间站起来"，现在补两帧过渡
+  wakeup: ['crouch', 'wakeupmid', 'wakeuplast'],
   jump: ['jumpup', 'jumpdown', 'jumpup'],
   punchLight: ['punchwindup', 'punchout', 'punchout'],
   punchHeavy: ['punchwindup', 'punchout', 'punchout'],
@@ -98,7 +101,6 @@ const ALIAS = {
   win3: 'win',
   block: 'guard', // 格挡：和"按住防御"是同一个姿势
   landing: 'crouch', // 落地缓冲
-  wakeup: 'crouch', // 起身
   hitFall: 'hit', // 被打飞
   taunt: 'win', // 挑衅
   lose: 'hit', // 败北

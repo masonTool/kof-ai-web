@@ -290,18 +290,46 @@ export const POSE_LIBRARY: Record<string, Pose> = {
       },
     ],
   },
+  /**
+   * 起身：蹲着 → 半起 → 站直。
+   *
+   * 帧数必须和图集一致（图集 `wakeup: ['crouch','wakeupmid','wakeuplast']` 三帧）——
+   * 不一致的话，贴图播放会取模绕回第一帧，看起来像"站起来又蹲回去"。
+   * 第一帧极矮（蹲）、第二帧半高、第三帧接近站立，高度递增是"起身"的关键。
+   */
   wakeup: {
     frameDuration: 4,
     loop: false,
     frames: [
+      // 蹲着（撑地蓄力）
       {
-        head: p(2, -52),
-        neck: p(1, -44),
-        hip: p(-4, -26),
-        armBack: [p(-8, -34), p(-12, -26)],
-        armFront: [p(6, -34), p(10, -26)],
-        legBack: [p(-10, -14), p(-8, -1)],
-        legFront: [p(8, -14), p(12, -1)],
+        head: p(2, -40),
+        neck: p(1, -34),
+        hip: p(-4, -20),
+        armBack: [p(-8, -26), p(-12, -20)],
+        armFront: [p(6, -26), p(10, -20)],
+        legBack: [p(-10, -11), p(-8, -1)],
+        legFront: [p(8, -11), p(12, -1)],
+      },
+      // 半起（膝盖还弯着）
+      {
+        head: p(2, -56),
+        neck: p(1, -48),
+        hip: p(-3, -30),
+        armBack: [p(-8, -38), p(-11, -28)],
+        armFront: [p(7, -38), p(12, -28)],
+        legBack: [p(-9, -16), p(-7, -1)],
+        legFront: [p(9, -16), p(13, -1)],
+      },
+      // 站直（接近 idle）
+      {
+        head: p(0, -70),
+        neck: p(0, -60),
+        hip: p(0, -40),
+        armBack: [p(-6, -50), p(-8, -34)],
+        armFront: [p(6, -50), p(8, -34)],
+        legBack: [p(-6, -20), p(-6, -1)],
+        legFront: [p(6, -20), p(6, -1)],
       },
     ],
   },

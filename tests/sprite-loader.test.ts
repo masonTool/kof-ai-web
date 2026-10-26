@@ -120,14 +120,22 @@ describe('京的贴图产物（build-kyo.mjs 的输出）', () => {
   });
 
   it('每一帧都落在图集范围内，且偏移与尺寸自洽', () => {
-    for (const [anim, list] of Object.entries(sheet.anims)) {
-      for (const f of list) {
-        expect(f.w, anim).toBeGreaterThan(0);
-        expect(f.h, anim).toBeGreaterThan(0);
-        expect(f.x + f.w, anim).toBeLessThanOrEqual(sheet.width);
-        expect(f.y + f.h, anim).toBeLessThanOrEqual(sheet.height);
-        expect(f.ox, anim).toBeLessThan(0);
-        expect(f.oy + f.h, anim).toBe(0); // 包围盒底边对齐脚下原点
+    // 两片是**两张不同的图**，矩形坐标各用各的尺寸校验；
+    // 混在一起查会把扩展片的矩形按主片尺寸判成越界（这个坑在 check-assets 里也踩过）
+    const pieces: [string, typeof mainSheet][] = [
+      ['main', mainSheet],
+      ['extra', extraSheet as unknown as typeof mainSheet],
+    ];
+    for (const [, piece] of pieces) {
+      for (const [anim, list] of Object.entries(piece.anims)) {
+        for (const f of list) {
+          expect(f.w, anim).toBeGreaterThan(0);
+          expect(f.h, anim).toBeGreaterThan(0);
+          expect(f.x + f.w, anim).toBeLessThanOrEqual(piece.width);
+          expect(f.y + f.h, anim).toBeLessThanOrEqual(piece.height);
+          expect(f.ox, anim).toBeLessThan(0);
+          expect(f.oy + f.h, anim).toBe(0); // 包围盒底边对齐脚下原点
+        }
       }
     }
   });
