@@ -788,3 +788,58 @@ describe('KO 演出', () => {
     expect(m.toHudModel().banner).toBeTruthy();
   });
 });
+
+describe('打击手感（抖动 / 弹跳 / 残影）', () => {
+  const mk = (): Match => new Match(KYO, IORI, { introFrames: 1, roundEndFrames: 3 }, 131);
+  const fight = (m: Match): void => {
+    while (m.phase === 'intro') m.step([{ held: 0 }, { held: 0 }]);
+  };
+
+  it('被打中的人会抖 3 帧（渲染层据此左右偏 1px）', () => {
+    const m = mk();
+    fight(m);
+    m.p2.x = m.p1.x + 20;
+    m.p1.startMove(KYO.moves['5C']!);
+    for (let i = 0; i < 40; i++) {
+      m.step([{ held: 0 }, { held: 0 }]);
+      if (m.lastHits.length > 0) break;
+    }
+    expect(m.p2.hitShake).toBeGreaterThan(0);
+    for (let i = 0; i < 6; i++) m.step([{ held: 0 }, { held: 0 }]);
+    expect(m.p2.hitShake).toBe(0);
+  });
+
+  it('站桩不动时没有残影（不会凭空重影）', () => {
+    const m = mk();
+    fight(m);
+    for (let i = 0; i < 30; i++) m.step([{ held: 0 }, { held: 0 }]);
+    expect(m.p1.ghosts.length).toBe(0);
+  });
+
+  it('必杀起手时留残影，出招结束就清空', () => {
+    const m = mk();
+    fight(m);
+    m.p1.startMove(KYO.moves['236A']!);
+    for (let i = 0; i < 10; i++) m.step([{ held: 0 }, { held: 0 }]);
+    expect(m.p1.ghosts.length).toBeGreaterThan(0);
+    // 招式总帧数没有单独字段，等它自己打完即可
+    for (let i = 0; i < 80; i++) m.step([{ held: 0 }, { held: 0 }]);
+    expect(m.p1.ghosts.length).toBe(0);
+  });
+
+  it('摔到地上会弹一次再趴下（不是直接贴地）', () => {
+    const m = mk();
+    fight(m);
+    // 打飞：超必杀带 launch
+    m.p1.meter = 100;
+    m.p2.x = m.p1.x + 18;
+    m.p1.startMove(KYO.moves['236236AC']!);
+    let sawBounce = false;
+    for (let i = 0; i < 200; i++) {
+      m.step([{ held: 0 }, { held: 0 }]);
+      if (m.p2.bounced) sawBounce = true;
+      if (m.phase !== 'fight') break;
+    }
+    expect(sawBounce).toBe(true);
+  });
+});

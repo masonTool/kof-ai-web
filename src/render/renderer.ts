@@ -269,15 +269,46 @@ export function drawFrame(ctx: Ctx2D, match: Match, opts: RenderOptions = {}): v
   drawStage(ctx, match.cam, stage);
   ctx.restore();
 
+  // 超必杀演出：先把背景压暗，人物才会从画面里"跳出来"。
+  // 只压背景不压人——所以这层必须画在角色之前。
+  if (match.superFlash > 0 || match.superHit > 0) {
+    const k = match.superHit > 0 ? match.superHit / SUPER_HIT_FRAMES : match.superFlash / SUPER_FLASH_FRAMES;
+    ctx.globalAlpha = 0.42 * k;
+    ctx.fillStyle = '#05070a';
+    ctx.fillRect(0, 0, VIEW_WIDTH, VIEW_HEIGHT);
+    ctx.globalAlpha = 1;
+  }
+
   ctx.save();
   match.cam.applyTo(ctx);
   for (const f of match.fighters) {
     const { anim, elapsed, duration } = animFor(f, match);
     const motion = squashFor(f);
+    // 残影：先画拖影（半透明、同一姿势），再画本体——快攻时才有速度感
+    for (let gi = 0; gi < f.ghosts.length; gi++) {
+      const g = f.ghosts[gi]!;
+      drawFighter(ctx, {
+        palette: f.char.palette,
+        facing: g.facing,
+        x: g.x,
+        y: g.y,
+        anim,
+        elapsed,
+        duration,
+        flash: false,
+        alpha: gi === f.ghosts.length - 1 ? 0.22 : 0.12,
+        look: lookFor(f.char.id),
+        charId: f.char.id,
+        lag: motion.lag,
+        squash: motion.squash,
+      });
+    }
+
     drawFighter(ctx, {
       palette: f.char.palette,
       facing: f.facing,
-      x: f.x,
+      // 命中抖动：被打的那 3 帧左右各偏 1px（不动模拟坐标，只是画的时候偏）
+      x: f.x + (f.hitShake > 0 ? (f.hitShake % 2 === 0 ? 1 : -1) : 0),
       y: f.y,
       anim,
       elapsed,

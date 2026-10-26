@@ -10,6 +10,11 @@ import type { InputState } from '../core/input';
 import { Btn, axisX, axisY } from '../core/input';
 import type { Box, CharDef, FxStyle, HitDef, MoveDef } from '../data/schema';
 import { newCombo, type ComboState } from './combo';
+/** 命中抖动帧数（被打方左右抖） */
+const HIT_SHAKE_FRAMES = 3;
+/** 摔地后的反弹初速（负 = 向上），约 5px 高、8 帧滞空 */
+const KNOCKDOWN_BOUNCE_VY = 1.6;
+
 import {
   GROUND_Y,
   METER_MAX,
@@ -79,6 +84,15 @@ export class Fighter implements Entity {
   airborne = false;
   /** 命中后身上残留的属性特效帧数（火/雷/气），0 = 无 */
   burnFrames = 0;
+  /** 命中抖动剩余帧（渲染层据此左右抖 1px，让"打到了"有物理感） */
+  hitShake = 0;
+  /** 这次摔倒已经弹过一次了（只弹一次，不然像皮球） */
+  bounced = false;
+  /**
+   * 残影轨迹：快速突进/必杀起手时记录最近几个位置，渲染层画成半透明拖影。
+   * 只在高"速"时才有，站着不动不会凭空多出重影。
+   */
+  ghosts: { x: number; y: number; facing: 1 | -1 }[] = [];
   /** 残留特效的属性色系（取自招式 fx） */
   burnStyle: FxStyle = 'none';
 
@@ -377,8 +391,24 @@ export class Fighter implements Entity {
 
   /** 受击硬直（空中受击会继续下落，落地转入倒地）。不清 hitstop——那是命中结算设好的 */
   /** 受击残留特效计时（每帧由 step 调用） */
+  /** 残影采样：每 3 帧取一个点，最多 2 个 */
+  private stepGhosts(): void {
+    const fast =
+      Math.abs(this.vx) >= 2.2 ||
+      (this.move != null && (this.move.kind === 'special' || this.move.kind === 'super') && this.moveFrame < 12);
+    if (!fast) {
+      if (this.ghosts.length > 0) this.ghosts.length = 0;
+      return;
+    }
+    if (this.stateFrame % 3 === 0) {
+      this.ghosts.push({ x: this.x, y: this.y, facing: this.facing });
+      if (this.ghosts.length > 2) this.ghosts.shift();
+    }
+  }
+
   stepBurn(): void {
     if (this.burnFrames > 0) this.burnFrames--;
+    if (this.hitShake > 0) this.hitShake--;
   }
 
   enterHitstun(frames: number, opts: { launch?: number; knockdown?: boolean } = {}): void {
@@ -386,6 +416,8 @@ export class Fighter implements Entity {
     this.moveFrame = 0;
     this.usedHits.clear();
     this.stunTimer = Math.max(1, frames | 0);
+    this.hitShake = HIT_SHAKE_FRAMES;
+    this.bounced = false;
     if (opts.launch !== undefined) {
       this.vy = opts.launch;
       this.vx *= 0.5;
@@ -448,6 +480,7 @@ export class Fighter implements Entity {
   step(_world: World, input: InputState): void {
     // 残留特效每帧都减：放在最前面，才不会被各状态的提前 return 漏掉
     this.stepBurn();
+    this.stepGhosts();
     this.input = input;
     // 指令历史每帧都要攒（冻结期间也不例外），否则连段里的摇杆会断
     this.controls.feed(input);
@@ -626,6 +659,14 @@ export class Fighter implements Entity {
       const landed = integrateAir(this);
       this.clampX();
       if (landed) {
+        // 摔下来弹一下再趴下：硬贴地看起来像"被贴在画面上"，弹一跳才有重量
+        if (!this.bounced) {
+          this.bounced = true;
+          this.airborne = true;
+          this.vy = -KNOCKDOWN_BOUNCE_VY;
+          this.vx *= 0.35;
+          return;
+        }
         this.airborne = false;
         this.enterKnockdown();
         return;
