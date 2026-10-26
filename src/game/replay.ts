@@ -114,9 +114,10 @@ export function parseReplay(raw: unknown): Replay | null {
   }
 
   const cfgRaw = (obj['config'] !== null && typeof obj['config'] === 'object' ? obj['config'] : {}) as Record<string, unknown>;
+  // 只用于数值字段（infiniteTime 是布尔，不进回放配置）
   const cfg = (k: keyof MatchConfig): number => {
     const v = cfgRaw[k];
-    const fallback = DEFAULT_MATCH[k];
+    const fallback = DEFAULT_MATCH[k] as number;
     return typeof v === 'number' && Number.isFinite(v) ? v : fallback;
   };
 

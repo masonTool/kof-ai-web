@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { Btn, NO_INPUT, makeInput } from '../src/core/input';
 import { KYO } from '../src/data/chars/kyo';
+import { IORI } from '../src/data/chars/iori';
 import { Match } from '../src/game/match';
 import { METER_MAX } from '../src/sim/constants';
 import { FighterState } from '../src/sim/state';
@@ -8,6 +9,9 @@ import { drawFrame } from '../src/render/renderer';
 import {
   DEFAULT_TRAINING,
   DUMMY_ORDER,
+  GOAL_HINT,
+  GOAL_LABEL,
+  GOAL_ORDER,
   TrainingSession,
   describeInput,
   drawTrainingOverlay,
@@ -280,5 +284,47 @@ describe('观战模式（P1 也交给 CPU）', () => {
       if (training.lastInputs[0].held !== 0) sawP1Input = true;
     }
     expect(sawP1Input).toBe(true);
+  });
+});
+
+describe('练习目标（训练场专业化）', () => {
+  const mkSession = (): TrainingSession =>
+    new TrainingSession(new Match(KYO, IORI, { introFrames: 1, roundEndFrames: 3 }, 121));
+
+  it('切目标会顺手把假人摆好（练招式站着、练防守让 CPU 打）', () => {
+    const t = mkSession();
+    expect(t.settings.goal).toBe('free');
+    t.cycleGoal(); // → move
+    expect(t.settings.goal).toBe('move');
+    expect(t.settings.dummy).toBe('stand');
+    t.cycleGoal(); // → defense
+    expect(t.settings.goal).toBe('defense');
+    expect(t.settings.dummy).toBe('cpu');
+    t.cycleGoal(); // → combo
+    expect(t.settings.dummy).toBe('stand');
+    t.cycleGoal(); // 回到 free
+    expect(t.settings.goal).toBe('free');
+  });
+
+  it('每个目标都有指导文案（不会出现空白提示条）', () => {
+    for (const g of GOAL_ORDER) {
+      expect(GOAL_HINT[g].length, g).toBeGreaterThan(6);
+      expect(GOAL_LABEL[g].length, g).toBeGreaterThan(0);
+    }
+  });
+
+  it('训练场默认不计时（infiniteTime 打开）', () => {
+    expect(DEFAULT_TRAINING.infiniteTime).toBe(true);
+  });
+});
+
+describe('无限时间', () => {
+  it('开了 infiniteTime 倒计时就不动（练招式不被打断）', () => {
+    const m = new Match(KYO, IORI, { introFrames: 1, roundEndFrames: 3, infiniteTime: true }, 122);
+    while (m.phase === 'intro') m.step([{ held: 0 }, { held: 0 }]);
+    const before = m.timerSeconds;
+    for (let i = 0; i < 600; i++) m.step([{ held: 0 }, { held: 0 }]);
+    expect(m.timerSeconds).toBe(before);
+    expect(m.phase).toBe('fight'); // 不会 TIME UP
   });
 });

@@ -34,6 +34,8 @@ export interface MatchConfig {
   introFrames: number;
   /** KO / TIME UP 后的停顿帧数 */
   roundEndFrames: number;
+  /** 回合倒计时不递减（训练场用） */
+  infiniteTime?: boolean;
   /** 开局两人间距（中心到中心） */
   spawnGap: number;
   /** 组队战换人时的演出帧数（比开局短） */
@@ -236,6 +238,8 @@ export class Match {
     this.stepSpectators();
 
     if (this.phase !== 'fight') return; // 命中里可能已经结束回合
+    // 训练场关掉倒计时：练招式时不被打断
+    if (this.config.infiniteTime === true) return;
     if (this.p1.isDead || this.p2.isDead) {
       this.finishRound(this.p1.isDead && this.p2.isDead ? 'double-ko' : 'ko');
       return;

@@ -12,6 +12,39 @@ import type { Ctx2D } from '../render/ctx';
 
 export type DummyAction = 'cpu' | 'stand' | 'crouch' | 'jump' | 'guard' | 'guardLow' | 'human';
 
+/**
+ * 练习目标：决定"这一局练什么"，并联动假人行为与指导文案。
+ *
+ * 原来的训练场只有一堆开关（无限血/假人行为/判定框），玩家进去不知道从哪开始——
+ * 目标是一条"引导线"：选了目标就知道该练什么、假人该怎么站、屏幕上该看什么提示。
+ */
+export type TrainingGoal = 'free' | 'move' | 'defense' | 'combo';
+
+export const GOAL_ORDER: readonly TrainingGoal[] = ['free', 'move', 'defense', 'combo'];
+
+export const GOAL_LABEL: Record<TrainingGoal, string> = {
+  free: '自由练习',
+  move: '练招式',
+  defense: '练防守',
+  combo: '练连段',
+};
+
+/** 每个目标的指导文案（显示在训练状态条下面那一行） */
+export const GOAL_HINT: Record<TrainingGoal, string> = {
+  free: '随便打：方向键移动，ABC 是拳脚，L 看招式表',
+  move: '按 L 看招式表，照着指令放：236 + 拳、623 + 拳、214 + 腿',
+  defense: '按住后退就是防御；试试蹲防（↓ + 后退）扛下段',
+  combo: '先用轻攻击确认命中，再接必杀（轻拳 → 236 拳）',
+};
+
+/** 目标对应的假人行为：练招/连段让木桩站着，练防守让 CPU 主动进攻 */
+export const GOAL_DUMMY: Record<TrainingGoal, DummyAction> = {
+  free: 'cpu',
+  move: 'stand',
+  defense: 'cpu',
+  combo: 'stand',
+};
+
 export const DUMMY_ORDER: readonly DummyAction[] = ['cpu', 'stand', 'guard', 'guardLow', 'crouch', 'jump', 'human'];
 
 export interface TrainingSettings {
@@ -29,6 +62,10 @@ export interface TrainingSettings {
   cpuLevel: CpuLevel;
   /** P1 也交给 CPU（观战模式：两边自动打） */
   cpuP1: boolean;
+  /** 练习目标（决定假人行为与指导文案） */
+  goal: TrainingGoal;
+  /** 无限时间（回合倒计时不递减） */
+  infiniteTime: boolean;
 }
 
 /**
@@ -44,7 +81,15 @@ export const DEFAULT_TRAINING: TrainingSettings = {
   dummy: 'cpu',
   cpuLevel: 'normal',
   cpuP1: false,
+  goal: 'free',
+  // 训练场默认不计时：练招式时被倒计时打断最烦
+  infiniteTime: true,
 };
+
+/** 切换练习目标：顺手把假人摆成该有的样子（不用玩家自己再去翻一遍假人选项） */
+export function applyGoal(settings: TrainingSettings, goal: TrainingGoal): TrainingSettings {
+  return { ...settings, goal, dummy: GOAL_DUMMY[goal] };
+}
 
 /** 把按住的键翻译成给人看的符号（调试面板用） */
 export function describeInput(held: number): string {
@@ -85,6 +130,16 @@ export class TrainingSession {
   }
 
   /** 切换假人行为（循环） */
+  /** 切换练习目标（循环）：顺手把假人摆成该有的样子 */
+  cycleGoal(): TrainingGoal {
+    const idx = GOAL_ORDER.indexOf(this.settings.goal);
+    const next = GOAL_ORDER[(idx + 1) % GOAL_ORDER.length]!;
+    // settings 是 readonly 引用，只能改字段不能整体替换
+    this.settings.goal = next;
+    this.settings.dummy = GOAL_DUMMY[next];
+    return next;
+  }
+
   cycleDummy(): DummyAction {
     const idx = DUMMY_ORDER.indexOf(this.settings.dummy);
     this.settings.dummy = DUMMY_ORDER[(idx + 1) % DUMMY_ORDER.length]!;

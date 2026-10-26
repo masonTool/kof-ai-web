@@ -262,10 +262,10 @@ export function drawComboMeter(ctx: Ctx2D, current: number, best: number): void 
  */
 export function drawTrainingBadge(
   ctx: Ctx2D,
-  info: { infiniteHp: boolean; infiniteMeter: boolean; dummy: string },
+  info: { infiniteHp: boolean; infiniteMeter: boolean; dummy: string; goal: string; hint: string },
 ): void {
-  const y = 26;
-  const w = 190;
+  const y = 24;
+  const w = 200;
   const x = (VIEW_WIDTH - w) / 2;
   ctx.globalAlpha = 0.82;
   ctx.fillStyle = '#05070a';
@@ -276,7 +276,14 @@ export function drawTrainingBadge(
   ctx.strokeRect(x + 0.5, y + 0.5, w - 1, 14);
   const hp = info.infiniteHp ? '不损血' : '正常血量';
   const meter = info.infiniteMeter ? '气无限' : '气正常';
-  text(ctx, `训练场 · ${hp} · ${meter} · 假人:${info.dummy}`, VIEW_WIDTH / 2, y + 4, 'center', 6, '#9fd0ff');
+  text(ctx, `训练场·${info.goal} · ${hp} · ${meter} · 假人:${info.dummy}`, VIEW_WIDTH / 2, y + 4, 'center', 6, '#9fd0ff');
+
+  // 指导行：告诉玩家"这一局该练什么"。放在状态条下面一行、避开右上角连击面板
+  ctx.globalAlpha = 0.7;
+  ctx.fillStyle = '#05070a';
+  ctx.fillRect(24, y + 17, VIEW_WIDTH - 48, 13);
+  ctx.globalAlpha = 1;
+  text(ctx, info.hint, VIEW_WIDTH / 2, y + 20, 'center', 5, '#cfe4ff');
 }
 
 /** 首次进对局时的必杀提示（只弹一次，之后靠右上角「招式」按钮） */
@@ -284,7 +291,8 @@ export const MOVE_HINT_TEXT = '必杀技怎么放？按 L 或点右上角「招�
 
 /** 画首次必杀提示：底部一条窄横幅，不挡血条也不挡站位 */
 export function drawMoveHint(ctx: Ctx2D, alpha = 1): void {
-  const y = 186;
+  // y=186 会被手台压住，上移到 150（手台上沿约 159）
+  const y = 150;
   const w = 288;
   ctx.globalAlpha = alpha * 0.88;
   ctx.fillStyle = '#05070a';

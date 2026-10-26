@@ -71,7 +71,7 @@ import { ChallengeBoard } from './ui/challenges';
 import { KeyBindMenu } from './ui/keybind';
 import { PauseMenu } from './ui/pause';
 import { SettingsStore, keymapFor, type StorageLike } from './ui/settings';
-import { TrainingSession, drawTrainingOverlay } from './ui/training';
+import { GOAL_HINT, GOAL_LABEL, TrainingSession, drawTrainingOverlay } from './ui/training';
 import { mountTouchControls } from './ui/touch-controls';
 import { VirtualPad } from './ui/virtual-pad';
 
@@ -307,6 +307,8 @@ function startMatch(): void {
   match = new Match(playerTeam, enemyTeam, {
     roundsToWin: cfg.roundsToWin,
     roundSeconds: cfg.roundSeconds,
+    // 训练场默认不计时：练招式时被倒计时打断最烦
+    infiniteTime: flow.mode === 'training' && training !== null && training.settings.infiniteTime,
   });
   recorder = new ReplayRecorder({
     seed: match.world.seed,
@@ -369,6 +371,11 @@ const controls = mountTouchControls(pad, [
     id: 'hp',
     label: () => `无限血:${training?.settings.infiniteHp === true ? 'ON' : 'OFF'}`,
     run: () => void training?.toggle('infiniteHp'),
+  },
+  {
+    id: 'goal',
+    label: () => `目标:${GOAL_LABEL[training?.settings.goal ?? 'free']}`,
+    run: () => void training?.cycleGoal(),
   },
   { id: 'dummy', label: dummyLabel, run: () => void training?.cycleDummy() },
   { id: 'level', label: () => `难度:${CPU_LEVEL_LABEL[training?.settings.cpuLevel ?? 'normal']}`, run: () => void training?.cycleCpuLevel() },
@@ -1217,6 +1224,8 @@ startAnimationLoop(
           infiniteHp: training.settings.infiniteHp,
           infiniteMeter: training.settings.infiniteMeter,
           dummy: training.settings.dummy,
+          goal: GOAL_LABEL[training.settings.goal],
+          hint: GOAL_HINT[training.settings.goal],
         });
       }
       if (moveHintFrames > 0 && flow.screen === 'fight' && !moveListOpen) {

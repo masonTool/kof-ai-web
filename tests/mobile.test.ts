@@ -228,7 +228,7 @@ describe('宽屏适配：可视宽度随长宽比变化', () => {
 describe('训练场状态条', () => {
   it('把"不损血 / 气无限"常驻显示出来（开关埋在按钮里没人知道）', () => {
     const ctx = new FakeCtx();
-    drawTrainingBadge(ctx, { infiniteHp: true, infiniteMeter: true, dummy: 'cpu' });
+    drawTrainingBadge(ctx, { infiniteHp: true, infiniteMeter: true, dummy: 'cpu', goal: '自由练习', hint: '随便打' });
     const all = ctx.texts.map((t) => String(t.text)).join('');
     expect(all).toContain('训练场');
     expect(all).toContain('不损血');
@@ -238,7 +238,7 @@ describe('训练场状态条', () => {
 
   it('关掉时如实显示"正常血量"，不能骗玩家', () => {
     const ctx = new FakeCtx();
-    drawTrainingBadge(ctx, { infiniteHp: false, infiniteMeter: false, dummy: 'stand' });
+    drawTrainingBadge(ctx, { infiniteHp: false, infiniteMeter: false, dummy: 'stand', goal: '练招式', hint: '按 L 看招式表' });
     const all = ctx.texts.map((t) => String(t.text)).join('');
     expect(all).toContain('正常血量');
     expect(all).not.toContain('不损血');
