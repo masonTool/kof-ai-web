@@ -445,12 +445,20 @@ export const POSE_LIBRARY: Record<string, Pose> = {
     ],
   },
   /** 超必杀蓄力：双拳收腰，身体后仰 */
+  /**
+   * 超必杀三段：起手 → 蓄满 → 释放收招。
+   * 帧数必须和图集一致（三帧）；原来是两帧，缺"收招"，放完超必杀会硬切回站架。
+   */
   superCharge: {
     frameDuration: 1,
     loop: false,
     frames: [
+      // 起手（气开始汇聚，身体微沉）
       f({ head: p(-3, -70), neck: p(-4, -60), armFront: [p(-4, -54), p(-10, -50)], armBack: [p(-10, -54), p(-16, -50)] }),
+      // 蓄满（气浪最大，整个人被撑起来）
       f({ head: p(-6, -72), neck: p(-7, -62), armFront: [p(-8, -56), p(-14, -52)], armBack: [p(-14, -56), p(-20, -52)] }),
+      // 收招（前甩收回、回到直立）
+      f({ head: p(-1, -70), neck: p(-1, -60), armFront: [p(2, -54), p(4, -44)], armBack: [p(-6, -54), p(-8, -44)] }),
     ],
   },
   throwStart: {

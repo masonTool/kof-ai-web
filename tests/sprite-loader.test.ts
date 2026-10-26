@@ -256,6 +256,21 @@ describe('落地缓冲（landing）', () => {
   });
 });
 
+describe('超必杀三段式（superCharge）', () => {
+  const framesOf = (anim: string): { w: number; h: number }[] =>
+    (sheetJson.anims as unknown as Record<string, { w: number; h: number }[]>)[anim]!;
+
+  it('三帧：起手 → 蓄满 → 收招（两帧的话放完会硬切回站架）', () => {
+    expect(framesOf('superCharge').length).toBe(3);
+  });
+
+  it('中间帧最高（气浪把人撑起来），收招回落', () => {
+    const f = framesOf('superCharge');
+    expect(f[1]!.h).toBeGreaterThan(f[0]!.h);
+    expect(f[2]!.h).toBeLessThan(f[1]!.h);
+  });
+});
+
 describe('受身翻滚（roll）', () => {
   const framesOf = (anim: string): { w: number; h: number }[] =>
     (sheetJson.anims as unknown as Record<string, { w: number; h: number }[]>)[anim]!;

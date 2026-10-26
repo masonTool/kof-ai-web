@@ -96,7 +96,8 @@ const ANIMS = {
   specialProjectile: ['specialprojectilewindup', 'specialprojectile'],
   specialUppercut: ['specialuppercutwindup', 'specialuppercut'],
   specialRush: ['specialrushwindup', 'specialrush'],
-  superCharge: ['superchargewindup', 'supercharge'],
+  // 超必杀三段：起手（气汇聚）→ 蓄满（气浪最大）→ 释放收招
+  superCharge: ['superchargewindup', 'supercharge', 'superchargerecover'],
   // 躺在地上：按"宽度"归一，锚点用包围盒中心（横躺的人没有"脚底"这个概念）
   down: ['down'],
 };
@@ -328,6 +329,7 @@ const HEIGHT_TARGET = {
   // 不是侧躺），按宽度归一会让人物突然变宽 3 倍；宁可保留竖构图，只靠高度变化做节奏
   roll: [52, 62, 70],
   wakeup: [58, 72, 84], // 蹲着 → 半起 → 站直
+  superCharge: [80, 88, 82], // 蓄力压低 → 气浪撑起 → 收招回落
   win: 88,
   win2: 88,
   win3: 88,
