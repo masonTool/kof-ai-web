@@ -32,7 +32,7 @@ export const ATHENA: CharDef = {
 
     // ---------------------------------------------------------------- 必杀技
     // サイコボール：气弹
-    '236A': mv('236A', 'サイコボール', 'special', 34, 'special', [], {
+    '236A': mv('236A', 'サイコボール', 'athenaspecial1', 34, 'special', [], {
       input: { motion: '236', buttons: ['A'] },
       projectile: {
         anim: 'サイコボール',
@@ -52,7 +52,7 @@ export const ATHENA: CharDef = {
     }),
 
     // サイコソード：短距精神刃
-    '623A': mv('623A', 'サイコソード', 'special', 38, 'special', [
+    '623A': mv('623A', 'サイコソード', 'athenaspecial2', 38, 'special', [
       hit('h1', {
         box: { x: 8, y: -84, w: 30, h: 60 },
         frames: [4, 10],
@@ -66,7 +66,7 @@ export const ATHENA: CharDef = {
     ], { input: { motion: '623', buttons: ['A'] }, invuln: [{ frames: [1, 5], kind: 'full' }] }),
 
     // フェニックスアロー：跳起下突（中段）
-    '214B': mv('214B', 'フェニックスアロー', 'kickHeavy', 36, 'special', [
+    '214B': mv('214B', 'フェニックスアロー', 'athenaspecial3', 36, 'special', [
       hit('h1', {
         box: { x: 10, y: -64, w: 30, h: 24 },
         frames: [11, 15],
@@ -92,7 +92,7 @@ export const ATHENA: CharDef = {
 
     // ---------------------------------------------------------------- 超必杀
     // シャイニングクリスタルビット：多段光弹（原作是同名 DM 的 MAX 版更痛）
-    '236236A': mv('236236A', 'シャイニングクリスタルビット', 'special', 64, 'super', [
+    '236236A': mv('236236A', 'シャイニングクリスタルビット', 'athenasuper', 64, 'super', [
       hit('h1', { box: { x: 8, y: -80, w: 34, h: 50 }, frames: [10, 13], damage: 32, hitStun: 16, hitstop: 7, meterGain: 0 }),
       hit('h2', { box: { x: 8, y: -80, w: 34, h: 50 }, frames: [16, 19], damage: 30, hitStun: 16, hitstop: 7, meterGain: 0 }),
       hit('h3', { box: { x: 8, y: -82, w: 36, h: 54 }, frames: [22, 25], damage: 30, hitStun: 16, hitstop: 7, meterGain: 0 }),
@@ -108,7 +108,7 @@ export const ATHENA: CharDef = {
       }),
     ], { input: { motion: '236236', buttons: ['A'] }, meterCost: 50 }),
 
-    '236236AC': mv('236236AC', 'シャイニングクリスタルビット MAX', 'special', 76, 'super', [
+    '236236AC': mv('236236AC', 'シャイニングクリスタルビット MAX', 'athenasuper', 76, 'super', [
       hit('h1', { box: { x: 8, y: -82, w: 36, h: 54 }, frames: [8, 11], damage: 30, hitStun: 16, hitstop: 6, meterGain: 0 }),
       hit('h2', { box: { x: 8, y: -82, w: 36, h: 54 }, frames: [14, 17], damage: 28, hitStun: 16, hitstop: 6, meterGain: 0 }),
       hit('h3', { box: { x: 8, y: -84, w: 38, h: 56 }, frames: [20, 23], damage: 28, hitStun: 16, hitstop: 6, meterGain: 0 }),

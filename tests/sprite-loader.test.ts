@@ -100,7 +100,7 @@ describe('京的贴图产物（build-kyo.mjs 的输出）', () => {
   const sheet = raw;
 
   // 角色专属姿势（kyspecial1 / iorisuper…）只有那个角色有，不能要求京的图集全都有
-  const EXCLUSIVE_RE = /^(ky|iori)special[0-9]$|^(ky|iori)super$/;
+  const EXCLUSIVE_RE = /^(ky|iori|terry|athena)(special[0-9]|super)$/;
 
   it('姿势库里的每个通用动画都有贴图（少一个就会在那一下闪回程序化像素人）', () => {
     const generic = poseNames().filter((n) => !EXCLUSIVE_RE.test(n));

@@ -42,7 +42,7 @@ export const TERRY: CharDef = {
 
     // ---------------------------------------------------------------- 必杀技
     // パワーウェイブ：地面波，飞行道具
-    '236A': mv('236A', 'パワーウェイブ', 'special', 38, 'special', [], {
+    '236A': mv('236A', 'パワーウェイブ', 'terryspecial1', 38, 'special', [], {
       input: { motion: '236', buttons: ['A'] },
       projectile: {
         anim: 'パワーウェイブ',
@@ -64,7 +64,7 @@ export const TERRY: CharDef = {
     }),
 
     // バーンナックル：带位移的突进拳
-    '214A': mv('214A', 'バーンナックル', 'punchHeavy', 38, 'special', [
+    '214A': mv('214A', 'バーンナックル', 'terryspecial2', 38, 'special', [
       hit('h1', {
         box: { x: 14, y: -62, w: 34, h: 18 },
         frames: [9, 13],
@@ -78,7 +78,7 @@ export const TERRY: CharDef = {
     ], { input: { motion: '214', buttons: ['A'] }, travel: 62, travelFrames: 16 }),
 
     // ライジングタックル：升龙，有无敌帧
-    '623A': mv('623A', 'ライジングタックル', 'special', 44, 'special', [
+    '623A': mv('623A', 'ライジングタックル', 'terryspecial3', 44, 'special', [
       hit('h1', {
         box: { x: 6, y: -92, w: 30, h: 66 },
         frames: [5, 12],
@@ -108,7 +108,7 @@ export const TERRY: CharDef = {
     ], { input: { motion: '214', buttons: ['B'] } }),
 
     // ---------------------------------------------------------------- 超必杀
-    '236236A': mv('236236A', 'パワーゲイザー', 'special', 62, 'super', [
+    '236236A': mv('236236A', 'パワーゲイザー', 'terrysuper', 62, 'super', [
       hit('h1', { box: { x: 12, y: -84, w: 46, h: 62 }, frames: [12, 16], damage: 55, hitStun: 20, hitstop: 10, meterGain: 0 }),
       hit('h2', { box: { x: 12, y: -84, w: 46, h: 62 }, frames: [24, 28], damage: 45, hitStun: 20, hitstop: 10, meterGain: 0 }),
       hit('h3', {
@@ -122,7 +122,7 @@ export const TERRY: CharDef = {
       }),
     ], { input: { motion: '236236', buttons: ['A'] }, meterCost: 50 }),
 
-    '236236B': mv('236236B', 'バスターウルフ', 'special', 58, 'super', [
+    '236236B': mv('236236B', 'バスターウルフ', 'terrysuper', 58, 'super', [
       hit('h1', {
         box: { x: 14, y: -68, w: 40, h: 34 },
         frames: [10, 14],

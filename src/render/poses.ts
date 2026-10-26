@@ -476,6 +476,47 @@ export const POSE_LIBRARY: Record<string, Pose> = {
     loop: false,
     frames: [f({ head: p(3, -66), neck: p(3, -56), hip: p(0, -36), armFront: [p(16, -58), p(30, -58)], armBack: [p(4, -56), p(16, -56)] })],
   },
+  // Terry / Athena 专属必杀的兜底（形状接近，光效由贴图和特效层负责）
+  terryspecial1: {
+    frameDuration: 1,
+    loop: false,
+    frames: [f({ head: p(3, -62), neck: p(3, -54), hip: p(-3, -34), armFront: [p(10, -34), p(20, -22)], armBack: [p(-12, -50), p(-18, -42)] })],
+  },
+  terryspecial2: {
+    frameDuration: 1,
+    loop: false,
+    frames: [f({ head: p(6, -66), neck: p(6, -56), hip: p(2, -36), armFront: [p(16, -56), p(28, -54)], armBack: [p(-14, -50), p(-22, -44)] })],
+  },
+  terryspecial3: {
+    frameDuration: 1,
+    loop: false,
+    frames: [f({ head: p(2, -74), neck: p(2, -62), hip: p(1, -40), armFront: [p(8, -64), p(14, -72)], armBack: [p(-8, -48), p(-12, -40)] })],
+  },
+  terrysuper: {
+    frameDuration: 1,
+    loop: false,
+    frames: [f({ head: p(-2, -72), neck: p(-2, -62), hip: p(0, -40), armFront: [p(6, -70), p(8, -86)], armBack: [p(-8, -70), p(-10, -86)] })],
+  },
+  athenaspecial1: {
+    frameDuration: 1,
+    loop: false,
+    frames: [f({ head: p(-1, -68), neck: p(-1, -58), armFront: [p(8, -56), p(4, -50)], armBack: [p(-8, -56), p(-4, -50)] })],
+  },
+  athenaspecial2: {
+    frameDuration: 1,
+    loop: false,
+    frames: [f({ head: p(0, -70), neck: p(0, -60), armFront: [p(6, -68), p(6, -86)], armBack: [p(-10, -50), p(-16, -44)] })],
+  },
+  athenaspecial3: {
+    frameDuration: 1,
+    loop: false,
+    frames: [f({ head: p(2, -72), neck: p(2, -62), hip: p(0, -40), legFront: [p(10, -26), p(12, -4)], legBack: [p(-8, -30), p(-10, -12)] })],
+  },
+  athenasuper: {
+    frameDuration: 1,
+    loop: false,
+    frames: [f({ head: p(0, -72), neck: p(0, -62), hip: p(0, -40), armFront: [p(8, -70), p(10, -88)], armBack: [p(-8, -70), p(-10, -88)] })],
+  },
   /** 升龙系：整个人向上冲，手臂上举 */
   specialUppercut: {
     frameDuration: 1,

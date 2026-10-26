@@ -25,7 +25,7 @@ const STAGES = join(ROOT, 'public/stages');
  * **排除角色专属姿势**（`kyspecial1`、`iorisuper` 这种）：它们只有那个角色有贴图，
  * 不能要求全部 27 个角色都有。新增角色专属化时记得把前缀加进这个正则。
  */
-const CHAR_EXCLUSIVE_RE = /^(kyspecial[0-9]|kysuper|iorispecial[0-9]|iorisuper)$/;
+const CHAR_EXCLUSIVE_RE = /^(ky|iori|terry|athena)(special[0-9]|super)$/;
 
 function poseNames() {
   const src = readFileSync(join(ROOT, 'src/render/poses.ts'), 'utf8');

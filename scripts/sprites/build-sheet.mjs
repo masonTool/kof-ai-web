@@ -106,6 +106,14 @@ const ANIMS = {
   iorispecial2: ['iorioniyaki'],
   iorispecial3: ['ioriaoi'],
   iorisuper: ['iorisuper'],
+  terryspecial1: ['terrywave'],
+  terryspecial2: ['terryburn'],
+  terryspecial3: ['terryrising'],
+  terrysuper: ['terrysuper'],
+  athenaspecial1: ['athenaball'],
+  athenaspecial2: ['athenasword'],
+  athenaspecial3: ['athenaarrow'],
+  athenasuper: ['athenasuper'],
   // 超必杀三段：起手（气汇聚）→ 蓄满（气浪最大）→ 释放收招
   superCharge: ['superchargewindup', 'supercharge', 'superchargerecover'],
   // 躺在地上：按"宽度"归一，锚点用包围盒中心（横躺的人没有"脚底"这个概念）
