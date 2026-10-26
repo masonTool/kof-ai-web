@@ -14,6 +14,8 @@ import { newCombo, type ComboState } from './combo';
 const HIT_SHAKE_FRAMES = 3;
 /** 摔地后的反弹初速（负 = 向上），约 5px 高、8 帧滞空 */
 const KNOCKDOWN_BOUNCE_VY = 1.6;
+/** 被打飞时的角速度（弧度/帧）：滞空约 30 帧 ≈ 一圈，太多会像电风扇 */
+const SPIN_VEL = 0.22;
 
 import {
   GROUND_Y,
@@ -88,6 +90,9 @@ export class Fighter implements Entity {
   hitShake = 0;
   /** 这次摔倒已经弹过一次了（只弹一次，不然像皮球） */
   bounced = false;
+  /** 被打飞时的旋转角（弧度）与角速度：翻着飞出去才像"被打飞"而不是"平移" */
+  spin = 0;
+  spinVel = 0;
   /**
    * 残影轨迹：快速突进/必杀起手时记录最近几个位置，渲染层画成半透明拖影。
    * 只在高"速"时才有，站着不动不会凭空多出重影。
@@ -391,6 +396,17 @@ export class Fighter implements Entity {
 
   /** 受击硬直（空中受击会继续下落，落地转入倒地）。不清 hitstop——那是命中结算设好的 */
   /** 受击残留特效计时（每帧由 step 调用） */
+  /** 旋转积分：滞空时一直转，落地就停 */
+  private stepSpin(): void {
+    if (this.spinVel === 0) return;
+    if (!this.airborne) {
+      this.spin = 0;
+      this.spinVel = 0;
+      return;
+    }
+    this.spin += this.spinVel;
+  }
+
   /** 残影采样：每 3 帧取一个点，最多 2 个 */
   private stepGhosts(): void {
     const fast =
@@ -421,7 +437,11 @@ export class Fighter implements Entity {
     if (opts.launch !== undefined) {
       this.vy = opts.launch;
       this.vx *= 0.5;
-      if (opts.launch < 0) this.airborne = true;
+      if (opts.launch < 0) {
+        this.airborne = true;
+        // 往前翻：方向跟着击退方向走，别让两个角色都朝同一个方向转
+        this.spinVel = this.vx >= 0 ? SPIN_VEL : -SPIN_VEL;
+      }
     }
     this.setState(FighterState.Hit);
     // 地上被击倒：直接进倒地；空中受击则在落地时由 stepStun() 转倒地
@@ -438,6 +458,8 @@ export class Fighter implements Entity {
 
   enterKnockdown(): void {
     this.airborne = false;
+    this.spin = 0;
+    this.spinVel = 0;
     this.vx = 0;
     this.vy = 0;
     this.y = GROUND_Y;
@@ -481,6 +503,7 @@ export class Fighter implements Entity {
     // 残留特效每帧都减：放在最前面，才不会被各状态的提前 return 漏掉
     this.stepBurn();
     this.stepGhosts();
+    this.stepSpin();
     this.input = input;
     // 指令历史每帧都要攒（冻结期间也不例外），否则连段里的摇杆会断
     this.controls.feed(input);

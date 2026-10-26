@@ -10,6 +10,8 @@ export interface Ctx2D {
   restore(): void;
   translate(x: number, y: number): void;
   scale(x: number, y: number): void;
+  /** 旋转（弧度）：被打飞时绕腰翻出去 */
+  rotate(angle: number): void;
 
   beginPath(): void;
   moveTo(x: number, y: number): void;

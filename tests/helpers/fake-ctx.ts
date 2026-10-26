@@ -19,7 +19,7 @@ export interface Line {
 /** 记账用的假 canvas context：只记调用，不画图 */
 export class FakeCtx implements Ctx2D {
   calls: string[] = [];
-  transforms: { translate: [number, number][]; scale: [number, number][] } = { translate: [], scale: [] };
+  transforms: { translate: [number, number][]; scale: [number, number][]; rotate: number[] } = { translate: [], scale: [], rotate: [] };
   fills: string[] = [];
   lineWidths: number[] = [];
   rects: Rect[] = [];
@@ -61,6 +61,11 @@ export class FakeCtx implements Ctx2D {
   scale(x: number, y: number): void {
     this.calls.push('scale');
     this.transforms.scale.push([x, y]);
+  }
+
+  rotate(angle: number): void {
+    this.calls.push('rotate');
+    this.transforms.rotate.push(angle);
   }
 
   beginPath(): void {

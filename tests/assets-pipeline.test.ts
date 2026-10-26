@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { PALETTES } from '../src/data/chars/palette';
+import { KYO } from '../src/data/chars/kyo';
 import { drawFighter } from '../src/render/fighter-draw';
 import {
   currentAssetProvider,
@@ -177,5 +178,19 @@ describe('绘制层接管', () => {
     setAssetProvider(null);
     expect(currentAssetProvider()).toBeNull();
     expect(spriteFor('kyo', 'idle', 0)).toBeNull();
+  });
+});
+
+describe('旋转绘制', () => {
+  it('传了 spin 就真的调用 rotate（不是只存在状态里）', () => {
+    const ctx = new FakeCtx();
+    drawFighter(ctx, { palette: KYO.palette, facing: 1, x: 0, y: 0, anim: 'idle', elapsed: 0, spin: 0.5 });
+    expect(ctx.transforms.rotate).toContain(0.5);
+  });
+
+  it('没传 spin 时不转（站着不能自己转）', () => {
+    const ctx = new FakeCtx();
+    drawFighter(ctx, { palette: KYO.palette, facing: 1, x: 0, y: 0, anim: 'idle', elapsed: 0 });
+    expect(ctx.transforms.rotate.length).toBe(0);
   });
 });

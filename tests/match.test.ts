@@ -843,3 +843,24 @@ describe('打击手感（抖动 / 弹跳 / 残影）', () => {
     expect(sawBounce).toBe(true);
   });
 });
+
+describe('被打飞时旋转', () => {
+  it('打飞后开始转，落地就停（不会躺着一直转）', () => {
+    const m = new Match(KYO, IORI, { introFrames: 1, roundEndFrames: 3 }, 141);
+    while (m.phase === 'intro') m.step([{ held: 0 }, { held: 0 }]);
+    m.p1.meter = 100;
+    m.p2.x = m.p1.x + 18;
+    m.p1.startMove(KYO.moves['236236AC']!);
+    let maxSpin = 0;
+    for (let i = 0; i < 120; i++) {
+      m.step([{ held: 0 }, { held: 0 }]);
+      maxSpin = Math.max(maxSpin, Math.abs(m.p2.spin));
+      if (m.phase !== 'fight') break;
+    }
+    expect(maxSpin).toBeGreaterThan(0.3); // 确实转过
+    // 落地/倒地后归零
+    for (let i = 0; i < 120; i++) m.step([{ held: 0 }, { held: 0 }]);
+    expect(m.p2.spin).toBe(0);
+    expect(m.p2.spinVel).toBe(0);
+  });
+});

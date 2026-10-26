@@ -622,13 +622,25 @@ export interface FighterVisual {
   lag?: number;
   /** 挤压拉伸：正 = 纵向拉长，负 = 横向压扁 */
   squash?: number;
+  /** 被打飞时的旋转角（弧度），绕身体中心转 */
+  spin?: number;
 }
+
+/** 旋转支点：从脚底往上抬这么高（逻辑单位，约为角色身高的一半） */
+const SPIN_PIVOT = 42;
 
 export function drawFighter(ctx: Ctx2D, v: FighterVisual): void {
   const s = v.scale ?? 1;
   ctx.save();
   ctx.globalAlpha = Math.max(0, Math.min(1, v.alpha ?? 1));
   ctx.translate(v.x, v.y);
+  // 旋转绕**身体中心**而不是脚底：原点在脚底，所以先上移半个身高、转、再移回来。
+  // 绕脚底转会像"脚钉在地上被拧"，绕腰转才是"整个人翻出去"。
+  if (v.spin) {
+    ctx.translate(0, -SPIN_PIVOT);
+    ctx.rotate(v.spin);
+    ctx.translate(0, SPIN_PIVOT);
+  }
   ctx.scale(v.facing * s, s);
 
   // 有自绘贴图就用贴图，没有就画骨架——两条路共用同一套坐标与镜像
