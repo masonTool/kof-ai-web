@@ -192,18 +192,35 @@ export const POSE_LIBRARY: Record<string, Pose> = {
       }),
     ],
   },
+  /**
+   * 落地缓冲：蹲到底 → 回弹。
+   *
+   * 帧数必须和图集一致（图集 `landing: ['crouch','landingmid']` 两帧）。
+   * 第一帧极矮、第二帧稍高——落地要看得出"被冲击压下去再弹起来"。
+   */
   landing: {
     frameDuration: 3,
     loop: false,
     frames: [
+      // 蹲到底（吸收冲击）
       f({
-        head: p(3, -60),
-        neck: p(2, -50),
-        hip: p(-2, -30),
-        legBack: [p(-10, -16), p(-9, -1)],
-        legFront: [p(9, -16), p(11, -1)],
-        armBack: [p(-8, -44), p(-14, -38)],
-        armFront: [p(8, -44), p(14, -38)],
+        head: p(3, -52),
+        neck: p(2, -44),
+        hip: p(-2, -26),
+        legBack: [p(-10, -14), p(-9, -1)],
+        legFront: [p(9, -14), p(11, -1)],
+        armBack: [p(-8, -38), p(-14, -32)],
+        armFront: [p(8, -38), p(14, -32)],
+      }),
+      // 回弹（膝盖还弯着）
+      f({
+        head: p(2, -64),
+        neck: p(1, -54),
+        hip: p(-1, -34),
+        legBack: [p(-9, -18), p(-8, -1)],
+        legFront: [p(8, -18), p(10, -1)],
+        armBack: [p(-7, -46), p(-12, -38)],
+        armFront: [p(7, -46), p(12, -38)],
       }),
     ],
   },

@@ -222,7 +222,7 @@ describe('姿势库与图集的帧数一致', () => {
    * 规则：图集 `frame % list.length` 会取模，姿势库帧数多于图集时，
    * 贴图播到多出来的帧会绕回第 0 帧（非循环动画看起来像"出手后缩回蓄力"）。
    */
-  const MUST_MATCH = ['specialProjectile', 'specialUppercut', 'specialRush', 'superCharge', 'wakeup'];
+  const MUST_MATCH = ['specialProjectile', 'specialUppercut', 'specialRush', 'superCharge', 'wakeup', 'landing'];
 
   for (const anim of MUST_MATCH) {
     it(`${anim}：姿势库帧数 = 图集帧数`, () => {
@@ -239,6 +239,17 @@ describe('姿势库与图集的帧数一致', () => {
       const frames = (sheetJson.anims as unknown as Record<string, unknown[]>)[anim]!;
       expect(frames.length, anim).toBeGreaterThanOrEqual(2);
     }
+  });
+});
+
+describe('落地缓冲（landing）', () => {
+  const framesOf = (anim: string): { w: number; h: number }[] =>
+    (sheetJson.anims as unknown as Record<string, { w: number; h: number }[]>)[anim]!;
+
+  it('两帧，且第二帧更高（落地要被压下去再弹起来）', () => {
+    const f = framesOf('landing');
+    expect(f.length).toBe(2);
+    expect(f[1]!.h).toBeGreaterThan(f[0]!.h);
   });
 });
 
