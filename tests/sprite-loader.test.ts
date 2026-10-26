@@ -256,6 +256,23 @@ describe('落地缓冲（landing）', () => {
   });
 });
 
+describe('必杀三段式（波动 / 升龙）', () => {
+  const framesOf = (anim: string): { w: number; h: number }[] =>
+    (sheetJson.anims as unknown as Record<string, { w: number; h: number }[]>)[anim]!;
+
+  for (const anim of ['specialProjectile', 'specialUppercut']) {
+    it(`${anim} 三帧：起手 → 出手 → 收招（两帧的话动作没打完就切站架）`, () => {
+      expect(framesOf(anim).length).toBe(3);
+    });
+  }
+
+  it('升龙中间帧最高（冲天），收招回落', () => {
+    const f = framesOf('specialUppercut');
+    expect(f[1]!.h).toBeGreaterThan(f[0]!.h);
+    expect(f[2]!.h).toBeLessThan(f[1]!.h);
+  });
+});
+
 describe('超必杀三段式（superCharge）', () => {
   const framesOf = (anim: string): { w: number; h: number }[] =>
     (sheetJson.anims as unknown as Record<string, { w: number; h: number }[]>)[anim]!;

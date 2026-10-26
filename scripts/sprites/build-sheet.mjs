@@ -93,8 +93,8 @@ const ANIMS = {
   // 必杀技：所有必杀/超必杀共用一个起手姿势
   special: ['special'],
   // 必杀专属动作（T200 出图）：波动推手 / 升龙上挑 / 前冲肩撞 / 超必杀蓄力
-  specialProjectile: ['specialprojectilewindup', 'specialprojectile'],
-  specialUppercut: ['specialuppercutwindup', 'specialuppercut'],
+  specialProjectile: ['specialprojectilewindup', 'specialprojectile', 'specialprojectilerecover'],
+  specialUppercut: ['specialuppercutwindup', 'specialuppercut', 'specialuppercutrecover'],
   specialRush: ['specialrushwindup', 'specialrush'],
   // 超必杀三段：起手（气汇聚）→ 蓄满（气浪最大）→ 释放收招
   superCharge: ['superchargewindup', 'supercharge', 'superchargerecover'],
@@ -330,6 +330,8 @@ const HEIGHT_TARGET = {
   roll: [52, 62, 70],
   wakeup: [58, 72, 84], // 蹲着 → 半起 → 站直
   superCharge: [80, 88, 82], // 蓄力压低 → 气浪撑起 → 收招回落
+  specialProjectile: [82, 84, 80], // 微沉 → 推出 → 回正
+  specialUppercut: [74, 92, 80], // 屈膝 → 冲天 → 落地缓冲
   win: 88,
   win2: 88,
   win3: 88,

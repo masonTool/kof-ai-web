@@ -424,6 +424,8 @@ export const POSE_LIBRARY: Record<string, Pose> = {
     frames: [
       f({ head: p(-2, -70), neck: p(-3, -60), armFront: [p(-2, -56), p(-8, -52)], armBack: [p(-8, -54), p(-14, -50)] }),
       f({ head: p(2, -70), neck: p(1, -60), armFront: [p(14, -58), p(30, -56)], armBack: [p(6, -58), p(18, -56)] }),
+      // 收招（手收回腰侧、身体回正）
+      f({ head: p(1, -70), neck: p(1, -60), armFront: [p(6, -56), p(10, -48)], armBack: [p(-4, -56), p(-6, -48)] }),
     ],
   },
   /** 升龙系：整个人向上冲，手臂上举 */
@@ -431,8 +433,12 @@ export const POSE_LIBRARY: Record<string, Pose> = {
     frameDuration: 1,
     loop: false,
     frames: [
+      // 屈膝蓄力
       f({ head: p(0, -62), neck: p(0, -52), hip: p(0, -32), armFront: [p(4, -50), p(6, -44)], legFront: [p(6, -18), p(8, -1)] }),
+      // 冲天（拳向上、身体伸展）
       f({ head: p(2, -78), neck: p(1, -66), hip: p(0, -42), armFront: [p(6, -70), p(4, -84)], legFront: [p(8, -26), p(10, -6)] }),
+      // 收招（落地缓冲、拳收回胸前）
+      f({ head: p(1, -68), neck: p(1, -58), hip: p(0, -36), armFront: [p(6, -56), p(8, -48)], legFront: [p(7, -20), p(9, -1)] }),
     ],
   },
   /** 突进系：低身前冲，肩膀在前 */
