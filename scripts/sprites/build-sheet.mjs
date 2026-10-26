@@ -72,6 +72,8 @@ const ANIMS = {
   // 败北：受击 → 跪地（原来借用受击姿势，输了还在摆挨打造型）
   lose: ['hit', 'losemid'],
   // 被打飞：受击 → 后仰腾空（原来借用受击姿势，飞出去还是站着的）
+  // 受身翻滚：蜷身 → 横滚成球（横躺）→ 起身。原来借用 crouch，蹲着不动
+  roll: ['crouch', 'rollball', 'rollup'],
   hitFall: ['hit', 'hitfallmid'],
   // 挑衅：站架 → 抬手勾指（原来借用胜利姿势）
   taunt: ['idle', 'tauntmid'],
@@ -110,12 +112,24 @@ const ALIAS = {
   win2: 'win',
   win3: 'win',
   block: 'guard', // 格挡：和"按住防御"是同一个姿势
-  roll: 'crouch', // 受身翻滚
   throwStart: 'special', // 投技起手
 };
 
 /** 这些动画按宽度归一 + 水平居中（横躺姿势） */
-const LYING = new Set(['down']);
+/**
+ * 横躺帧：按**宽度**归一 + 水平居中（因为宽 > 高，按高度归一会把它缩成一条）。
+ *
+ * `'all'` = 整个动画都是横躺（`down`）；数组 = 只有指定帧号是横躺（`roll` 的第 2 帧是横滚成球）。
+ * 这是受身翻滚能成立的前提——之前 `roll` 借的是 `crouch`，蹲着不动，根本看不出在滚。
+ */
+const LYING = new Map([['down', 'all']]);
+
+/** 第 idx 帧是不是横躺姿势 */
+function isLying(anim, idx) {
+  const rule = LYING.get(anim);
+  if (rule === undefined) return false;
+  return rule === 'all' || rule.includes(idx);
+}
 
 /**
  * 少数姿势要单独定身高。
@@ -309,6 +323,10 @@ const HEIGHT_TARGET = {
   crouchKick: 58,
   landing: [60, 72], // 蹲到底 → 回弹
   lose: [62, 40], // 挨打 → 跪地（越跪越矮）
+  // 蜷身 → 蜷得更紧（抱膝）→ 起身。高度递增做"滚过去再站起来"的节奏。
+  // **不给中间帧做横躺处理**：AI 出的 rollball 是竖构图（706×1109 说明它画的是抱膝蹲，
+  // 不是侧躺），按宽度归一会让人物突然变宽 3 倍；宁可保留竖构图，只靠高度变化做节奏
+  roll: [52, 62, 70],
   wakeup: [58, 72, 84], // 蹲着 → 半起 → 站直
   win: 88,
   win2: 88,
@@ -317,11 +335,11 @@ const HEIGHT_TARGET = {
 
 const frames = {};
 for (const [anim, list] of Object.entries(ANIMS)) {
-  const lying = LYING.has(anim);
   const targetH = HEIGHT_TARGET[anim];
   const available = list.filter((p) => raws.has(p));
   if (available.length === 0) throw new Error(`动画 ${anim} 一帧都找不到`);
   frames[anim] = available.map((pose, frameIdx) => {
+    const lying = isLying(anim, frameIdx);
     const raw = raws.get(pose);
     // 目标身高可以是数组（逐帧），起身就是靠这个做出"越来越高"
     const th = Array.isArray(targetH) ? targetH[frameIdx] : targetH;

@@ -224,7 +224,7 @@ describe('姿势库与图集的帧数一致', () => {
    */
   const MUST_MATCH = [
     'specialProjectile', 'specialUppercut', 'specialRush', 'superCharge',
-    'wakeup', 'landing', 'dizzy', 'lose', 'hitFall', 'taunt',
+    'wakeup', 'landing', 'dizzy', 'lose', 'hitFall', 'taunt', 'roll',
   ];
 
   for (const anim of MUST_MATCH) {
@@ -253,6 +253,26 @@ describe('落地缓冲（landing）', () => {
     const f = framesOf('landing');
     expect(f.length).toBe(2);
     expect(f[1]!.h).toBeGreaterThan(f[0]!.h);
+  });
+});
+
+describe('受身翻滚（roll）', () => {
+  const framesOf = (anim: string): { w: number; h: number }[] =>
+    (sheetJson.anims as unknown as Record<string, { w: number; h: number }[]>)[anim]!;
+
+  it('三帧且高度递增（蜷身 → 抱膝 → 起身）', () => {
+    const f = framesOf('roll');
+    expect(f.length).toBe(3);
+    expect(f[1]!.h).toBeGreaterThan(f[0]!.h);
+    expect(f[2]!.h).toBeGreaterThan(f[1]!.h);
+  });
+
+  it('不会有某帧宽度突然翻几倍（AI 画的是竖构图，不做横躺归一）', () => {
+    const f = framesOf('roll');
+    const widest = Math.max(...f.map((x) => x.w));
+    const narrowest = Math.min(...f.map((x) => x.w));
+    // 按宽度归一的话中间帧会到 706（约 3 倍），这里守住 2 倍以内
+    expect(widest / narrowest).toBeLessThan(2);
   });
 });
 
