@@ -208,11 +208,28 @@ describe('必杀起手帧（1 帧 → 2 帧）', () => {
 });
 
 describe('姿势库与图集的帧数一致', () => {
-  it('波动的程序化姿势帧数 = 图集帧数（多了会绕回蓄力，少了会少播）', () => {
-    const p = POSE_LIBRARY['specialProjectile']!;
-    const frames = (sheetJson.anims as unknown as Record<string, unknown[]>)['specialProjectile']!;
-    // 图集每帧对应姿势库一帧：图集取模到自己的长度，
-    // 姿势库帧数多于图集时，贴图那边播到多出来的帧会绕回第 0 帧（非循环动画不该绕回）
-    expect(p.frames.length).toBe(frames.length);
+  /**
+   * **遍历全部必杀**而不是逐个列举 —— 这个坑踩过两次：
+   * 第一次只给 specialProjectile 加了断言，第二次改升龙/突进/超必杀时就又漏了。
+   * 规则：图集 `frame % list.length` 会取模，姿势库帧数多于图集时，
+   * 贴图播到多出来的帧会绕回第 0 帧（非循环动画看起来像"出手后缩回蓄力"）。
+   */
+  const MUST_MATCH = ['specialProjectile', 'specialUppercut', 'specialRush', 'superCharge'];
+
+  for (const anim of MUST_MATCH) {
+    it(`${anim}：姿势库帧数 = 图集帧数`, () => {
+      const p = POSE_LIBRARY[anim];
+      const frames = (sheetJson.anims as unknown as Record<string, unknown[]>)[anim];
+      expect(p, `${anim} 不在姿势库里`).toBeTruthy();
+      expect(frames, `${anim} 不在图集里`).toBeTruthy();
+      expect(p!.frames.length).toBe(frames!.length);
+    });
+  }
+
+  it('四个必杀都至少两帧（起手 + 出手）', () => {
+    for (const anim of MUST_MATCH) {
+      const frames = (sheetJson.anims as unknown as Record<string, unknown[]>)[anim]!;
+      expect(frames.length, anim).toBeGreaterThanOrEqual(2);
+    }
   });
 });
