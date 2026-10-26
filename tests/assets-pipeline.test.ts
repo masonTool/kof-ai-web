@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { PALETTES } from '../src/data/chars/palette';
 import { KYO } from '../src/data/chars/kyo';
 import { drawFighter } from '../src/render/fighter-draw';
+import { poseMotion } from '../src/render/renderer';
+import { Fighter } from '../src/sim/fighter';
 import {
   currentAssetProvider,
   hasCustomArt,
@@ -192,5 +194,38 @@ describe('旋转绘制', () => {
     const ctx = new FakeCtx();
     drawFighter(ctx, { palette: KYO.palette, facing: 1, x: 0, y: 0, anim: 'idle', elapsed: 0 });
     expect(ctx.transforms.rotate.length).toBe(0);
+  });
+});
+
+describe('程序化补间（呼吸 / 蓄力）', () => {
+  const mkF = (): Fighter => new Fighter(KYO, { x: 100, facing: 1 });
+
+  it('站着会呼吸：dy 随时间变化且幅度很小（不超过 1px）', () => {
+    const f = mkF();
+    const a = poseMotion(f, 0);
+    const b = poseMotion(f, 20);
+    expect(a.dy).not.toBe(b.dy); // 会动
+    expect(Math.abs(a.dy)).toBeLessThanOrEqual(1);
+    expect(Math.abs(b.dy)).toBeLessThanOrEqual(1);
+  });
+
+  it('出招时不呼吸（避免和动作姿态打架）', () => {
+    const f = mkF();
+    f.startMove(KYO.moves['5A']!);
+    const m = poseMotion(f, 20);
+    expect(m.dy).toBe(0);
+  });
+
+  it('必杀起手前 8 帧压扁并后撤，之后就恢复', () => {
+    const f = mkF();
+    f.startMove(KYO.moves['236A']!);
+    const early = poseMotion(f, 0);
+    expect(early.squash).toBeLessThan(0); // 压扁
+    expect(early.dx).toBeLessThan(0); // 面朝右时往后（左）撤
+    // 推到第 8 帧之后
+    for (let i = 0; i < 9; i++) f.step({} as never, { held: 0, pressed: 0 } as never);
+    const late = poseMotion(f, 0);
+    expect(late.squash).toBe(0);
+    expect(late.dx).toBe(0);
   });
 });

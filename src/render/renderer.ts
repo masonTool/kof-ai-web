@@ -94,6 +94,42 @@ export function squashFor(f: Fighter): { squash: number; lag: number } {
   return { squash: 0, lag: 0.18 };
 }
 
+/**
+ * 程序化补间：用**一帧贴图 + 变换**模拟多帧节奏。
+ *
+ * 为什么需要：`idle` 只有 1 帧、所有必杀也只有 1 帧（原版是 4~6 帧呼吸循环 / 3 段
+ * 起手-判定-收招）。补图要几百张、几十小时，而这里用变换就能骗过眼睛：
+ * - **呼吸**：站着时上下 ±0.7px + 轻微 squash —— 修好这一条，观感提升比加十个特效都大
+ * - **蓄力**：必杀前 8 帧把身体压扁、重心后撤，让"1 帧的招"有发力过程
+ *
+ * 全部用 `elapsed`（确定性帧计数）驱动，回放一致，不用随机数。
+ */
+export function poseMotion(f: Fighter, elapsed: number): { dx: number; dy: number; squash: number } {
+  let dx = 0;
+  let dy = 0;
+  let squash = 0;
+
+  // 呼吸：只有"站着/蹲着/防御"这种静止状态才呼吸，出招和挨打时不动
+  const resting =
+    f.state === FighterState.Idle || f.state === FighterState.Crouch || f.state === FighterState.Guard;
+  if (resting) {
+    const breathe = Math.sin(elapsed * 0.07);
+    dy = breathe * 0.7;
+    squash = breathe * 0.05;
+  }
+
+  // 必杀/超必杀起手：前 8 帧压扁 + 后撤（越接近出手越恢复）
+  if (f.isAttacking && f.move && (f.move.kind === 'special' || f.move.kind === 'super')) {
+    const windup = Math.max(0, 1 - f.moveFrame / 8);
+    if (windup > 0) {
+      squash -= 0.35 * windup;
+      dx -= f.facing * 2.5 * windup;
+    }
+  }
+
+  return { dx, dy, squash };
+}
+
 /** 道具的配色：按属性取；无属性时用主人的色板 */
 function projectileColors(p: Projectile): { core: string; inner: string } {
   if (p.style !== 'none') {
@@ -284,6 +320,7 @@ export function drawFrame(ctx: Ctx2D, match: Match, opts: RenderOptions = {}): v
   for (const f of match.fighters) {
     const { anim, elapsed, duration } = animFor(f, match);
     const motion = squashFor(f);
+    const pm = poseMotion(f, elapsed);
     // 残影：先画拖影（半透明、同一姿势），再画本体——快攻时才有速度感
     for (let gi = 0; gi < f.ghosts.length; gi++) {
       const g = f.ghosts[gi]!;
@@ -307,9 +344,9 @@ export function drawFrame(ctx: Ctx2D, match: Match, opts: RenderOptions = {}): v
     drawFighter(ctx, {
       palette: f.char.palette,
       facing: f.facing,
-      // 命中抖动：被打的那 3 帧左右各偏 1px（不动模拟坐标，只是画的时候偏）
-      x: f.x + (f.hitShake > 0 ? (f.hitShake % 2 === 0 ? 1 : -1) : 0),
-      y: f.y,
+      // 命中抖动 + 程序化补间（呼吸/蓄力）：都只改绘制，不动模拟坐标
+      x: f.x + (f.hitShake > 0 ? (f.hitShake % 2 === 0 ? 1 : -1) : 0) + pm.dx,
+      y: f.y + pm.dy,
       anim,
       elapsed,
       duration,
