@@ -222,7 +222,7 @@ describe('姿势库与图集的帧数一致', () => {
    * 规则：图集 `frame % list.length` 会取模，姿势库帧数多于图集时，
    * 贴图播到多出来的帧会绕回第 0 帧（非循环动画看起来像"出手后缩回蓄力"）。
    */
-  const MUST_MATCH = ['specialProjectile', 'specialUppercut', 'specialRush', 'superCharge'];
+  const MUST_MATCH = ['specialProjectile', 'specialUppercut', 'specialRush', 'superCharge', 'wakeup'];
 
   for (const anim of MUST_MATCH) {
     it(`${anim}：姿势库帧数 = 图集帧数`, () => {
@@ -234,10 +234,30 @@ describe('姿势库与图集的帧数一致', () => {
     });
   }
 
-  it('四个必杀都至少两帧（起手 + 出手）', () => {
+  it('多帧动作都至少两帧（起手/过程 + 收尾）', () => {
     for (const anim of MUST_MATCH) {
       const frames = (sheetJson.anims as unknown as Record<string, unknown[]>)[anim]!;
       expect(frames.length, anim).toBeGreaterThanOrEqual(2);
     }
+  });
+});
+
+describe('起身动画（wakeup）', () => {
+  const framesOf = (anim: string): { w: number; h: number }[] =>
+    (sheetJson.anims as unknown as Record<string, { w: number; h: number }[]>)[anim]!;
+
+  it('三帧，且高度递增（蹲着 → 半起 → 站直）', () => {
+    const f = framesOf('wakeup');
+    expect(f.length).toBe(3);
+    // 起身的关键就是"越来越高"：如果高度不递增，看起来就是原地抖三下
+    expect(f[1]!.h).toBeGreaterThan(f[0]!.h);
+    expect(f[2]!.h).toBeGreaterThan(f[1]!.h);
+  });
+
+  it('不再借用蹲姿（原来是 ALIAS 到 crouch，看起来像"瞬间站起来"）', () => {
+    const crouch = framesOf('crouch')[0]!;
+    const last = framesOf('wakeup')[2]!;
+    // 最后一帧必须明显比蹲姿高，否则说明还在用 crouch 的图
+    expect(last.h).toBeGreaterThan(crouch.h * 1.2);
   });
 });

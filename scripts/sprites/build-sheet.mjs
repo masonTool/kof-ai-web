@@ -292,10 +292,17 @@ const scale = (CHAR_H * RES) / refH;
  * 表现就是"同一个人一会儿高一会儿矮"。改成**按姿势类别给固定身高**最稳：
  * 站姿一律 84（脚底到头顶），蹲姿另给，躺姿按宽度，胜负姿势含举起的手臂。
  */
+/**
+ * 按动画（或按**帧**）指定目标身高，单位是世界单位的角色身高。
+ *
+ * 写数组表示"逐帧高度"——起身必须用数组：所有站姿默认统一缩放到 84，
+ * 三帧起身会被抹成一样高，看起来只是原地抖三下，没有"从地上爬起来"的感觉。
+ */
 const HEIGHT_TARGET = {
   crouch: 64,
   crouchPunch: 66,
   crouchKick: 58,
+  wakeup: [58, 72, 84], // 蹲着 → 半起 → 站直
   win: 88,
   win2: 88,
   win3: 88,
@@ -307,12 +314,14 @@ for (const [anim, list] of Object.entries(ANIMS)) {
   const targetH = HEIGHT_TARGET[anim];
   const available = list.filter((p) => raws.has(p));
   if (available.length === 0) throw new Error(`动画 ${anim} 一帧都找不到`);
-  frames[anim] = available.map((pose) => {
+  frames[anim] = available.map((pose, frameIdx) => {
     const raw = raws.get(pose);
+    // 目标身高可以是数组（逐帧），起身就是靠这个做出"越来越高"
+    const th = Array.isArray(targetH) ? targetH[frameIdx] : targetH;
     // 站姿一律按目标身高缩放；蹲姿给更矮的目标；躺姿按宽度
     const sized = lying
       ? scaleToWidth(raw, Math.round(CHAR_H * RES * 1.05))
-      : scaleToHeight(raw, Math.round((targetH ?? CHAR_H) * RES));
+      : scaleToHeight(raw, Math.round((th ?? CHAR_H) * RES));
     const img = quantize(sized, framePalette(sized));
     const ox = -Math.round(lying ? img.width / 2 : legAnchorX(img));
     const rect = { w: img.width, h: img.height, ox, oy: -img.height };
