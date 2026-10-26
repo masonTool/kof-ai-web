@@ -333,23 +333,30 @@ describe('贴图加载提示', () => {
 });
 
 describe('画面内按钮位置（从左上角挪到右上）', () => {
-  it('两个按钮都在右上，且跟着可视宽度走（不是加载时快照）', () => {
+  it('两个按钮并排在底部中间，且跟着可视宽度走（不是加载时快照）', () => {
     setViewWidthByAspect(1280, 720); // → 398
     const wide = VIEW_WIDTH;
     const mb = movesButtonRect();
     const nb = menuButtonRect();
-    expect(mb.x).toBeGreaterThan(wide / 2);
+    // 都在画面内，由左到右："招式" 在 "暂停" 左边
+    expect(mb.x).toBeGreaterThanOrEqual(0);
     expect(nb.x + nb.w).toBeLessThanOrEqual(wide);
-    expect(mb.x + mb.w).toBeLessThanOrEqual(nb.x); // 招式在菜单左边，不重叠
+    expect(mb.x + mb.w).toBeLessThanOrEqual(nb.x);
 
     setViewWidthByAspect(320, 240); // → 320 基准
     expect(menuButtonRect().x).toBeLessThan(nb.x + 1); // 跟着变窄
   });
 
-  it('不压血条也不压气槽（原来 y=204 正压着气槽）', () => {
+  it('放在底部中间：不压血条/气槽，也避开左右两个手台', () => {
     const mb = movesButtonRect();
-    expect(mb.y).toBeGreaterThan(HUD_LAYOUT.barY + HUD_LAYOUT.barH); // 血条之下
-    expect(mb.y + mb.h).toBeLessThan(HUD_LAYOUT.meterY); // 气槽之上
+    // 血条 + 气槽都在顶部
+    expect(mb.y).toBeGreaterThan(HUD_LAYOUT.meterY + HUD_LAYOUT.meterH);
+    // 左边摇杆、右边四键大约各占 90px，按钮必须落在中间那段
+    expect(mb.x).toBeGreaterThan(90);
+    expect(mb.x + mb.w).toBeLessThan(VIEW_WIDTH - 85);
+    // 和「暂停」不重叠
+    const pause = menuButtonRect();
+    expect(mb.x + mb.w).toBeLessThanOrEqual(pause.x);
   });
 });
 

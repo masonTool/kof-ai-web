@@ -47,16 +47,28 @@ export interface Rect {
 }
 
 /** 布局常量（改版式只改这里） */
+/**
+ * HUD 布局。
+ *
+ * 这一版按"饱满 + 避开手台"重排：
+ * - 血条从 9px 加高到 18px（原来细得像一条线，上半屏看着发空）
+ * - 气槽从**底部**挪到**各自血条正下方**：原来在 `VIEW_HEIGHT - 13`，
+ *   正好被左下的摇杆和右下的四键完全盖住——玩家根本看不到自己的气
+ * - 名字放进血条内、左/右对齐，省掉一行
+ * - 时钟加底板，不再悬在空中
+ */
 export const HUD_LAYOUT = {
-  barY: 6,
-  barH: 9,
-  barW: 140,
+  barY: 8,
+  barH: 18,
+  barW: 148,
   margin: 6,
-  nameY: 17,
-  meterY: VIEW_HEIGHT - 13,
-  meterH: 6,
-  meterW: 110,
-  comboY: 44,
+  /** 名字画在血条内部，距血条顶几像素 */
+  nameInsetY: 5,
+  /** 气槽：血条正下方，紧跟名字下面 */
+  meterY: 30,
+  meterH: 10,
+  meterW: 148,
+  comboY: 52,
   bannerY: 78,
 } as const;
 
@@ -175,15 +187,16 @@ function drawHealthBar(ctx: Ctx2D, p: PlayerHud, side: 1 | 2): void {
   text(
     ctx,
     p.name,
-    side === 1 ? rect.x : rect.x + rect.w,
-    HUD_LAYOUT.nameY,
+    side === 1 ? rect.x + 4 : rect.x + rect.w - 4,
+    rect.y + HUD_LAYOUT.nameInsetY,
     side === 1 ? 'left' : 'right',
-    8,
+    10,
     HUD_COLORS.text,
   );
 
   // 队伍剩余人数（血条下方小方块）与胜场星
-  const iconY = HUD_LAYOUT.nameY + 10;
+  // 人数方块放到气槽下面（原来在血条下方，现在那块地方被气槽占了）
+  const iconY = HUD_LAYOUT.meterY + HUD_LAYOUT.meterH + 3;
   for (let i = 0; i < Math.max(0, p.teamLeft); i++) {
     const x = side === 1 ? rect.x + i * 7 : rect.x + rect.w - 5 - i * 7;
     ctx.fillStyle = HUD_COLORS.meterFill;
@@ -200,8 +213,9 @@ function drawMeter(ctx: Ctx2D, p: PlayerHud, side: 1 | 2): void {
   const rect = meterBarLayout(side);
   const ratio = meterRatio(p);
 
+  // 外框 + 内底色：加粗到 10px 之后必须有个深色底，不然满屏亮背景下看不出槽的边界
   ctx.fillStyle = HUD_COLORS.frame;
-  ctx.fillRect(rect.x - 1, rect.y - 1, rect.w + 2, rect.h + 2);
+  ctx.fillRect(rect.x - 2, rect.y - 2, rect.w + 4, rect.h + 4);
   ctx.fillStyle = HUD_COLORS.meterBack;
   ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
 
@@ -212,12 +226,18 @@ function drawMeter(ctx: Ctx2D, p: PlayerHud, side: 1 | 2): void {
     ctx.fillRect(x, rect.y, fillW, rect.h);
   }
 
+  // 气槽亮边：气是 0 的时候槽体是纯深色，和背景糊在一起，必须靠描边看出"这里有个槽"
+  ctx.strokeStyle = 'rgba(140,180,220,0.55)';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(rect.x - 0.5, rect.y - 0.5, rect.w + 1, rect.h + 1);
+
+  // 状态字放进槽体内部（原来在 y-9，正好压在加高后的血条底边上）
   const active = p.maxMode === true;
   text(
     ctx,
     active ? 'MAX MODE' : ratio >= 1 ? 'MAX' : 'POWER',
-    side === 1 ? rect.x : rect.x + rect.w,
-    rect.y - 10,
+    side === 1 ? rect.x + 4 : rect.x + rect.w - 4,
+    rect.y + 2,
     side === 1 ? 'left' : 'right',
     7,
     active || ratio >= 1 ? HUD_COLORS.meterMax : HUD_COLORS.text,

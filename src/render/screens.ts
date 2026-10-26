@@ -128,8 +128,14 @@ export function helpPageText(page: number): HelpPageView {
  *
  * 放在「招式」按钮右边一格：两者都在画面下沿，不挡站位，也不和手台的摇杆/四键重叠。
  */
+/**
+ * 「暂停」按钮：**底部中间**（两个手台之间）。
+ *
+ * 原来放右上角 y=26，正好压在 P2 的血条和名字上；而血条加高到 18px 之后更没地方放。
+ * 底部中间这块是唯一既空着、又不会被摇杆/四键盖住的地方。
+ */
 export function menuButtonRect(): { x: number; y: number; w: number; h: number } {
-  return { x: VIEW_WIDTH - 44, y: 26, w: 40, h: 15 };
+  return { x: 148, y: 198, w: 40, h: 15 };
 }
 
 export function drawMenuButton(ctx: Ctx2D): void {
@@ -242,8 +248,8 @@ export function drawLoadingHint(ctx: Ctx2D, blinkOn: boolean): void {
 export function drawStageBadge(ctx: Ctx2D, stage: number, total: number, teamName: string): void {
   const label = `STAGE ${stage}/${total}${teamName ? ` · ${teamName}` : ''}`;
   const w = Math.min(VIEW_WIDTH - 8, label.length * 6 + 12);
-  // y=8 会盖住血条（barY=6 高 9），下移到血条与名字下面
-  const y = 26;
+  // 依次给血条（8~26）、气槽（30~40）让位，落到气槽下面
+  const y = 44;
   ctx.globalAlpha = 0.8;
   ctx.fillStyle = '#05070a';
   ctx.fillRect(4, y, w, 13);
@@ -335,8 +341,9 @@ export function drawMoveHint(ctx: Ctx2D, alpha = 1): void {
  * 顶层 `const` 会在模块加载时把它固定成 320 —— 宽屏下按钮就跑到画面中间去了。
  * （左下角原来那个位置的毛病是压住气槽 meterY = VIEW_HEIGHT-13，还紧挨摇杆。）
  */
+/** 「招式」按钮：和「暂停」并排（底部中间） */
 export function movesButtonRect(): { x: number; y: number; w: number; h: number } {
-  return { x: VIEW_WIDTH - 92, y: 26, w: 44, h: 15 };
+  return { x: 100, y: 198, w: 44, h: 15 };
 }
 
 /** 画「招式」小按钮 */

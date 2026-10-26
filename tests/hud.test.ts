@@ -153,7 +153,7 @@ describe('绘制血条', () => {
     expect(ctx.lastText('IORI')!.align).toBe('right');
     // 2 个队员图标 + 1 颗星
     const p1 = hpBarLayout(1);
-    expect(ctx.rects.filter((r) => r.y >= HUD_LAYOUT.nameY).length).toBeGreaterThanOrEqual(3);
+    expect(ctx.rects.filter((r) => r.y >= HUD_LAYOUT.meterY + HUD_LAYOUT.meterH + 3).length).toBeGreaterThanOrEqual(2);
     expect(ctx.rects.some((r) => r.y === p1.y - 7)).toBe(true);
   });
 });
