@@ -99,7 +99,7 @@ const HELP_PAGES: readonly { title: string; lines: readonly string[] }[] = [
       '↓↘→ + 拳 = 波动系（远距离）',
       '→↓↘ + 拳 = 升龙系（推前 → 压下 → 滑到前下）',
       '↓↙← + 脚 = 突进系',
-      '按不准就对局中按 L / 点左下角「招式」看本角色招式表。',
+      '按不准就对局中按 L，或点右上角「招式」看本角色招式表。',
     ],
   },
   {
@@ -124,7 +124,7 @@ export function helpPageText(page: number): HelpPageView {
 }
 
 /**
- * 左下角「菜单」按钮：触屏没有 Start 键，靠它叫出系统菜单。
+ * 右上角「暂停」按钮：触屏没有 Start 键，靠它叫出系统菜单。
  *
  * 放在「招式」按钮右边一格：两者都在画面下沿，不挡站位，也不和手台的摇杆/四键重叠。
  */
@@ -141,7 +141,7 @@ export function drawMenuButton(ctx: Ctx2D): void {
   ctx.lineWidth = 1;
   ctx.strokeRect(nb.x + 0.5, nb.y + 0.5, nb.w - 1, nb.h - 1);
   ctx.globalAlpha = 1;
-  text(ctx, '菜单', nb.x + nb.w / 2, nb.y + 4, 'center', 6, SCREEN_COLORS.text);
+  text(ctx, '暂停', nb.x + nb.w / 2, nb.y + 4, 'center', 6, SCREEN_COLORS.text);
 }
 
 /** 手台位置调整时的顶部提示 */
@@ -279,8 +279,8 @@ export function drawTrainingBadge(
   text(ctx, `训练场 · ${hp} · ${meter} · 假人:${info.dummy}`, VIEW_WIDTH / 2, y + 4, 'center', 6, '#9fd0ff');
 }
 
-/** 首次进对局时的必杀提示（只弹一次，之后靠左下角「招式」按钮） */
-export const MOVE_HINT_TEXT = '必杀技怎么放？按 L 或点左下角「招式」看本角色招式表';
+/** 首次进对局时的必杀提示（只弹一次，之后靠右上角「招式」按钮） */
+export const MOVE_HINT_TEXT = '必杀技怎么放？按 L 或点右上角「招式」看本角色招式表';
 
 /** 画首次必杀提示：底部一条窄横幅，不挡血条也不挡站位 */
 export function drawMoveHint(ctx: Ctx2D, alpha = 1): void {
