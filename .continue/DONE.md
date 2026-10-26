@@ -41,6 +41,23 @@
 
 <!-- 实际归档放下面，最新的放最上面 -->
 
+## 批次 20261026-2214 · 2026-10-26 · 会话 59bce766
+
+**这批的目标**：把被限流截断的 44 张起手帧补齐。
+
+- [x] [T247] 补齐三个专属必杀的起手帧：yuri/clark 各缺 1 张，后 14 角色各缺 3 张 → 重打包 + 29/29 验证
+  - 结果：**四个专属必杀 29/29 全部 2 帧**（升龙/突进/超必杀蓄力从 15/15/13 → 29/29/29），`art:check` 通过
+  - 怎么补上的：分两轮、拉长间隔——第一轮 16 角色（yuri/clark + 后 14 个）每角色 sleep 45 秒，补齐到 21/27；第二轮剩 6 个（chin/chang/choi/yashiro/shermie/chris）每角色 sleep 60 秒，全部成功
+  - 为什么前两轮失败：连续出图触发元宝限流（前 13 个成功后连片报"失败：三个全挂"）。**间隔 45~60 秒后就没再失败**——限流是按频率算的
+  - **按 TIPS 的教训改了测试**：原来只给 `specialProjectile` 加"姿势库帧数 = 图集帧数"断言，另外三个第二次踩了同一个坑；现在改成 `MUST_MATCH` 数组**遍历四个必杀**，并额外加一条"四个都至少两帧"
+  - 验证：`npm run check` **972 条全绿**（新增 4 个遍历断言 + 1 条至少两帧）；逐角色统计四个必杀帧数分布，全部 `{"2":29}`；`art:check` 通过
+  - 批次：20261026-2214
+  - 现状：波动必杀 **29/29**；升龙 15/29、突进 15/29、超必杀蓄力 13/29
+  - 缺图清单：`yuri: superchargewindup`、`clark: superchargewindup`、`athena/kensou/chin/kim/chang/choi/billy/eiji/shingo/yashiro/shermie/chris/goenitz/orochi` 三个全缺（共 44 张）
+  - 上次失败原因：连续出图被元宝限流（前 13 个角色成功后，后面连片报「失败：三个全挂」）
+  - 本次策略：逐角色出图，**每个角色之间 sleep 45 秒**（拉长间隔），日志 `/tmp/fill-windup.log`
+  - 批次：20261026-2214
+
 ## 批次 20261026-2134 · 2026-10-26 · 会话 59bce766
 
 **这批的目标**：其余三个专属必杀也补起手帧。
@@ -277,16 +294,4 @@
   - 并发策略分两层：workflow 级 `group: <workflow>-<ref>` + `cancel-in-progress: true`（同分支连推取消旧的，省额度）；`deploy` job 级 `group: pages` + `cancel-in-progress: false`（部署不能被打断，否则线上会出现半个站点）
   - 验证：`ruby -ryaml` 解析通过（jobs: build 9 步 / deploy 1 步，只有一个 workflow 文件）；本地按合并后的顺序跑完整链路——typecheck 通过、`npm run test` **926 条全绿**、`art:check` 通过、`npm run build` 成功（2.62s）；README 的「持续集成」章节改写为单 workflow 说明
   - 批次：20261026-0033
-
-## 批次 20261026-0019 · 2026-10-26 · 会话 59bce766
-
-**这批的目标**：线上白屏。
-
-- [x] [T221] 修 GitHub Pages 白屏：线上发布的是**仓库根目录的开发版 index.html**（`<script src="/src/main.ts">`），不是 `dist/` 构建产物 → 新增 `deploy.yml` 用 Actions 发布 dist，加 `.nojekyll`
-  - 根因：`curl` 线上首页拿到的 HTML 里是 `src="/src/main.ts"` —— 那是开发模式的入口，浏览器去请求一个不存在的 `.ts`，且 .ts 本身也不能直接跑，于是整页白屏。仓库根目录的 `index.html` 就是这样，说明 Pages 的 Source 选的是 "Deploy from a branch / main / root"
-  - 修复：①新增 `.github/workflows/deploy.yml`（build → upload-pages-artifact → deploy-pages，权限 pages/id-token，concurrency 不打断进行中的部署）；②加 `public/.nojekyll`（build 时复制进 dist，避免 Jekyll 处理）
-  - 为什么不用 gh-pages 分支：既然已经有 Actions，直接把 dist 交给 Pages 最省事，也不用往仓库里塞第二份产物
-  - 验证：①本地模拟子目录部署（`/tmp/ghtest/kof-ai-web/` 放 dist，python http.server）——`index.html`、`assets/*.js`、`sheets/kyo.json` 三个关键资源全部 **200**；②playwright 打开 `http://127.0.0.1:8902/kof-ai-web/` 截图确认画面正常（说明浮层自动弹出、手台摇杆与四键都在），不再白屏
-  - **还需要你做一步**：仓库 Settings → Pages → Source 改成 **GitHub Actions**（现在是 Deploy from a branch，我改不了仓库设置）
-  - 批次：20261026-0019
 
