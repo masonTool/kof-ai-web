@@ -42,9 +42,12 @@ const problems = [];
 const warn = (msg) => problems.push(msg);
 
 const poses = poseNames();
-const ids = existsSync(SHEETS)
+// 图集分两片：`<id>.json` 是核心片、`<id>-extra.json` 是扩展片。
+// 校验按「一个角色 = 两片合并」来做，否则扩展片会被当成独立角色报"缺一堆动画"。
+const allJsonIds = existsSync(SHEETS)
   ? readdirSync(SHEETS).filter((f) => f.endsWith('.json')).map((f) => f.slice(0, -5)).sort()
   : [];
+const ids = allJsonIds.filter((id) => !id.endsWith('-extra'));
 
 if (ids.length === 0) {
   console.error('没有找到任何图集，先跑 npm run art:all');
@@ -55,6 +58,13 @@ const heights = new Map();
 
 for (const id of ids) {
   const json = JSON.parse(readFileSync(join(SHEETS, `${id}.json`), 'utf8'));
+  // 扩展片合并进来再校验（缺了也不致命，只是那些动作会回落程序化）
+  const extraPath = join(SHEETS, `${id}-extra.json`);
+  if (existsSync(extraPath)) {
+    const extra = JSON.parse(readFileSync(extraPath, 'utf8'));
+    json.anims = { ...json.anims, ...extra.anims };
+    json.flash = { ...(json.flash ?? {}), ...(extra.flash ?? {}) };
+  }
   const pngPath = join(SHEETS, `${id}.png`);
   if (!existsSync(pngPath)) {
     warn(`${id}: 有 json 没有 png`);

@@ -125,9 +125,19 @@ export async function loadCharSheet(charId: string, jsonUrl: string): Promise<As
 // ---------- 多角色图集：按需加载 + 合并成一个 provider ----------
 
 /** 已装好的角色图集（charId → provider） */
-const sheets = new Map<string, AssetProvider>();
+/**
+ * 每个角色两片：`main`（站架/移动/防御/轻攻击，首屏必须先到）与 `extra`（跳跃/必杀/
+ * 重攻击/胜利姿势，后台补）。合起来才是完整的 33 个动画——
+ * 分片的目的是把首屏从 1.85MB 压到 0.91MB（线上 CDN 冷缓存 20~30 秒），不是减少总量。
+ */
+interface SheetEntry {
+  main: AssetProvider;
+  extra: AssetProvider | null;
+}
+const sheets = new Map<string, SheetEntry>();
 /** 正在加载中的请求（同一角色只发一次） */
 const pending = new Map<string, Promise<void>>();
+const extraPending = new Map<string, Promise<void>>();
 /** 同时在内存里最多保留几个角色的图集（一张约 1.7MB，全装 40+MB 太浪费） */
 const MAX_LOADED = 8;
 /** 最近使用顺序，用于淘汰 */
@@ -156,12 +166,46 @@ function touch(charId: string): void {
 export function installSheetProvider(): void {
   setAssetProvider({
     fighter(charId: string, anim: string, frame: number, flash = false): SpriteFrame | null {
-      const sheet = sheets.get(charId);
-      if (!sheet) return null;
+      const entry = sheets.get(charId);
+      if (!entry) return null;
       touch(charId);
-      return sheet.fighter(charId, anim, frame, flash);
+      return entry.main.fighter(charId, anim, frame, flash) ?? entry.extra?.fighter(charId, anim, frame, flash) ?? null;
     },
   });
+}
+
+/**
+ * 后台补扩展片（跳跃/必杀/重攻击/胜利姿势）。
+ *
+ * 和 `ensureCharSheets` 分开放：主片决定"能不能出画面"，必须有；
+ * 扩展片晚到只是某些动作短暂回落程序化，**不阻塞开局**。
+ */
+export async function ensureCharExtras(charIds: readonly string[]): Promise<void> {
+  const jobs = charIds.map(async (charId) => {
+    const entry = sheets.get(charId);
+    if (!entry || entry.extra) return;
+    const running = extraPending.get(charId);
+    if (running) return running;
+    const job = (async () => {
+      const extra = await withSlot(() =>
+        loadCharSheet(charId, `${baseUrl()}sheets/${charId}-extra.json`),
+      );
+      const cur = sheets.get(charId);
+      if (extra && cur) sheets.set(charId, { main: cur.main, extra });
+    })();
+    extraPending.set(charId, job);
+    try {
+      await job;
+    } finally {
+      extraPending.delete(charId);
+    }
+  });
+  await Promise.all(jobs);
+}
+
+/** 扩展片是否已装（测试用） */
+export function hasExtraSheet(charId: string): boolean {
+  return sheets.get(charId)?.extra != null;
 }
 
 /** 某个角色的图集是否已经装好（测试/调试用） */
@@ -211,7 +255,8 @@ export async function ensureCharSheets(charIds: readonly string[]): Promise<void
     const job = (async () => {
       const provider = await withSlot(() => loadCharSheet(charId, `${baseUrl()}sheets/${charId}.json`));
       if (provider) {
-        sheets.set(charId, provider);
+        const prev = sheets.get(charId);
+        sheets.set(charId, { main: provider, extra: prev?.extra ?? null });
         touch(charId);
       }
     })();

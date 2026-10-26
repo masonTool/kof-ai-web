@@ -1,5 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import sheetJson from '../public/sheets/kyo.json';
+import mainSheet from '../public/sheets/kyo.json';
+import extraSheet from '../public/sheets/kyo-extra.json';
+
+/**
+ * 图集现在分两片：主片（站架/移动/蹲/防御/轻攻击）+ 扩展片（跳跃/必杀/胜利姿势）。
+ * 测试要读**合起来的**动画集，否则会误判"某个动画没了"。
+ */
+const sheetJson = {
+  ...mainSheet,
+  anims: { ...mainSheet.anims, ...extraSheet.anims },
+  flash: { ...(mainSheet.flash ?? {}), ...(extraSheet.flash ?? {}) },
+} as typeof mainSheet;
 import { frameListProvider, type FrameListSheet, type SpriteFrame } from '../src/render/assets';
 import { poseNames } from '../src/render/poses';
 import { isSheetJson, providerFromSheetJson, type SheetJson } from '../src/render/sprite-loader';
@@ -154,5 +165,27 @@ describe('京的贴图产物（build-kyo.mjs 的输出）', () => {
     const idle = sheet.anims.idle[0]!;
     const punch = sheet.anims.punchLight![1]!;
     expect(punch.w).toBeGreaterThan(idle.w + 6);
+  });
+});
+
+describe('图集分片（首屏只下核心片）', () => {
+  it('核心片包含所有"一进场就可能用到"的动作', () => {
+    // 少了这些，进对局第一秒就会看到像素人
+    for (const anim of ['idle', 'walkF', 'walkB', 'crouch', 'guard', 'hit', 'down', 'punchLight', 'kickLight']) {
+      expect(mainSheet.anims[anim as keyof typeof mainSheet.anims], `核心片缺 ${anim}`).toBeTruthy();
+    }
+  });
+
+  it('扩展片放的是低频动作（跳跃/必杀/胜利），不会和核心片重复', () => {
+    for (const anim of ['special', 'superCharge', 'win']) {
+      expect(extraSheet.anims[anim as keyof typeof extraSheet.anims], `扩展片缺 ${anim}`).toBeTruthy();
+    }
+    // 同一个动画不该两片都有（否则白占体积）
+    const overlap = Object.keys(mainSheet.anims).filter((a) => a in extraSheet.anims);
+    expect(overlap).toEqual([]);
+  });
+
+  it('两片合起来覆盖全部 33 个动画（分片不能丢动作）', () => {
+    expect(Object.keys(sheetJson.anims).length).toBe(33);
   });
 });

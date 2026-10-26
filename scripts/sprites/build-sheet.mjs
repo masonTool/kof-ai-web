@@ -29,6 +29,8 @@ const argVal = (name) => {
 
 const RAW = `art-source/${CHAR_ID}-raw-${STYLE}`;
 const OUT_IMAGE = `public/sheets/${CHAR_ID}.png`;
+const OUT_EXTRA_IMAGE = `public/sheets/${CHAR_ID}-extra.png`;
+const OUT_EXTRA_JSON = `public/sheets/${CHAR_ID}-extra.json`;
 const OUT_JSON = `public/sheets/${CHAR_ID}.json`;
 
 /** 角色身高（逻辑像素）：跟程序化绘制的京同高，站上去才对得上判定盒 */
@@ -228,24 +230,38 @@ if (FROM) {
     console.error('--tint 要写成 "r,g,b"（0~255）');
     process.exit(1);
   }
-  const srcPng = decodePng(readFileSync(`public/sheets/${FROM}.png`));
-  const out = { width: srcPng.width, height: srcPng.height, data: new Uint8Array(srcPng.data) };
-  // 只染**中间调**：纯黑描边保持黑、白衬衫保持白，中间调（皮肤/裤子/衣褶）整体偏移。
-  // 试过整体相乘（白衣服变粉）和只染暗部（黑夹克变红、衣服细节全丢），都不如按亮度取中间。
-  const STRENGTH = 0.62;
-  for (let i = 0; i < out.data.length; i += 4) {
-    if (out.data[i + 3] === 0) continue;
-    const lum = (0.299 * out.data[i] + 0.587 * out.data[i + 1] + 0.114 * out.data[i + 2]) / 255;
-    const k = STRENGTH * Math.max(0, 1 - Math.abs(lum - 0.45) * 2.1);
-    out.data[i] = Math.round(out.data[i] * (1 - k) + tint[0] * k);
-    out.data[i + 1] = Math.round(out.data[i + 1] * (1 - k) + tint[1] * k);
-    out.data[i + 2] = Math.round(out.data[i + 2] * (1 - k) + tint[2] * k);
+  /**
+   * 只染**中间调**：纯黑描边保持黑、白衬衫保持白，中间调（皮肤/裤子/衣褶）整体偏移。
+   * 试过整体相乘（白衣服变粉）和只染暗部（黑夹克变红、衣服细节全丢），都不如按亮度取中间。
+   */
+  const tintPng = (srcPng) => {
+    const out = { width: srcPng.width, height: srcPng.height, data: new Uint8Array(srcPng.data) };
+    const STRENGTH = 0.62;
+    for (let i = 0; i < out.data.length; i += 4) {
+      if (out.data[i + 3] === 0) continue;
+      const lum = (0.299 * out.data[i] + 0.587 * out.data[i + 1] + 0.114 * out.data[i + 2]) / 255;
+      const k = STRENGTH * Math.max(0, 1 - Math.abs(lum - 0.45) * 2.1);
+      out.data[i] = Math.round(out.data[i] * (1 - k) + tint[0] * k);
+      out.data[i + 1] = Math.round(out.data[i + 1] * (1 - k) + tint[1] * k);
+      out.data[i + 2] = Math.round(out.data[i + 2] * (1 - k) + tint[2] * k);
+    }
+    return out;
+  };
+
+  // 主片 + 扩展片都要派生（漏了扩展片，变体放必杀/跳跃时会闪回像素人）
+  const pieces = [
+    { src: FROM, out: CHAR_ID, outImage: OUT_IMAGE, outJson: OUT_JSON },
+    { src: `${FROM}-extra`, out: `${CHAR_ID}-extra`, outImage: OUT_EXTRA_IMAGE, outJson: OUT_EXTRA_JSON },
+  ];
+  for (const p of pieces) {
+    if (!existsSync(`public/sheets/${p.src}.png`)) continue;
+    const out = tintPng(decodePng(readFileSync(`public/sheets/${p.src}.png`)));
+    writeFileSync(p.outImage, encodePng(out));
+    const json = JSON.parse(readFileSync(`public/sheets/${p.src}.json`, 'utf8'));
+    json.image = `${p.out}.png`;
+    writeFileSync(p.outJson, `${JSON.stringify(json, null, 1)}\n`);
+    console.log(`${p.out}：由 ${p.src} 染色派生（tint ${tint.join(',')}）· 图集 ${out.width}×${out.height}`);
   }
-  writeFileSync(OUT_IMAGE, encodePng(out));
-  const json = JSON.parse(readFileSync(`public/sheets/${FROM}.json`, 'utf8'));
-  json.image = `${CHAR_ID}.png`;
-  writeFileSync(OUT_JSON, `${JSON.stringify(json, null, 1)}\n`);
-  console.log(`${CHAR_ID}：由 ${FROM} 染色派生（tint ${tint.join(',')}）· 图集 ${out.width}×${out.height}`);
   process.exit(0);
 }
 
@@ -305,62 +321,91 @@ for (const [anim, list] of Object.entries(ANIMS)) {
 }
 
 // ---------- 打包：简单货架（宽高都不大，够用） ----------
-const MAX_W = 2048;
+
+/**
+ * 分片用的核心动画集：**对战里一定会用到的**。
+ *
+ * 其余（胜利/挑衅/败北/眩晕/受身/投技起手）放到 `-extra` 片里后台加载——
+ * 结算和受身那一下就算晚到几帧，也只是回落程序化一瞬，不会像必杀姿势闪回那么刺眼。
+ * 必杀/超必杀姿势**必须在核心片**，否则放必杀的那一下会闪回像素人。
+ */
+const CORE_ANIMS = new Set([
+  // 首屏必需：站架 + 移動 + 防御 + 挨打 + 两个最常用的轻攻击
+  // 线上实测（GitHub Pages）单张 2MB 冷缓存要 20~30 秒；只装这几个能把首屏压到 ~0.4MB
+  'idle', 'walkF', 'walkB', 'crouch', 'guard', 'hit', 'down', 'punchLight', 'kickLight', 'crouchPunch', 'crouchKick',
+]);
+
 const order = [];
 for (const [anim, list] of Object.entries(frames)) {
   for (const f of list) order.push({ anim, kind: 'normal', img: f.img, rect: { ...f.rect } });
   for (const f of list) if (f.sil) order.push({ anim, kind: 'flash', img: f.sil, rect: { ...f.rect } });
 }
-let shelfX = 0;
-let shelfY = 0;
-let shelfH = 0;
-for (const f of order) {
-  if (shelfX + f.rect.w > MAX_W) {
-    shelfX = 0;
-    shelfY += shelfH + 1;
-    shelfH = 0;
+
+const MAX_W = 2048;
+
+/** 把一组帧货架打包并写出去（png + json），返回图集尺寸 */
+function packAndWrite(subset, outImage, outJson, imageName) {
+  const placed = subset.map((f) => ({ ...f, rect: { ...f.rect } }));
+  let shelfX = 0;
+  let shelfY = 0;
+  let shelfH = 0;
+  for (const f of placed) {
+    if (shelfX + f.rect.w > MAX_W) {
+      shelfX = 0;
+      shelfY += shelfH + 1;
+      shelfH = 0;
+    }
+    f.rect.x = shelfX;
+    f.rect.y = shelfY;
+    shelfX += f.rect.w + 1;
+    shelfH = Math.max(shelfH, f.rect.h);
   }
-  f.rect.x = shelfX;
-  f.rect.y = shelfY;
-  shelfX += f.rect.w + 1;
-  shelfH = Math.max(shelfH, f.rect.h);
+  const atlasW = MAX_W;
+  const atlasH = Math.max(1, shelfY + shelfH);
+  const atlas = createImage(atlasW, atlasH);
+  for (const f of placed) blit(atlas, f.img, f.rect.x, f.rect.y);
+  writeFileSync(outImage, encodePng(atlas));
+
+  const animsJson = {};
+  const flashJson = {};
+  const pick = (f) => ({ x: f.rect.x, y: f.rect.y, w: f.rect.w, h: f.rect.h, ox: f.rect.ox, oy: f.rect.oy });
+  const animNames = [...new Set(subset.map((f) => f.anim))];
+  for (const anim of animNames) {
+    animsJson[anim] = placed.filter((o) => o.anim === anim && o.kind === 'normal').map(pick);
+    const flash = placed.filter((o) => o.anim === anim && o.kind === 'flash').map(pick);
+    if (flash.length > 0) flashJson[anim] = flash;
+    if (animsJson[anim].length === 0) throw new Error(`动画 ${anim} 一帧都没有`);
+  }
+  // 别名：源动画在本片才建别名，跨片不建（指向不存在的矩形会让绘制层报错）
+  for (const [alias, src] of Object.entries(ALIAS)) {
+    if (!animsJson[src]) continue;
+    animsJson[alias] = animsJson[src].map((f) => ({ ...f }));
+    if (flashJson[src]) flashJson[alias] = flashJson[src].map((f) => ({ ...f }));
+  }
+
+  writeFileSync(
+    outJson,
+    JSON.stringify(
+      // scale：一个源像素等于多少世界单位（绘制时宽高都要乘它，否则贴图会被放大 RES 倍）
+      { image: imageName, width: atlasW, height: atlasH, scale: 1 / RES, anims: animsJson, flash: flashJson },
+      null,
+      1,
+    ),
+  );
+  return { w: atlasW, h: atlasH, anims: animNames.length, bytes: 0 };
 }
-const atlasW = MAX_W;
-const atlasH = shelfY + shelfH;
 
-const atlas = createImage(atlasW, atlasH);
-for (const f of order) blit(atlas, f.img, f.rect.x, f.rect.y);
+const coreFrames = order.filter((f) => CORE_ANIMS.has(f.anim));
+const extraFrames = order.filter((f) => !CORE_ANIMS.has(f.anim));
 
-writeFileSync(OUT_IMAGE, encodePng(atlas));
+const core = packAndWrite(coreFrames, OUT_IMAGE, OUT_JSON, `${CHAR_ID}.png`);
+const extra = extraFrames.length > 0
+  ? packAndWrite(extraFrames, OUT_EXTRA_IMAGE, OUT_EXTRA_JSON, `${CHAR_ID}-extra.png`)
+  : null;
 
-const animsJson = {};
-const flashJson = {};
-const pick = (f) => ({ x: f.rect.x, y: f.rect.y, w: f.rect.w, h: f.rect.h, ox: f.rect.ox, oy: f.rect.oy });
-for (const [anim, list] of Object.entries(frames)) {
-  animsJson[anim] = order.filter((o) => o.anim === anim && o.kind === 'normal').map(pick);
-  const flash = order.filter((o) => o.anim === anim && o.kind === 'flash').map(pick);
-  if (flash.length > 0) flashJson[anim] = flash;
-  if (animsJson[anim].length === 0) throw new Error(`动画 ${anim} 一帧都没有`);
-  void list;
-}
-// 别名：直接指到源动画的矩形上（同一块图集区域，JSON 里多几个键而已）
-for (const [alias, src] of Object.entries(ALIAS)) {
-  if (!animsJson[src]) throw new Error(`别名 ${alias} → ${src} 失败：源动画不存在`);
-  animsJson[alias] = animsJson[src].map((f) => ({ ...f }));
-  if (flashJson[src]) flashJson[alias] = flashJson[src].map((f) => ({ ...f }));
-}
-
-writeFileSync(
-  OUT_JSON,
-  JSON.stringify(
-    // scale：一个源像素等于多少世界单位（绘制时宽高都要乘它，否则贴图会被放大 RES 倍）
-    { image: `${CHAR_ID}.png`, width: atlasW, height: atlasH, scale: 1 / RES, anims: animsJson, flash: flashJson },
-    null,
-    1,
-  ),
-);
-
-console.log(`${CHAR_ID}：缩放 ${scale.toFixed(4)} · 图集 ${atlasW}×${atlasH}`);
+console.log(`${CHAR_ID}：缩放 ${scale.toFixed(4)}`);
+console.log(`  核心片 ${core.w}×${core.h} · ${core.anims} 个动画`);
+if (extra) console.log(`  扩展片 ${extra.w}×${extra.h} · ${extra.anims} 个动画`);
 for (const [anim, list] of Object.entries(frames)) {
   console.log(`  ${anim.padEnd(11)} ${list.length} 帧  ${list.map((f) => `${f.rect.w}×${f.rect.h}`).join(' ')}`);
 }

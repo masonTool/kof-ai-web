@@ -24,7 +24,7 @@ import { ensureBigPortraits, ensurePortraits } from './render/portraits';
 import { ensureStageArt } from './render/stage-art';
 import { setWeatherEnabled, stageForIndex, stageForSeed } from './render/stage-draw';
 import { ensureTitleArt } from './render/title-art';
-import { ensureCharSheets, installSheetProvider, sheetReady } from './render/sprite-loader';
+import { ensureCharExtras, ensureCharSheets, installSheetProvider, sheetReady } from './render/sprite-loader';
 import { applyViewport, computeViewport, shouldRotate, type SafeInsets } from './render/scale';
 import {
   drawContinue,
@@ -313,9 +313,11 @@ function startMatch(): void {
   // 线上（GitHub Pages）单张图集 2MB、冷缓存要 20~30 秒，6 个一起请求会互相拖慢，
   // 结果就是玩家进场先看到程序化像素人。
   const firstTwo = [playerTeam[0]!, enemyTeam[0]!].map((c) => c.id);
-  void ensureCharSheets(firstTwo).then(() =>
-    ensureCharSheets([...playerTeam, ...enemyTeam].map((c) => c.id)),
-  );
+  const allIds = [...playerTeam, ...enemyTeam].map((c) => c.id);
+  void ensureCharSheets(firstTwo).then(() => {
+    // 主片（站架/移动/轻攻击）优先到；剩下的人和扩展片（跳跃/必杀/胜利姿势）后台补
+    void ensureCharSheets(allIds).then(() => ensureCharExtras(allIds));
+  });
   match = new Match(playerTeam, enemyTeam, {
     roundsToWin: cfg.roundsToWin,
     roundSeconds: cfg.roundSeconds,
