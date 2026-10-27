@@ -501,13 +501,29 @@ benispecial1: {
 |---|---|---|
 | 草薙京 | **标准空手道正拳**：腰拧转、肩送出 | **中段回旋踢**：腿抬得更高 |
 | 八神庵 | **五指张开成爪前抓**：身体前扑 | **侧身斜上踢**：身体大幅侧转 |
+| 二阶堂红丸 | 修长笔直的拳击 + 紫电 | 高抬腿斜上踢 + 电弧 |
+| 大门五郎 | **相扑式推掌突张**：双掌前推 | **力士低位扫踢**：重心压低 |
+| Terry | 拳击式右直拳、肩送出 | 低扫腿 + 橙红气流 |
+| Andy | 笔直掌击 + 青白气 | 忍者侧踢 + 青白残影 |
 
 对比图 `/tmp/normal-moves.png`（每组左为通用、右为专属）——差异比预想明显得多：
 京是正派空手道、八神是狂野爪击。
 
 **成本**：每角色 2 张图（2 个动作 × 1 张），27 角色共 **54 张**，约 40 分钟。
 
-进度：**2 / 27**（京、八神）
+进度：**6 / 27**（京、八神、红丸、大门、Terry、Andy）
+
+### 正常技专属化的一个坑
+
+`terry`/`andy` 这类用 `buildNormals()` 批量生成普通技的角色，**重攻击的动画名是硬编码的**
+（`HEAVY_ANIM = { punch: 'punchHeavy', kick: 'kickHeavy' }`），`style.anim` 改不了。
+
+已在 `template.ts` 里扩展：`NormalStyle.anim` 支持 `heavyPunch`/`heavyKick`，
+`buildNormals` 内部优先用它们。以后这类角色直接传参即可：
+
+```ts
+...buildNormals({ power: 1.02, cancels: CANCELS, anim: { heavyPunch: 'terryheavypunch', heavyKick: 'terryheavykick' } })
+```
 
 ## 七、执行约定
 

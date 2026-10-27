@@ -29,11 +29,11 @@ export const BENIMARU: CharDef = {
       hit('h1', { box: { x: 12, y: -46, w: 32, h: 12 }, frames: [5, 8], damage: 30, hitStun: 14, hitstop: 6 }),
     ], { cancel: { onHit: ['2B', ...CANCELS] } }),
 
-    '5C': mv('5C', '重拳', 'punchHeavy', 25, 'normal', [
+    '5C': mv('5C', '重拳', 'beniheavypunch', 25, 'normal', [
       hit('h1', { box: { x: 14, y: -66, w: 30, h: 14 }, frames: [8, 11], damage: 68, hitStun: 18, blockStun: 12, hitstop: 9 }),
     ], { cancel: { onHit: CANCELS } }),
 
-    '5D': mv('5D', '重脚', 'kickHeavy', 29, 'normal', [
+    '5D': mv('5D', '重脚', 'beniheavykick', 29, 'normal', [
       hit('h1', { box: { x: 12, y: -72, w: 36, h: 14 }, frames: [9, 12], damage: 76, hitStun: 18, blockStun: 12, hitstop: 9, level: 'high' }),
     ], { cancel: { onHit: CANCELS } }),
 

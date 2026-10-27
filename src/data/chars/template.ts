@@ -21,7 +21,22 @@ export interface NormalStyle {
   /** 通常技命中后可取消进的招式（各自的必杀 id） */
   cancels?: readonly string[];
   /** 姿势风格：踢技为主 or 拳技为主（只影响 anim 名字） */
-  anim?: { punch?: string; kick?: string; crouchPunch?: string; crouchKick?: string; jump?: string };
+  /**
+   * 姿势风格：只影响 anim 名字。
+   *
+   * `heavyPunch`/`heavyKick` 用来给**重攻击**指定角色专属的出手姿势
+   * （`buildNormals` 原本把重攻击硬编码成 `punchHeavy`/`kickHeavy`，
+   * 导致所有角色的 5C/5D 长得一样）。
+   */
+  anim?: {
+    punch?: string;
+    kick?: string;
+    crouchPunch?: string;
+    crouchKick?: string;
+    jump?: string;
+    heavyPunch?: string;
+    heavyKick?: string;
+  };
 }
 
 const DEFAULT_ANIM = {
@@ -51,6 +66,11 @@ export function buildNormals(style: NormalStyle = {}): Record<string, MoveDef> {
     reach: style.reach ?? 1,
   };
   const anim = { ...DEFAULT_ANIM, ...style.anim };
+  // 重攻击的姿势名：默认 punchHeavy/kickHeavy，可由 style.anim.heavyPunch/heavyKick 覆盖
+  const heavy = {
+    punch: style.anim?.heavyPunch ?? HEAVY_ANIM.punch,
+    kick: style.anim?.heavyKick ?? HEAVY_ANIM.kick,
+  };
   const cancels = style.cancels ?? [];
 
   const light = (key: string, name: string, base: { damage: number; total: number; box: Box; hitStun: number; blockStun: number }, extra: Partial<MoveDef> = {}): MoveDef =>
@@ -82,7 +102,7 @@ export function buildNormals(style: NormalStyle = {}): Record<string, MoveDef> {
     }),
   ], { cancel: { onHit: ['2B', ...cancels] } });
 
-  moves['5C'] = mv('5C', '重拳', HEAVY_ANIM.punch, tune({ damage: 70, total: 26, box: { x: 14, y: -66, w: 32, h: 14 }, hitStun: 18, blockStun: 12 }, s).total, 'normal', [
+  moves['5C'] = mv('5C', '重拳', heavy.punch, tune({ damage: 70, total: 26, box: { x: 14, y: -66, w: 32, h: 14 }, hitStun: 18, blockStun: 12 }, s).total, 'normal', [
     hit('h1', {
       box: tune({ damage: 70, total: 26, box: { x: 14, y: -66, w: 32, h: 14 }, hitStun: 18, blockStun: 12 }, s).box,
       frames: [Math.round(8 * s.speed), Math.round(11 * s.speed)],
@@ -93,7 +113,7 @@ export function buildNormals(style: NormalStyle = {}): Record<string, MoveDef> {
     }),
   ], { cancel: { onHit: [...cancels] } });
 
-  moves['5D'] = mv('5D', '重脚', HEAVY_ANIM.kick, tune({ damage: 76, total: 30, box: { x: 12, y: -72, w: 34, h: 14 }, hitStun: 18, blockStun: 12 }, s).total, 'normal', [
+  moves['5D'] = mv('5D', '重脚', heavy.kick, tune({ damage: 76, total: 30, box: { x: 12, y: -72, w: 34, h: 14 }, hitStun: 18, blockStun: 12 }, s).total, 'normal', [
     hit('h1', {
       box: tune({ damage: 76, total: 30, box: { x: 12, y: -72, w: 34, h: 14 }, hitStun: 18, blockStun: 12 }, s).box,
       frames: [Math.round(9 * s.speed), Math.round(12 * s.speed)],

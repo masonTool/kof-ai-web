@@ -30,11 +30,11 @@ export const DAIMON: CharDef = {
       hit('h1', { box: { x: 12, y: -48, w: 32, h: 12 }, frames: [6, 9], damage: 34, hitStun: 14, hitstop: 6 }),
     ], { cancel: { onHit: ['2B', ...CANCELS] } }),
 
-    '5C': mv('5C', '重拳', 'punchHeavy', 28, 'normal', [
+    '5C': mv('5C', '重拳', 'daimonheavypunch', 28, 'normal', [
       hit('h1', { box: { x: 14, y: -68, w: 30, h: 16 }, frames: [9, 12], damage: 78, hitStun: 19, blockStun: 12, hitstop: 10 }),
     ], { cancel: { onHit: CANCELS } }),
 
-    '5D': mv('5D', '重脚', 'kickHeavy', 32, 'normal', [
+    '5D': mv('5D', '重脚', 'daimonheavykick', 32, 'normal', [
       hit('h1', { box: { x: 12, y: -74, w: 34, h: 16 }, frames: [10, 13], damage: 84, hitStun: 19, blockStun: 13, hitstop: 10, level: 'high' }),
     ], { cancel: { onHit: CANCELS } }),
 
