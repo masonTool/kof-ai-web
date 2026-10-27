@@ -41,6 +41,17 @@
 
 <!-- 实际归档放下面，最新的放最上面 -->
 
+## 批次 20261027-0757 · 2026-10-27 · 会话 59bce766
+
+**这批的目标**：动作专属化第 15、16 个角色（椎拳崇、鎮元斎）。
+
+- [x] [T266] Kensou + Chin 各 4 个必杀专属动作（16/27）→ 出图 + 数据 + 打包验证
+  - 做了什么：①`gen-poses.mjs` 加 8 条（Kensou：青绿气弹/拳顶气旋/拖气流连打/背后浮龙；Chin：旋身出拳/后仰扫腿/摇摇晃晃踏步/紫红酒气爆发）；②`build-sheet.mjs` 加 `kensouspecial1-3`+`kensousuper`、`chinspecial1-3`+`chinsuper`，并更新 `EXCLUSIVE_OWNER`；③`poses.ts` 加 8 个兜底（key = anim 名）；④`kensou.ts`/`chin.ts` 各改 5 处
+  - **意外之喜**：Kensou 的「神龍撃」AI 真画出了**一条完整的青绿色巨龙**从背后浮起，不只是光效
+  - **Chin 的醉拳特色**：`酔歩` 那张画的是"摇摇晃晃地踏出、重心不稳"，动作本身在表达醉态
+  - 验证：打包两个角色都检查了错误（`grep -qi error`），失败=0；`art:check` 通过；`npm run check` **995 条全绿**
+  - 批次：20261027-0757
+
 ## 批次 20261027-0748 · 2026-10-27 · 会话 59bce766
 
 **这批的目标**：动作专属化第 13、14 个角色（Ralf、Clark）。
@@ -269,22 +280,4 @@
   - 为什么先做落地（T249 里 6 个动作之一）：每次跳跃都经历，频率仅次于 idle/walk；而且它不需要横躺姿势支持（`roll` 需要，留后面）
   - 进行中：后台出图 27 角色 × 1 张（日志 `/tmp/gen-landing.log`，每角色间隔 55 秒防限流，约 35 分钟）
   - 批次：20261026-2359
-
-## 批次 20261026-2253 · 2026-10-26 · 会话 59bce766
-
-**这批的目标**：「起身」从借用蹲姿变成真三帧。
-
-- [x] [T248] wakeup 补两帧：`wakeup: 'crouch'` 别名 → `['crouch','wakeupmid','wakeuplast']` 三帧 → 单测 + 29/29 验证
-  - 结果：**29/29 角色 wakeup 全部 3 帧**，三帧高度 464 → 576 → 672（递增），`art:check` 通过
-  - 做了什么：①`gen-poses.mjs` 加 `wakeupmid`（单膝跪地撑手、身体前倾）与 `wakeuplast`（刚站起、膝盖仍微弯）；②`build-sheet.mjs` 把 `wakeup` 从 ALIAS 表**移除**、在 ANIMS 里新增 `['crouch','wakeupmid','wakeuplast']`；③`poses.ts` 的 wakeup 从 1 帧扩到 3 帧（高度 -40 → -56 → -70）；④**`HEIGHT_TARGET` 支持逐帧数组**（`wakeup: [58, 72, 84]`）
-  - **踩到一个真坑（差点白做）**：`build-sheet` 把所有非躺姿**统一缩放到 `CHAR_H * RES`（672 高）**，三帧起身被抹成一样高——测试断言"高度递增"直接报 `expected 672 to be greater than 672`。不修的话，起身就是"原地抖三下"，跟原来借用蹲姿没本质区别。改成 `HEIGHT_TARGET` 支持数组后才有高度差
-  - 为什么先做 wakeup 而不是其它别名：起身是最高频的（每次被打倒都经历）；`landing` 用蹲姿其实合理（落地缓冲），`taunt`/`lose` 是低频
-  - 顺手修的：`check-assets.mjs` 与 `sprite-loader.test.ts` 各自有个"两片坐标混用"的 bug（T240 分片引入），会把扩展片的矩形按主片尺寸判成越界（kyo/joe/shermie 的 superCharge 全在误报）
-  - 验证：`npm run check` **975 条全绿**（新增 wakeup 三帧高度递增、末帧比蹲姿高 1.2 倍两条）；`art:check` 通过；逐角色统计 `{"3":29}`
-  - 批次：20261026-2253
-  - **背景（重要发现）**：`build-sheet.mjs` 的 ALIAS 表里有一批动画**根本没有专属贴图**，全是借用别人的图：`landing → crouch`（落地用蹲姿）、`wakeup → crouch`（起身用蹲姿）、`hitFall → hit`、`taunt → win`（挑衅用胜利姿势）、`lose → hit`（败北用受击姿势）、`dizzy → idle`、`roll → crouch`。这是"不像原版"的又一个大缺口，覆盖面比必杀补帧更广——每次倒地/翻滚/眩晕都会看到
-  - 做了什么：①`gen-poses.mjs` 加 `wakeupmid`（单膝跪地撑手、身体前倾）与 `wakeuplast`（刚站起、膝盖仍微弯）两条提示词；②`build-sheet.mjs` 把 `wakeup` 从 ALIAS 表**移除**、在 ANIMS 里新增 `wakeup: ['crouch','wakeupmid','wakeuplast']`；③`poses.ts` 的 `wakeup` 从 1 帧扩到 3 帧（高度递增：-40 → -56 → -70，这是"起身"的视觉关键）
-  - 进行中：后台出图 27 角色 × 2 张（日志 `/tmp/gen-wakeup.log`，每角色间隔 60 秒防限流，约 50 分钟）
-  - 为什么先起身而不是其它别名：起身是**最高频**的（每次被打倒都经历），落地用蹲姿其实合理（缓冲），挑衅/败北是低频
-  - 批次：20261026-2253
 
