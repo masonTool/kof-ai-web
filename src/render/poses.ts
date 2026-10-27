@@ -646,6 +646,15 @@ export const POSE_LIBRARY: Record<string, Pose> = {
   billyspecial2: { frameDuration: 1, loop: false, exclusive: 'billy', frames: [f({ head: p(5, -68), neck: p(5, -58), hip: p(1, -37), armFront: [p(20, -56), p(34, -56)], armBack: [p(-8, -54), p(-16, -50)] })] },
   billyspecial3: { frameDuration: 1, loop: false, exclusive: 'billy', frames: [f({ head: p(4, -68), neck: p(4, -58), hip: p(0, -37), armFront: [p(18, -56), p(30, -52)], armBack: [p(-12, -54), p(-22, -50)] })] },
   billysuper: { frameDuration: 1, loop: false, exclusive: 'billy', frames: [f({ head: p(3, -70), neck: p(2, -60), hip: p(0, -38), armFront: [p(20, -58), p(34, -56)], armBack: [p(-16, -58), p(-30, -56)] })] },
+  // Eiji / Shingo 专属必杀的兜底（key 与 anim 名一致）
+  eijispecial1: { frameDuration: 1, loop: false, exclusive: 'eiji', frames: [f({ head: p(5, -68), neck: p(5, -58), hip: p(1, -37), armFront: [p(18, -58), p(32, -50)], armBack: [p(-8, -54), p(-16, -48)] })] },
+  eijispecial2: { frameDuration: 1, loop: false, exclusive: 'eiji', frames: [f({ head: p(6, -66), neck: p(6, -56), hip: p(2, -36), armFront: [p(16, -46), p(28, -62)], armBack: [p(-10, -52), p(-18, -46)] })] },
+  eijispecial3: { frameDuration: 1, loop: false, exclusive: 'eiji', frames: [f({ head: p(8, -54), neck: p(8, -46), hip: p(3, -28), armFront: [p(16, -38), p(30, -34)], armBack: [p(-12, -42), p(-20, -38)] })] },
+  eijisuper: { frameDuration: 1, loop: false, exclusive: 'eiji', frames: [f({ head: p(4, -68), neck: p(4, -58), hip: p(0, -37), armFront: [p(20, -56), p(34, -52)], armBack: [p(-14, -56), p(-28, -52)] })] },
+  shingospecial1: { frameDuration: 1, loop: false, exclusive: 'shingo', frames: [f({ head: p(5, -68), neck: p(5, -58), hip: p(1, -37), armFront: [p(18, -56), p(30, -56)], armBack: [p(-10, -52), p(-16, -46)] })] },
+  shingospecial2: { frameDuration: 1, loop: false, exclusive: 'shingo', frames: [f({ head: p(-2, -70), neck: p(-2, -60), hip: p(0, -39), legFront: [p(18, -52), p(28, -48)], legBack: [p(-8, -24), p(-8, -2)] })] },
+  shingospecial3: { frameDuration: 1, loop: false, exclusive: 'shingo', frames: [f({ head: p(2, -70), neck: p(2, -60), hip: p(0, -39), armFront: [p(10, -66), p(8, -80)], armBack: [p(-10, -50), p(-14, -42)] })] },
+  shingosuper: { frameDuration: 1, loop: false, exclusive: 'shingo', frames: [f({ head: p(6, -68), neck: p(6, -58), hip: p(2, -37), armFront: [p(20, -56), p(32, -54)], armBack: [p(8, -56), p(20, -54)] })] },
   /** 升龙系：整个人向上冲，手臂上举 */
   specialUppercut: {
     frameDuration: 1,

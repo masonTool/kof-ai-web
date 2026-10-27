@@ -177,6 +177,14 @@ const ANIMS = {
   billyspecial2: ['billychuudan'],
   billyspecial3: ['billykaryuu'],
   billysuper: ['billysuper'],
+  eijispecial1: ['eijikasumi'],
+  eijispecial2: ['eijikotsu'],
+  eijispecial3: ['eijikagesuberi'],
+  eijisuper: ['eijisuper'],
+  shingospecial1: ['shingoarai'],
+  shingospecial2: ['shingokick'],
+  shingospecial3: ['shingooniyaki'],
+  shingosuper: ['shingosuper'],
   // 超必杀三段：起手（气汇聚）→ 蓄满（气浪最大）→ 释放收招
   superCharge: ['superchargewindup', 'supercharge', 'superchargerecover'],
   // 躺在地上：按"宽度"归一，锚点用包围盒中心（横躺的人没有"脚底"这个概念）
@@ -447,6 +455,8 @@ const EXCLUSIVE_OWNER = {
   choispecial1: 'choi', choispecial2: 'choi', choispecial3: 'choi', choisuper: 'choi',
   changspecial1: 'chang', changspecial2: 'chang', changspecial3: 'chang', changsuper: 'chang',
   billyspecial1: 'billy', billyspecial2: 'billy', billyspecial3: 'billy', billysuper: 'billy',
+  eijispecial1: 'eiji', eijispecial2: 'eiji', eijispecial3: 'eiji', eijisuper: 'eiji',
+  shingospecial1: 'shingo', shingospecial2: 'shingo', shingospecial3: 'shingo', shingosuper: 'shingo',
 };
 
 const frames = {};

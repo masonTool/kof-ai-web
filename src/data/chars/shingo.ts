@@ -24,7 +24,7 @@ export const SHINGO: CharDef = {
 
     // ---------------------------------------------------------------- 必杀技
     // 荒咬み（未完成）：判定比京短一截
-    '236A': mv('236A', '荒咬み（未完成）', 'punchHeavy', 36, 'special', [
+    '236A': mv('236A', '荒咬み（未完成）', 'shingospecial1', 36, 'special', [
       hit('h1', {
         box: { x: 16, y: -62, w: 28, h: 14 },
         frames: [12, 15],
@@ -50,7 +50,7 @@ export const SHINGO: CharDef = {
     ], { input: { motion: '236', buttons: ['A'] } }),
 
     // 真吾キック：徒弟自己琢磨的踢
-    '214B': mv('214B', '真吾キック', 'kickHeavy', 38, 'special', [
+    '214B': mv('214B', '真吾キック', 'shingospecial2', 38, 'special', [
       hit('h1', {
         box: { x: 12, y: -62, w: 30, h: 18 },
         frames: [11, 15],
@@ -64,7 +64,7 @@ export const SHINGO: CharDef = {
     ], { input: { motion: '214', buttons: ['B'] }, travel: 50, travelFrames: 15 }),
 
     // 鬼焼き（未完成）：无敌帧也只有京的一半
-    '623A': mv('623A', '鬼焼き（未完成）', 'punchHeavy', 40, 'special', [
+    '623A': mv('623A', '鬼焼き（未完成）', 'shingospecial3', 40, 'special', [
       hit('h1', {
         box: { x: 6, y: -84, w: 24, h: 56 },
         frames: [6, 12],
@@ -78,7 +78,7 @@ export const SHINGO: CharDef = {
     ], { input: { motion: '623', buttons: ['A'] }, invuln: [{ frames: [1, 3], kind: 'full' }] }),
 
     // ---------------------------------------------------------------- 超必杀
-    '236236A': mv('236236A', '外式・駈け鳳麟', 'special', 60, 'super', [
+    '236236A': mv('236236A', '外式・駈け鳳麟', 'shingosuper', 60, 'super', [
       hit('h1', { box: { x: 12, y: -72, w: 34, h: 28 }, frames: [10, 14], damage: 30, hitStun: 16, hitstop: 7, meterGain: 0 }),
       hit('h2', { box: { x: 12, y: -74, w: 34, h: 32 }, frames: [18, 22], damage: 28, hitStun: 16, hitstop: 7, meterGain: 0 }),
       hit('h3', {
@@ -92,7 +92,7 @@ export const SHINGO: CharDef = {
       }),
     ], { input: { motion: '236236', buttons: ['A'] }, meterCost: 50, travel: 54, travelFrames: 12 }),
 
-    '236236AC': mv('236236AC', '外式・駈け鳳麟 MAX', 'special', 72, 'super', [
+    '236236AC': mv('236236AC', '外式・駈け鳳麟 MAX', 'shingosuper', 72, 'super', [
       hit('h1', { box: { x: 10, y: -74, w: 36, h: 30 }, frames: [8, 11], damage: 28, hitStun: 16, hitstop: 6, meterGain: 0 }),
       hit('h2', { box: { x: 10, y: -76, w: 36, h: 34 }, frames: [15, 18], damage: 26, hitStun: 16, hitstop: 6, meterGain: 0 }),
       hit('h3', { box: { x: 10, y: -78, w: 38, h: 38 }, frames: [22, 25], damage: 26, hitStun: 16, hitstop: 6, meterGain: 0 }),

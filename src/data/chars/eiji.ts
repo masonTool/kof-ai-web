@@ -22,7 +22,7 @@ export const EIJI: CharDef = {
 
     // ---------------------------------------------------------------- 必杀技
     // 霞斬り：突进斩
-    '236A': mv('236A', '霞斬り', 'kickLight', 36, 'special', [
+    '236A': mv('236A', '霞斬り', 'eijispecial1', 36, 'special', [
       hit('h1', {
         box: { x: 14, y: -68, w: 34, h: 22 },
         frames: [9, 13],
@@ -36,7 +36,7 @@ export const EIJI: CharDef = {
     ], { input: { motion: '236', buttons: ['A'] }, travel: 72, travelFrames: 14 }),
 
     // 骨破ぎ：对空斩
-    '623A': mv('623A', '骨破ぎ', 'kickLight', 38, 'special', [
+    '623A': mv('623A', '骨破ぎ', 'eijispecial2', 38, 'special', [
       hit('h1', { box: { x: 6, y: -86, w: 28, h: 56 }, frames: [4, 9], damage: 28, hitStun: 16, hitstop: 6, meterGain: 5 }),
       hit('h2', {
         box: { x: 6, y: -92, w: 30, h: 64 },
@@ -50,7 +50,7 @@ export const EIJI: CharDef = {
     ], { input: { motion: '623', buttons: ['A'] }, invuln: [{ frames: [1, 5], kind: 'full' }] }),
 
     // 影すべり：低身滑铲（下段）
-    '214A': mv('214A', '影すべり', 'crouchKick', 34, 'special', [
+    '214A': mv('214A', '影すべり', 'eijispecial3', 34, 'special', [
       hit('h1', {
         box: { x: 10, y: -20, w: 32, h: 16 },
         frames: [9, 13],
@@ -75,7 +75,7 @@ export const EIJI: CharDef = {
     }),
 
     // ---------------------------------------------------------------- 超必杀
-    '236236A': mv('236236A', '斬鉄蟷螂', 'special', 66, 'super', [
+    '236236A': mv('236236A', '斬鉄蟷螂', 'eijisuper', 66, 'super', [
       hit('h1', { box: { x: 12, y: -72, w: 36, h: 30 }, frames: [8, 11], damage: 30, hitStun: 16, hitstop: 6, meterGain: 0 }),
       hit('h2', { box: { x: 12, y: -74, w: 38, h: 34 }, frames: [15, 18], damage: 28, hitStun: 16, hitstop: 6, meterGain: 0 }),
       hit('h3', { box: { x: 12, y: -76, w: 38, h: 36 }, frames: [22, 25], damage: 28, hitStun: 16, hitstop: 6, meterGain: 0 }),
@@ -90,7 +90,7 @@ export const EIJI: CharDef = {
       }),
     ], { input: { motion: '236236', buttons: ['A'] }, meterCost: 50, travel: 60, travelFrames: 14 }),
 
-    '236236AC': mv('236236AC', '斬鉄蟷螂 MAX', 'special', 78, 'super', [
+    '236236AC': mv('236236AC', '斬鉄蟷螂 MAX', 'eijisuper', 78, 'super', [
       hit('h1', { box: { x: 12, y: -74, w: 38, h: 32 }, frames: [6, 9], damage: 28, hitStun: 16, hitstop: 5, meterGain: 0 }),
       hit('h2', { box: { x: 12, y: -76, w: 38, h: 34 }, frames: [13, 16], damage: 26, hitStun: 16, hitstop: 5, meterGain: 0 }),
       hit('h3', { box: { x: 12, y: -78, w: 40, h: 38 }, frames: [20, 23], damage: 26, hitStun: 16, hitstop: 5, meterGain: 0 }),
