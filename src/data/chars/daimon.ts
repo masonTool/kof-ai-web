@@ -22,11 +22,11 @@ export const DAIMON: CharDef = {
   },
   push: { w: 38 },
   moves: {
-    '5A': mv('5A', '轻拳', 'punchLight', 14, 'normal', [
+    '5A': mv('5A', '轻拳', 'daimonlightpunch', 14, 'normal', [
       hit('h1', { box: { x: 10, y: -66, w: 26, h: 10 }, frames: [4, 6], damage: 26, hitStun: 13, hitstop: 5 }),
     ], { cancel: { onHit: ['5B', '2B', ...CANCELS] } }),
 
-    '5B': mv('5B', '轻脚', 'kickLight', 18, 'normal', [
+    '5B': mv('5B', '轻脚', 'daimonlightkick', 18, 'normal', [
       hit('h1', { box: { x: 12, y: -48, w: 32, h: 12 }, frames: [6, 9], damage: 34, hitStun: 14, hitstop: 6 }),
     ], { cancel: { onHit: ['2B', ...CANCELS] } }),
 

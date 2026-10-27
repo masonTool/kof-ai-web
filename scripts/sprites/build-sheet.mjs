@@ -57,6 +57,15 @@ const FLASH_ANIMS = new Set(['hit']);
  * 运行时下标由 `poseFrameIndex()` 给，帧数少了会自己循环回来（出拳就是"收-出-收"）。
  */
 const ANIMS = {
+  // 轻攻击专属（5A/5B）：幅度小、节奏快，起手帧同样复用 punchwindup/kickwindup
+  kyolightpunch: ['punchwindup', 'kyolightpunchout', 'kyolightpunchout'],
+  kyolightkick: ['kickwindup', 'kyolightkickout', 'kyolightkickout'],
+  iorilightpunch: ['punchwindup', 'iorilightpunchout', 'iorilightpunchout'],
+  iorilightkick: ['kickwindup', 'iorilightkickout', 'iorilightkickout'],
+  benilightpunch: ['punchwindup', 'benilightpunchout', 'benilightpunchout'],
+  benilightkick: ['kickwindup', 'benilightkickout', 'benilightkickout'],
+  daimonlightpunch: ['punchwindup', 'daimonlightpunchout', 'daimonlightpunchout'],
+  daimonlightkick: ['kickwindup', 'daimonlightkickout', 'daimonlightkickout'],
   // 普通技专属（第七批 · 最后一批）
   shermieheavypunch: ['punchwindup', 'shermieheavypunchout', 'shermieheavypunchout'],
   shermieheavykick: ['kickwindup', 'shermieheavykickout', 'shermieheavykickout'],

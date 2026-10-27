@@ -27,13 +27,13 @@ export const KYO: CharDef = {
   push: { w: 34 },
   moves: {
     // ---------------------------------------------------------------- 通常技
-    '5A': mv('5A', '轻拳', 'punchLight', 13, 'normal', [
+    '5A': mv('5A', '轻拳', 'kyolightpunch', 13, 'normal', [
       hit('h1', { box: { x: 10, y: -64, w: 26, h: 10 }, frames: [3, 5], damage: 25, hitStun: 13, blockStun: 8, hitstop: 5 }),
     ], {
       cancel: { onHit: ['5B', '2B', '236A', '236C', '623P', '214K'] },
     }),
 
-    '5B': mv('5B', '轻脚', 'kickLight', 17, 'normal', [
+    '5B': mv('5B', '轻脚', 'kyolightkick', 17, 'normal', [
       hit('h1', { box: { x: 12, y: -44, w: 30, h: 12 }, frames: [5, 8], damage: 32, hitStun: 14, blockStun: 9, hitstop: 6 }),
     ], {
       cancel: { onHit: ['2B', '236A', '236C', '623P', '214K'] },

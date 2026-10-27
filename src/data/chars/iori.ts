@@ -27,11 +27,11 @@ export const IORI: CharDef = {
   push: { w: 34 },
   moves: {
     // ---------------------------------------------------------------- 通常技
-    '5A': mv('5A', '轻拳', 'punchLight', 13, 'normal', [
+    '5A': mv('5A', '轻拳', 'iorilightpunch', 13, 'normal', [
       hit('h1', { box: { x: 10, y: -64, w: 26, h: 10 }, frames: [3, 5], damage: 24 }),
     ], { cancel: { onHit: ['5B', '2B', ...CANCELS] } }),
 
-    '5B': mv('5B', '轻脚', 'kickLight', 17, 'normal', [
+    '5B': mv('5B', '轻脚', 'iorilightkick', 17, 'normal', [
       hit('h1', { box: { x: 12, y: -46, w: 30, h: 12 }, frames: [5, 8], damage: 30, hitStun: 14, hitstop: 6 }),
     ], { cancel: { onHit: ['2B', ...CANCELS] } }),
 
