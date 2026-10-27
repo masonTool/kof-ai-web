@@ -301,3 +301,4 @@
 - [x] T280 正常技专属化 14/27：Ralf/Clark/Athena/Kensou
 - [x] T281 正常技专属化 18/27：Chin/Kim/Choi/Chang
 - [x] T282 正常技专属化 22/27：Billy/Eiji/Shingo/Yashiro
+- [x] T283 正常技专属化收官：Shermie/Chris/Goenitz/Orochi；29 角色全部覆盖（变体继承已验证）

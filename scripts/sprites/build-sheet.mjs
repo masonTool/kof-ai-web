@@ -57,6 +57,15 @@ const FLASH_ANIMS = new Set(['hit']);
  * 运行时下标由 `poseFrameIndex()` 给，帧数少了会自己循环回来（出拳就是"收-出-收"）。
  */
 const ANIMS = {
+  // 普通技专属（第七批 · 最后一批）
+  shermieheavypunch: ['punchwindup', 'shermieheavypunchout', 'shermieheavypunchout'],
+  shermieheavykick: ['kickwindup', 'shermieheavykickout', 'shermieheavykickout'],
+  chrisheavypunch: ['punchwindup', 'chrisheavypunchout', 'chrisheavypunchout'],
+  chrisheavykick: ['kickwindup', 'chrisheavykickout', 'chrisheavykickout'],
+  goenitzheavypunch: ['punchwindup', 'goenitzheavypunchout', 'goenitzheavypunchout'],
+  goenitzheavykick: ['kickwindup', 'goenitzheavykickout', 'goenitzheavykickout'],
+  orochiheavypunch: ['punchwindup', 'orochiheavypunchout', 'orochiheavypunchout'],
+  orochiheavykick: ['kickwindup', 'orochiheavykickout', 'orochiheavykickout'],
   // 普通技专属（第六批）
   billyheavypunch: ['punchwindup', 'billyheavypunchout', 'billyheavypunchout'],
   billyheavykick: ['kickwindup', 'billyheavykickout', 'billyheavykickout'],
