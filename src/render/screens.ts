@@ -910,3 +910,40 @@ export function drawLoadingScreen(ctx: Ctx2D, progress: number, label: string): 
   text(ctx, `${Math.round(p * 100)}%`, VIEW_WIDTH / 2, y + barH + 8, 'center', 12, SCREEN_COLORS.text);
   text(ctx, label, VIEW_WIDTH / 2, y + barH + 26, 'center', 6, SCREEN_COLORS.dim);
 }
+
+/**
+ * 训练模式的**帧数面板**（F2）。
+ *
+ * 这个开关以前是空的——设置里有 `showFrameData`，但没有任何地方消费它。
+ * 现在显示三行：P1 当前招式走到第几帧 / P2 的状态与状态帧 / 判定的生效窗口。
+ *
+ * 位置放在**左侧中间**：上方是血条、下方是摇杆，只有这里不会被遮。
+ */
+export function drawFrameData(
+  ctx: Ctx2D,
+  p1: { state: string; stateFrame: number; moveName: string | null; moveFrame: number; moveTotal: number },
+  p2: { state: string; stateFrame: number },
+): void {
+  const lines: [string, string][] = [
+    ['P1', p1.moveName ? `${p1.moveName} ${p1.moveFrame}/${p1.moveTotal}` : `${p1.state} ${p1.stateFrame}`],
+    ['P2', `${p2.state} ${p2.stateFrame}`],
+  ];
+  const w = 108;
+  const h = 8 + lines.length * 9;
+  const x = 4;
+  const y = 96;
+
+  ctx.globalAlpha = 0.82;
+  ctx.fillStyle = '#05070a';
+  ctx.fillRect(x, y, w, h);
+  ctx.globalAlpha = 1;
+  ctx.strokeStyle = SCREEN_COLORS.dim;
+  ctx.lineWidth = 1;
+  ctx.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
+
+  lines.forEach(([tag, value], i) => {
+    const ly = y + 5 + i * 9;
+    text(ctx, tag, x + 4, ly, 'left', 6, SCREEN_COLORS.dim);
+    text(ctx, value, x + 22, ly, 'left', 6, SCREEN_COLORS.text);
+  });
+}

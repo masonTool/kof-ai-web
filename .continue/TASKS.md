@@ -310,3 +310,4 @@
 - [x] T289 舞台扩充 5 → 8 条：道场 · 樱 / 机场 · 跑道 / 火山 · 熔岩
 - [x] T290 BGM 扩充 5 → 8 首：dojo/airport/volcano + 舞台选曲优先级（BOSS > 暗色 > 舞台 > 默认）
 - [x] T291 命中音效按属性细分：hitFire/hitThunder/hitDarkfire/hitKi（属性音只用于重击）
+- [x] T292 训练模式帧数面板：showFrameData 从空开关补上实现（招式帧/状态帧）
