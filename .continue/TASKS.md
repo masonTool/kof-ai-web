@@ -300,3 +300,4 @@
 - [x] T279 正常技专属化 10/27：獠/Robert/Yuri/Leona（全走 buildNormals 的 anim 参数）
 - [x] T280 正常技专属化 14/27：Ralf/Clark/Athena/Kensou
 - [x] T281 正常技专属化 18/27：Chin/Kim/Choi/Chang
+- [x] T282 正常技专属化 22/27：Billy/Eiji/Shingo/Yashiro

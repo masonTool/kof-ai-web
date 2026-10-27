@@ -19,7 +19,7 @@ export const YASHIRO: CharDef = {
   boxes: standardBoxes(),
   push: { w: 36 },
   moves: {
-    ...buildNormals({ power: 1.08, speed: 1.02, reach: 1.08, cancels: CANCELS }),
+    ...buildNormals({ power: 1.08, speed: 1.02, reach: 1.08, cancels: CANCELS, anim: { heavyPunch: 'yashiroheavypunch', heavyKick: 'yashiroheavykick' } }),
 
     // ---------------------------------------------------------------- 必杀技
     // 強靭ダン：突进肩撞

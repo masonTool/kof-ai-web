@@ -20,7 +20,7 @@ export const SHINGO: CharDef = {
   push: { w: 34 },
   moves: {
     // 徒弟版：力量低、速度慢、距离短
-    ...buildNormals({ power: 0.9, speed: 1.06, reach: 0.92, cancels: CANCELS }),
+    ...buildNormals({ power: 0.9, speed: 1.06, reach: 0.92, cancels: CANCELS, anim: { heavyPunch: 'shingoheavypunch', heavyKick: 'shingoheavykick' } }),
 
     // ---------------------------------------------------------------- 必杀技
     // 荒咬み（未完成）：判定比京短一截

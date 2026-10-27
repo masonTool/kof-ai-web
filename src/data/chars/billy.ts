@@ -19,7 +19,7 @@ export const BILLY: CharDef = {
   push: { w: 35 },
   moves: {
     // 三节棍：攻击距离加成 20%，但速度慢 8%
-    ...buildNormals({ power: 1.04, speed: 1.08, reach: 1.2, cancels: CANCELS }),
+    ...buildNormals({ power: 1.04, speed: 1.08, reach: 1.2, cancels: CANCELS, anim: { heavyPunch: 'billyheavypunch', heavyKick: 'billyheavykick' } }),
 
     // ---------------------------------------------------------------- 必杀技
     // 旋風棍：抡棍连打
