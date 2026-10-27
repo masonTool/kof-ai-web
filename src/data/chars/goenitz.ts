@@ -28,7 +28,7 @@ export const GOENITZ: CharDef = {
 
     // ---------------------------------------------------------------- 必杀技
     // ミズチ：长判定风刃突进
-    '236A': mv('236A', 'ミズチ', 'special', 42, 'special', [
+    '236A': mv('236A', 'ミズチ', 'goenitzspecial1', 42, 'special', [
       hit('h1', {
         box: { x: 14, y: -76, w: 52, h: 40 },
         frames: [11, 16],
@@ -42,7 +42,7 @@ export const GOENITZ: CharDef = {
     ], { input: { motion: '236', buttons: ['A'] }, travel: 70, travelFrames: 16 }),
 
     // ヨルムンガンド：慢速大気弾
-    '214A': mv('214A', 'ヨルムンガンド', 'special', 44, 'special', [], {
+    '214A': mv('214A', 'ヨルムンガンド', 'goenitzspecial2', 44, 'special', [], {
       input: { motion: '214', buttons: ['A'] },
       projectile: {
         anim: 'ヨルムンガンド',
@@ -63,7 +63,7 @@ export const GOENITZ: CharDef = {
     }),
 
     // 对空：上升气刃
-    '623A': mv('623A', 'ゲーニッツ・ライジング', 'special', 44, 'special', [
+    '623A': mv('623A', 'ゲーニッツ・ライジング', 'goenitzspecial3', 44, 'special', [
       hit('h1', {
         box: { x: 6, y: -96, w: 34, h: 72 },
         frames: [5, 13],
@@ -77,7 +77,7 @@ export const GOENITZ: CharDef = {
     ], { input: { motion: '623', buttons: ['A'] }, invuln: [{ frames: [1, 7], kind: 'full' }] }),
 
     // ---------------------------------------------------------------- 超必杀
-    '236236A': mv('236236A', '大気の奔流', 'special', 70, 'super', [
+    '236236A': mv('236236A', '大気の奔流', 'goenitzsuper', 70, 'super', [
       hit('h1', { box: { x: 8, y: -92, w: 48, h: 46 }, frames: [10, 14], damage: 46, hitStun: 18, hitstop: 8, meterGain: 0 }),
       hit('h2', { box: { x: 8, y: -96, w: 52, h: 56 }, frames: [20, 24], damage: 42, hitStun: 18, hitstop: 8, meterGain: 0 }),
       hit('h3', {
@@ -91,7 +91,7 @@ export const GOENITZ: CharDef = {
       }),
     ], { input: { motion: '236236', buttons: ['A'] }, meterCost: 50 }),
 
-    '236236AC': mv('236236AC', '大気の奔流 MAX', 'special', 84, 'super', [
+    '236236AC': mv('236236AC', '大気の奔流 MAX', 'goenitzsuper', 84, 'super', [
       hit('h1', { box: { x: 6, y: -94, w: 52, h: 50 }, frames: [8, 11], damage: 40, hitStun: 18, hitstop: 7, meterGain: 0 }),
       hit('h2', { box: { x: 6, y: -98, w: 56, h: 58 }, frames: [16, 19], damage: 38, hitStun: 18, hitstop: 7, meterGain: 0 }),
       hit('h3', { box: { x: 4, y: -102, w: 60, h: 66 }, frames: [24, 27], damage: 38, hitStun: 18, hitstop: 7, meterGain: 0 }),

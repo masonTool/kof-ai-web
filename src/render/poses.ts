@@ -668,6 +668,15 @@ export const POSE_LIBRARY: Record<string, Pose> = {
   chrisspecial2: { frameDuration: 1, loop: false, exclusive: 'chris', frames: [f({ head: p(8, -54), neck: p(8, -46), hip: p(2, -28), legFront: [p(20, -18), p(32, -8)], legBack: [p(-10, -16), p(-14, -2)] })] },
   chrisspecial3: { frameDuration: 1, loop: false, exclusive: 'chris', frames: [f({ head: p(1, -74), neck: p(1, -64), hip: p(0, -41), armFront: [p(10, -66), p(8, -82)], armBack: [p(-10, -50), p(-14, -42)] })] },
   chrissuper: { frameDuration: 1, loop: false, exclusive: 'chris', frames: [f({ head: p(-2, -70), neck: p(-2, -60), hip: p(0, -38), armFront: [p(14, -58), p(28, -54)], armBack: [p(-14, -58), p(-28, -54)] })] },
+  // Goenitz / Orochi 专属必杀的兜底（key 与 anim 名一致）
+  goenitzspecial1: { frameDuration: 1, loop: false, exclusive: 'goenitz', frames: [f({ head: p(4, -70), neck: p(4, -60), hip: p(1, -38), armFront: [p(16, -58), p(30, -54)], armBack: [p(-10, -52), p(-16, -46)] })] },
+  goenitzspecial2: { frameDuration: 1, loop: false, exclusive: 'goenitz', frames: [f({ head: p(2, -70), neck: p(1, -60), hip: p(-1, -38), armFront: [p(18, -58), p(32, -52)], armBack: [p(-14, -56), p(-26, -50)] })] },
+  goenitzspecial3: { frameDuration: 1, loop: false, exclusive: 'goenitz', frames: [f({ head: p(0, -76), neck: p(0, -64), hip: p(0, -42), armFront: [p(8, -72), p(8, -90)], armBack: [p(-8, -50), p(-12, -42)] })] },
+  goenitzsuper: { frameDuration: 1, loop: false, exclusive: 'goenitz', frames: [f({ head: p(0, -72), neck: p(0, -62), hip: p(0, -40), armFront: [p(20, -60), p(34, -58)], armBack: [p(-20, -60), p(-34, -58)] })] },
+  orochispecial1: { frameDuration: 1, loop: false, exclusive: 'orochi', frames: [f({ head: p(2, -72), neck: p(2, -62), hip: p(0, -40), armFront: [p(14, -58), p(28, -54)], armBack: [p(-8, -54), p(-12, -48)] })] },
+  orochispecial2: { frameDuration: 1, loop: false, exclusive: 'orochi', frames: [f({ head: p(1, -70), neck: p(1, -60), hip: p(0, -39), armFront: [p(12, -46), p(16, -26)], armBack: [p(-10, -50), p(-14, -30)] })] },
+  orochispecial3: { frameDuration: 1, loop: false, exclusive: 'orochi', frames: [f({ head: p(0, -74), neck: p(0, -64), hip: p(0, -41), armFront: [p(10, -70), p(10, -88)], armBack: [p(-10, -52), p(-12, -44)] })] },
+  orochisuper: { frameDuration: 1, loop: false, exclusive: 'orochi', frames: [f({ head: p(0, -72), neck: p(0, -62), hip: p(0, -40), armFront: [p(22, -58), p(36, -56)], armBack: [p(-22, -58), p(-36, -56)] })] },
   /** 升龙系：整个人向上冲，手臂上举 */
   specialUppercut: {
     frameDuration: 1,

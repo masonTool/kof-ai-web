@@ -32,7 +32,7 @@ export const OROCHI: CharDef = {
 
     // ---------------------------------------------------------------- 必杀技
     // 空間断ち：极长的横向判定（半屏）
-    '236A': mv('236A', '空間断ち', 'special', 46, 'special', [
+    '236A': mv('236A', '空間断ち', 'orochispecial1', 46, 'special', [
       hit('h1', {
         box: { x: 10, y: -100, w: 200, h: 100 },
         frames: [14, 20],
@@ -46,7 +46,7 @@ export const OROCHI: CharDef = {
     ], { input: { motion: '236', buttons: ['A'] } }),
 
     // 大地の怒り：脚下扬起的冲击（不可防）
-    '214A': mv('214A', '大地の怒り', 'special', 50, 'special', [
+    '214A': mv('214A', '大地の怒り', 'orochispecial2', 50, 'special', [
       hit('h1', {
         box: { x: -60, y: -40, w: 240, h: 40 },
         frames: [16, 24],
@@ -61,7 +61,7 @@ export const OROCHI: CharDef = {
     ], { input: { motion: '214', buttons: ['A'] }, blockable: false }),
 
     // 光の柱：对空（不可防）
-    '623A': mv('623A', '光の柱', 'special', 44, 'special', [
+    '623A': mv('623A', '光の柱', 'orochispecial3', 44, 'special', [
       hit('h1', {
         box: { x: -20, y: -200, w: 60, h: 200 },
         frames: [6, 14],
@@ -77,7 +77,7 @@ export const OROCHI: CharDef = {
 
     // ---------------------------------------------------------------- 超必杀
     // 全屏判定 + 不可防：BOSS 的"无解"感就靠这一招
-    '236236A': mv('236236A', '大蛇の裁き', 'special', 76, 'super', [
+    '236236A': mv('236236A', '大蛇の裁き', 'orochisuper', 76, 'super', [
       hit('h1', {
         box: { ...FULLSCREEN_BOX },
         frames: [20, 30],
@@ -91,7 +91,7 @@ export const OROCHI: CharDef = {
       }),
     ], { input: { motion: '236236', buttons: ['A'] }, meterCost: 50, blockable: false }),
 
-    '236236AC': mv('236236AC', '大蛇の裁き MAX', 'special', 90, 'super', [
+    '236236AC': mv('236236AC', '大蛇の裁き MAX', 'orochisuper', 90, 'super', [
       hit('h1', {
         box: { ...FULLSCREEN_BOX },
         frames: [16, 24],

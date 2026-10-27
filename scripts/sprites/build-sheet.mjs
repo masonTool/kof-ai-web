@@ -197,6 +197,14 @@ const ANIMS = {
   chrisspecial2: ['chrissliding'],
   chrisspecial3: ['chrisupper'],
   chrissuper: ['chrisorochi'],
+  goenitzspecial1: ['goenitzmizuchi'],
+  goenitzspecial2: ['goenitzjorm'],
+  goenitzspecial3: ['goenitzrising'],
+  goenitzsuper: ['goenitzsuper'],
+  orochispecial1: ['orochispace'],
+  orochispecial2: ['orochiearth'],
+  orochispecial3: ['orochilight'],
+  orochisuper: ['orochijudgment'],
   // 超必杀三段：起手（气汇聚）→ 蓄满（气浪最大）→ 释放收招
   superCharge: ['superchargewindup', 'supercharge', 'superchargerecover'],
   // 躺在地上：按"宽度"归一，锚点用包围盒中心（横躺的人没有"脚底"这个概念）
@@ -472,6 +480,8 @@ const EXCLUSIVE_OWNER = {
   yashirospecial1: 'yashiro', yashirospecial2: 'yashiro', yashirospecial3: 'yashiro', yashirosuper: 'yashiro',
   shermiespecial1: 'shermie', shermiespecial2: 'shermie', shermiespecial3: 'shermie', shermiesuper: 'shermie',
   chrisspecial1: 'chris', chrisspecial2: 'chris', chrisspecial3: 'chris', chrissuper: 'chris',
+  goenitzspecial1: 'goenitz', goenitzspecial2: 'goenitz', goenitzspecial3: 'goenitz', goenitzsuper: 'goenitz',
+  orochispecial1: 'orochi', orochispecial2: 'orochi', orochispecial3: 'orochi', orochisuper: 'orochi',
 };
 
 const frames = {};
