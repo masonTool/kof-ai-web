@@ -619,6 +619,15 @@ export const POSE_LIBRARY: Record<string, Pose> = {
   clarkspecial2: { frameDuration: 1, loop: false, exclusive: 'clark', frames: [f({ head: p(-4, -60), neck: p(-4, -52), hip: p(-2, -32), armFront: [p(10, -62), p(14, -78)], armBack: [p(-8, -56), p(-12, -72)] })] },
   clarkspecial3: { frameDuration: 1, loop: false, exclusive: 'clark', frames: [f({ head: p(4, -52), neck: p(4, -44), hip: p(0, -26), armFront: [p(12, -38), p(18, -30)], armBack: [p(-8, -38), p(-14, -30)] })] },
   clarksuper: { frameDuration: 1, loop: false, exclusive: 'clark', frames: [f({ head: p(-2, -66), neck: p(-2, -56), hip: p(0, -38), armFront: [p(8, -78), p(10, -94)], armBack: [p(-8, -78), p(-10, -94)] })] },
+  // Kensou / Chin 专属必杀的兜底（key 与 anim 名一致）
+  kensouspecial1: { frameDuration: 1, loop: false, exclusive: 'kensou', frames: [f({ head: p(5, -68), neck: p(5, -58), hip: p(1, -37), armFront: [p(16, -58), p(30, -56)], armBack: [p(8, -58), p(22, -56)] })] },
+  kensouspecial2: { frameDuration: 1, loop: false, exclusive: 'kensou', frames: [f({ head: p(1, -74), neck: p(1, -64), hip: p(0, -41), armFront: [p(8, -70), p(6, -86)], armBack: [p(-10, -50), p(-14, -42)] })] },
+  kensouspecial3: { frameDuration: 1, loop: false, exclusive: 'kensou', frames: [f({ head: p(6, -68), neck: p(6, -58), hip: p(2, -37), armFront: [p(18, -56), p(30, -54)], armBack: [p(6, -56), p(18, -54)] })] },
+  kensousuper: { frameDuration: 1, loop: false, exclusive: 'kensou', frames: [f({ head: p(0, -70), neck: p(0, -60), hip: p(0, -38), armFront: [p(16, -58), p(32, -56)], armBack: [p(6, -58), p(20, -56)] })] },
+  chinspecial1: { frameDuration: 1, loop: false, exclusive: 'chin', frames: [f({ head: p(6, -56), neck: p(6, -48), hip: p(2, -30), armFront: [p(18, -46), p(28, -42)], armBack: [p(-10, -46), p(-16, -40)] })] },
+  chinspecial2: { frameDuration: 1, loop: false, exclusive: 'chin', frames: [f({ head: p(-6, -50), neck: p(-6, -44), hip: p(-4, -26), legFront: [p(14, -14), p(24, -6)], armBack: [p(-12, -34), p(-18, -28)] })] },
+  chinspecial3: { frameDuration: 1, loop: false, exclusive: 'chin', frames: [f({ head: p(5, -58), neck: p(4, -50), hip: p(-2, -30), armFront: [p(12, -44), p(18, -36)], armBack: [p(-10, -46), p(-14, -40)] })] },
+  chinsuper: { frameDuration: 1, loop: false, exclusive: 'chin', frames: [f({ head: p(3, -58), neck: p(3, -50), hip: p(0, -30), armFront: [p(18, -52), p(30, -48)], armBack: [p(-16, -52), p(-28, -48)] })] },
   /** 升龙系：整个人向上冲，手臂上举 */
   specialUppercut: {
     frameDuration: 1,

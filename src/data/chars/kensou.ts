@@ -22,7 +22,7 @@ export const KENSOU: CharDef = {
 
     // ---------------------------------------------------------------- 必杀技
     // 超球弾：气弹
-    '236A': mv('236A', '超球弾', 'special', 36, 'special', [], {
+    '236A': mv('236A', '超球弾', 'kensouspecial1', 36, 'special', [], {
       input: { motion: '236', buttons: ['A'] },
       projectile: {
         anim: '超球弾',
@@ -42,7 +42,7 @@ export const KENSOU: CharDef = {
     }),
 
     // 龍顎砕：对空升龙
-    '623A': mv('623A', '龍顎砕', 'special', 40, 'special', [
+    '623A': mv('623A', '龍顎砕', 'kensouspecial2', 40, 'special', [
       hit('h1', {
         box: { x: 6, y: -88, w: 28, h: 62 },
         frames: [4, 11],
@@ -56,7 +56,7 @@ export const KENSOU: CharDef = {
     ], { input: { motion: '623', buttons: ['A'] }, invuln: [{ frames: [1, 5], kind: 'full' }] }),
 
     // 龍連牙：三段连突
-    '214A': mv('214A', '龍連牙', 'punchLight', 44, 'special', [
+    '214A': mv('214A', '龍連牙', 'kensouspecial3', 44, 'special', [
       hit('h1', { box: { x: 12, y: -64, w: 30, h: 16 }, frames: [9, 12], damage: 32, hitStun: 15, hitstop: 6, meterGain: 5 }),
       hit('h2', { box: { x: 14, y: -62, w: 32, h: 16 }, frames: [16, 19], damage: 30, hitStun: 15, hitstop: 6, meterGain: 5 }),
       hit('h3', {
@@ -71,7 +71,7 @@ export const KENSOU: CharDef = {
     ], { input: { motion: '214', buttons: ['A'] }, travel: 52, travelFrames: 20 }),
 
     // ---------------------------------------------------------------- 超必杀
-    '236236A': mv('236236A', '神龍撃', 'special', 60, 'super', [], {
+    '236236A': mv('236236A', '神龍撃', 'kensousuper', 60, 'super', [], {
       input: { motion: '236236', buttons: ['A'] },
       meterCost: 50,
       projectile: {
@@ -92,7 +92,7 @@ export const KENSOU: CharDef = {
       },
     }),
 
-    '236236AC': mv('236236AC', '神龍天舞脚', 'special', 72, 'super', [
+    '236236AC': mv('236236AC', '神龍天舞脚', 'kensousuper', 72, 'super', [
       hit('h1', { box: { x: 10, y: -78, w: 36, h: 44 }, frames: [8, 12], damage: 38, hitStun: 18, hitstop: 8, meterGain: 0 }),
       hit('h2', { box: { x: 10, y: -80, w: 38, h: 50 }, frames: [18, 22], damage: 36, hitStun: 18, hitstop: 8, meterGain: 0 }),
       hit('h3', { box: { x: 10, y: -82, w: 38, h: 52 }, frames: [28, 32], damage: 36, hitStun: 18, hitstop: 8, meterGain: 0 }),

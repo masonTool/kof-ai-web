@@ -27,7 +27,7 @@ export const CHIN: CharDef = {
 
     // ---------------------------------------------------------------- 必杀技
     // 回転的空突拳：突进连打
-    '236A': mv('236A', '回転的空突拳', 'punchLight', 46, 'special', [
+    '236A': mv('236A', '回転的空突拳', 'chinspecial1', 46, 'special', [
       hit('h1', { box: { x: 12, y: -58, w: 30, h: 18 }, frames: [8, 11], damage: 30, hitStun: 14, hitstop: 6, meterGain: 5 }),
       hit('h2', { box: { x: 14, y: -58, w: 32, h: 18 }, frames: [15, 18], damage: 28, hitStun: 14, hitstop: 6, meterGain: 5 }),
       hit('h3', {
@@ -42,7 +42,7 @@ export const CHIN: CharDef = {
     ], { input: { motion: '236', buttons: ['A'] }, travel: 64, travelFrames: 24 }),
 
     // 柳燐蓬萊：矮身突进（下段）
-    '214B': mv('214B', '柳燐蓬萊', 'crouchKick', 38, 'special', [
+    '214B': mv('214B', '柳燐蓬萊', 'chinspecial2', 38, 'special', [
       hit('h1', {
         box: { x: 10, y: -24, w: 34, h: 18 },
         frames: [10, 14],
@@ -58,7 +58,7 @@ export const CHIN: CharDef = {
     ], { input: { motion: '214', buttons: ['B'] }, travel: 58, travelFrames: 15 }),
 
     // 酔歩：歪歪扭扭地滑过去（带无敌帧）
-    '623A': mv('623A', '酔歩', 'roll', 32, 'special', [], {
+    '623A': mv('623A', '酔歩', 'chinspecial3', 32, 'special', [], {
       input: { motion: '623', buttons: ['A'] },
       invuln: [{ frames: [1, 18], kind: 'full' }],
       travel: 76,
@@ -67,7 +67,7 @@ export const CHIN: CharDef = {
     }),
 
     // ---------------------------------------------------------------- 超必杀
-    '236236A': mv('236236A', '大酔直全方位', 'special', 64, 'super', [
+    '236236A': mv('236236A', '大酔直全方位', 'chinsuper', 64, 'super', [
       hit('h1', { box: { x: 8, y: -64, w: 36, h: 30 }, frames: [8, 12], damage: 36, hitStun: 16, hitstop: 7, meterGain: 0 }),
       hit('h2', { box: { x: 8, y: -64, w: 36, h: 30 }, frames: [18, 22], damage: 34, hitStun: 16, hitstop: 7, meterGain: 0 }),
       hit('h3', { box: { x: 6, y: -70, w: 38, h: 38 }, frames: [28, 32], damage: 34, hitStun: 16, hitstop: 7, meterGain: 0 }),
@@ -82,7 +82,7 @@ export const CHIN: CharDef = {
       }),
     ], { input: { motion: '236236', buttons: ['A'] }, meterCost: 50, travel: 60, travelFrames: 16 }),
 
-    '236236AC': mv('236236AC', '大酔直全方位 MAX', 'special', 74, 'super', [
+    '236236AC': mv('236236AC', '大酔直全方位 MAX', 'chinsuper', 74, 'super', [
       hit('h1', { box: { x: 6, y: -66, w: 38, h: 34 }, frames: [8, 11], damage: 32, hitStun: 16, hitstop: 6, meterGain: 0 }),
       hit('h2', { box: { x: 6, y: -66, w: 38, h: 34 }, frames: [15, 18], damage: 30, hitStun: 16, hitstop: 6, meterGain: 0 }),
       hit('h3', { box: { x: 6, y: -70, w: 40, h: 40 }, frames: [22, 25], damage: 30, hitStun: 16, hitstop: 6, meterGain: 0 }),
