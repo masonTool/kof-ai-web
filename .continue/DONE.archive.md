@@ -2092,3 +2092,14 @@
   - 验证：打包两个角色都检查了错误（`grep -qi error`），失败=0；`art:check` 通过；`npm run check` **995 条全绿**
   - 批次：20261027-0748
 
+## 批次 20261027-0757 · 2026-10-27 · 会话 59bce766
+
+**这批的目标**：动作专属化第 15、16 个角色（椎拳崇、鎮元斎）。
+
+- [x] [T266] Kensou + Chin 各 4 个必杀专属动作（16/27）→ 出图 + 数据 + 打包验证
+  - 做了什么：①`gen-poses.mjs` 加 8 条（Kensou：青绿气弹/拳顶气旋/拖气流连打/背后浮龙；Chin：旋身出拳/后仰扫腿/摇摇晃晃踏步/紫红酒气爆发）；②`build-sheet.mjs` 加 `kensouspecial1-3`+`kensousuper`、`chinspecial1-3`+`chinsuper`，并更新 `EXCLUSIVE_OWNER`；③`poses.ts` 加 8 个兜底（key = anim 名）；④`kensou.ts`/`chin.ts` 各改 5 处
+  - **意外之喜**：Kensou 的「神龍撃」AI 真画出了**一条完整的青绿色巨龙**从背后浮起，不只是光效
+  - **Chin 的醉拳特色**：`酔歩` 那张画的是"摇摇晃晃地踏出、重心不稳"，动作本身在表达醉态
+  - 验证：打包两个角色都检查了错误（`grep -qi error`），失败=0；`art:check` 通过；`npm run check` **995 条全绿**
+  - 批次：20261027-0757
+
