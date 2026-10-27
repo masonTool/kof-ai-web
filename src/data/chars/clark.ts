@@ -18,7 +18,7 @@ export const CLARK: CharDef = {
   boxes: standardBoxes(),
   push: { w: 37 },
   moves: {
-    ...buildNormals({ power: 1.05, speed: 1.03, reach: 0.98, cancels: CANCELS, anim: { heavyPunch: 'clarkheavypunch', heavyKick: 'clarkheavykick' } }),
+    ...buildNormals({ power: 1.05, speed: 1.03, reach: 0.98, cancels: CANCELS, anim: { crouchPunch: 'clarkcrouchpunch', crouchKick: 'clarkcrouchkick', heavyPunch: 'clarkheavypunch', heavyKick: 'clarkheavykick' } }),
     // 投技：← + C（不可防，只抓站立/蹲防的对手）
     '4C': mv('4C', '终极背摔', 'throwStart', 34, 'throw', [
       hit('h1', { box: { x: 4, y: -66, w: 24, h: 36 }, frames: [3, 7], damage: 120, hitStun: 30, blockStun: 0, hitstop: 14, pushback: 0, knockdown: 'slam' }),

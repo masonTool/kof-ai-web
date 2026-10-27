@@ -18,7 +18,7 @@ export const SHERMIE: CharDef = {
   boxes: standardBoxes(),
   push: { w: 34 },
   moves: {
-    ...buildNormals({ power: 1.02, speed: 1.04, reach: 1.0, cancels: CANCELS, anim: { heavyPunch: 'shermieheavypunch', heavyKick: 'shermieheavykick' } }),
+    ...buildNormals({ power: 1.02, speed: 1.04, reach: 1.0, cancels: CANCELS, anim: { crouchPunch: 'shermiecrouchpunch', crouchKick: 'shermiecrouchkick', heavyPunch: 'shermieheavypunch', heavyKick: 'shermieheavykick' } }),
 
     // ---------------------------------------------------------------- 必杀技
     // シェルミーフラッシュ：雷电突进

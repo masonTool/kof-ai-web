@@ -18,7 +18,7 @@ export const ANDY: CharDef = {
   boxes: standardBoxes(),
   push: { w: 34 },
   moves: {
-    ...buildNormals({ power: 0.98, speed: 0.96, reach: 1.03, cancels: CANCELS, anim: { heavyPunch: 'andyheavypunch', heavyKick: 'andyheavykick' } }),
+    ...buildNormals({ power: 0.98, speed: 0.96, reach: 1.03, cancels: CANCELS, anim: { crouchPunch: 'andycrouchpunch', crouchKick: 'andycrouchkick', heavyPunch: 'andyheavypunch', heavyKick: 'andyheavykick' } }),
 
     // 指令技：肘落とし（中段）
     '6A': mv('6A', '肘落とし', 'punchHeavy', 28, 'command', [

@@ -18,7 +18,7 @@ export const CHRIS: CharDef = {
   boxes: standardBoxes(),
   push: { w: 33 },
   moves: {
-    ...buildNormals({ power: 0.94, speed: 0.92, reach: 0.98, cancels: CANCELS, anim: { heavyPunch: 'chrisheavypunch', heavyKick: 'chrisheavykick' } }),
+    ...buildNormals({ power: 0.94, speed: 0.92, reach: 0.98, cancels: CANCELS, anim: { crouchPunch: 'chriscrouchpunch', crouchKick: 'chriscrouchkick', heavyPunch: 'chrisheavypunch', heavyKick: 'chrisheavykick' } }),
 
     // ---------------------------------------------------------------- 必杀技
     // クリスフレイム：火焰弹（飞行道具）

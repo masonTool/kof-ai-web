@@ -18,7 +18,7 @@ export const EIJI: CharDef = {
   boxes: standardBoxes(),
   push: { w: 33 },
   moves: {
-    ...buildNormals({ power: 0.94, speed: 0.9, reach: 1.0, cancels: CANCELS, anim: { heavyPunch: 'eijiheavypunch', heavyKick: 'eijiheavykick' } }),
+    ...buildNormals({ power: 0.94, speed: 0.9, reach: 1.0, cancels: CANCELS, anim: { crouchPunch: 'eijicrouchpunch', crouchKick: 'eijicrouchkick', heavyPunch: 'eijiheavypunch', heavyKick: 'eijiheavykick' } }),
 
     // ---------------------------------------------------------------- 必杀技
     // 霞斬り：突进斩

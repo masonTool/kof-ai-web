@@ -23,7 +23,7 @@ export const CHIN: CharDef = {
   },
   push: { w: 33 },
   moves: {
-    ...buildNormals({ power: 1.02, speed: 1.04, reach: 0.96, cancels: CANCELS, anim: { heavyPunch: 'chinheavypunch', heavyKick: 'chinheavykick' } }),
+    ...buildNormals({ power: 1.02, speed: 1.04, reach: 0.96, cancels: CANCELS, anim: { crouchPunch: 'chincrouchpunch', crouchKick: 'chincrouchkick', heavyPunch: 'chinheavypunch', heavyKick: 'chinheavykick' } }),
 
     // ---------------------------------------------------------------- 必杀技
     // 回転的空突拳：突进连打

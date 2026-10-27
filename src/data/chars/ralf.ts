@@ -18,7 +18,7 @@ export const RALF: CharDef = {
   boxes: standardBoxes(),
   push: { w: 36 },
   moves: {
-    ...buildNormals({ power: 1.08, speed: 1.02, reach: 1.04, cancels: CANCELS, anim: { heavyPunch: 'ralfheavypunch', heavyKick: 'ralfheavykick' } }),
+    ...buildNormals({ power: 1.08, speed: 1.02, reach: 1.04, cancels: CANCELS, anim: { crouchPunch: 'ralfcrouchpunch', crouchKick: 'ralfcrouchkick', heavyPunch: 'ralfheavypunch', heavyKick: 'ralfheavykick' } }),
     // 投技：← + C（不可防，只抓站立/蹲防的对手）
     '4C': mv('4C', '阿根廷背摔', 'throwStart', 34, 'throw', [
       hit('h1', { box: { x: 4, y: -66, w: 24, h: 36 }, frames: [3, 7], damage: 120, hitStun: 30, blockStun: 0, hitstop: 14, pushback: 0, knockdown: 'slam' }),
