@@ -2103,3 +2103,14 @@
   - 验证：打包两个角色都检查了错误（`grep -qi error`），失败=0；`art:check` 通过；`npm run check` **995 条全绿**
   - 批次：20261027-0757
 
+## 批次 20261027-0807 · 2026-10-27 · 会话 59bce766
+
+**这批的目标**：动作专属化第 17、18 个角色（Kim、Choi）。
+
+- [x] [T267] Kim + Choi 各 4 个必杀专属动作（18/27）→ 出图 + 数据 + 打包验证
+  - 做了什么：①`gen-poses.mjs` 加 8 条（Kim：青白弧线踢/缠气流飞踢/空中连踢残像/青白火焰状气劲；Choi：紫色旋风/三道紫光刃/贴地紫残影/紫色龙卷包裹）；②`build-sheet.mjs` 加 `kimspecial1-3`+`kimsuper`、`choispecial1-3`+`choisuper`，并更新 `EXCLUSIVE_OWNER`；③`poses.ts` 加 8 个兜底（key = anim 名）；④`kim.ts`/`choi.ts` 各改 5 处
+  - **踩到一个大小写坑**：`build-sheet` 里写成 `choiSpecial1`（大写 S），数据里是 `choispecial1`（小写 s）——两者必须完全一致，否则打包出来的动画名对不上 `move.anim`。已统一成小写
+  - **风格区分**：Kim＝白道服、腿法为主、青白气流；Choi＝瘦小、爪击、紫色旋风
+  - 验证：打包两个角色都检查了错误（`grep -qi error`），失败=0；`art:check` 通过；`npm run check` **995 条全绿**
+  - 批次：20261027-0807
+
