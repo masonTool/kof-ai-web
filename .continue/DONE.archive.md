@@ -2010,3 +2010,37 @@
   - 验证：node 直读确认 `236A → pose kyspecial1`、`623P → kyspecial3`、`236236P → kysuper`、`5C → punchHeavy`（没误伤普通技）；`art:check` 通过。**游戏内截图没抓到目标帧**（键盘搓 236 容易判成 5C、超必杀要满气而开局气为 0），改用"原图预览 + 数据断言"
   - 批次：20261027-0619
 
+## 批次 20261027-0627 · 2026-10-27 · 会话 59bce766
+
+**这批的目标**：角色动作专属化 · 第 2 个角色（八神庵）。
+
+- [x] [T259] 八神庵 4 个必杀专属动作（2/27）+ 京毒咬重出 → 出图 + 数据 + 原图验证
+  - 做了什么：①`gen-poses.mjs` 加八神 4 条（闇払い：贴地紫焰；鬼焼き：紫焰冲天；葵花：爪尖紫焰；八稚女：全身紫焰），并把京的 `kyodoku` 提示词加粗强调火焰后**重出**；②`build-sheet.mjs` 加 `iorispecial1/2/3` + `iorisuper`；③`poses.ts` 加 4 个兜底姿势 + `exclusivePoseNames()`；④`iori.ts` 把 5 处 anim 换成专属名（八酒杯和八稚女共用 `iorisuper`）
+  - **基础设施修复（重要）**：`art:check` 原来要求"姿势库里每个动画所有角色都必须有"，加了专属姿势后其余 26 个角色全被报"缺动画"。已在 `check-assets.mjs` 加 `CHAR_EXCLUSIVE_RE` 排除 `kyspecial*`/`kysuper`/`iorispecial*`/`iorisuper`。**以后每专属化一个角色要往这个正则里加前缀**
+  - **效果（/tmp/iori-moves.png）**：京的毒咬现在拳头上有明亮橙焰（修复成功）；八神四招分别是贴地紫焰、紫焰冲天、爪尖紫焰、全身紫焰——**橙焰 vs 紫焰对比极强**
+  - 验证：`art:check` 通过（29 图集 / 33 通用动画）；`npm run check` **995 条全绿**（修了 3 处被专属化影响的断言：超必杀映射改用"假招式"测规则本身、京图集只校验通用动画、动画总数改成 `>=33`）
+  - 批次：20261027-0627
+
+## 批次 20261027-0647 · 2026-10-27 · 会话 59bce766
+
+**这批的目标**：修 exclusive 标记机制 + 红丸/大门专属化。
+
+- [x] [T261] 姿势 `exclusive` 自声明机制 + 红丸/大门各专属必杀（6/27）
+  - **先修基础设施**：`art:check` 原来用正则猜名字前缀排除专属姿势，每加一个角色都要手改，漏一次误报 26 条——已踩三次（京→八神→Terry/Athena→红丸/大门）。改成 `Pose.exclusive?: string` 字段自声明，`exclusivePoseNames()` 读字段，`check-assets.mjs` 的 `poseNames()` 改成按块解析（切块后看有没有 `exclusive:` 行），测试也改用 `exclusivePoseNames()`。**以后加角色只在姿势里写一行，不用动校验脚本**
+  - 做了什么：①`gen-poses.mjs` 加 7 条（红丸：紫电拳/带电高踢/削击/全身紫电+落雷；大门：拍地/抓腿摔/高举过头顶）；②`build-sheet.mjs` 加 `benispecial1-3`+`benisuper`、`daimonspecial1-2`+`daimonsuper`；③`poses.ts` 加 7 个兜底（都带 `exclusive` 标记）；④`benimaru.ts` 改 5 处、`daimon.ts` 改 3 处
+  - **大门只有 3 个必杀**（数据里本来就没有第 4 个），所以是 3 个专属动画而不是 4 个
+  - **效果（/tmp/beni-daimon.png）**：红丸雷光拳全身紫电+头顶落雷最抢眼；大门地雷震双掌拍地碎石飞溅、超必杀双手高举
+  - 验证：`art:check` 通过（29 图集 / 33 通用动画）；`npm run check` **995 条全绿**
+  - 批次：20261027-0647
+
+## 批次 20261027-0637 · 2026-10-27 · 会话 59bce766
+
+**这批的目标**：动作专属化第 3、4 个角色（Terry、Athena）。
+
+- [x] [T260] Terry + Athena 各 4 个必杀专属动作（4/27）→ 出图 + 数据 + 原图验证
+  - 做了什么：①`gen-poses.mjs` 加 8 条提示词（Terry：贴地能量波/带火冲拳/脚下火焰冲天/全身火柱；Athena：胸前能量球/掌心光刃/空中粉紫尾迹/水晶光柱）；②`build-sheet.mjs` 加 `terryspecial1-3`+`terrysuper`、`athenaspecial1-3`+`athenasuper`；③`poses.ts` 加 8 个兜底姿势；④`terry.ts`/`athena.ts` 各改 5 处 anim（两个超必杀共用一个 super 姿势）；⑤`check-assets.mjs` 与 `sprite-loader.test.ts` 的专属正则扩成 `(ky|iori|terry|athena)(special[0-9]|super)`
+  - **风格刻意区分**：京＝橙焰+拳、八神＝紫焰+爪、Terry＝橙红火+力量型（挥拳冲撞）、Athena＝粉紫三色光+轻盈型（球/剑/翻踢）
+  - **效果（/tmp/terry-athena.png）**：Terry 的パワーゲイザー 全身被火柱包住最壮观；Athena 的サイコソード 掌心延伸光刃、超必杀全身水晶光柱；八张姿势互不相同
+  - 验证：`art:check` 通过；`npm run check` **995 条全绿**（专属正则漏了 terry/athena，京的图集测试报 `terryspecial1 缺失`，补进正则后通过）
+  - 批次：20261027-0637
+
