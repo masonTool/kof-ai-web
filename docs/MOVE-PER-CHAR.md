@@ -776,6 +776,33 @@ P2  hitstun 2      ← 对手状态 + 状态帧
 **判断"还在硬直中"用的是 `stateFrame < stunTotal`**——不是比状态名：硬直结束后
 `stateFrame` 会继续涨、超过 `stunTotal`，这个条件自然失效，不用额外记标志。
 
+## 六点十八、回滚骨架（线上对战的第一块基石）
+
+**不是快照，是"重放输入"**。`World.entities` 里存着 `p1`/`p2` 的**引用**，
+`structuredClone` 出来是纯对象，`Object.assign` 回填会把这些引用和 Fighter 的方法一起弄丢。
+
+**方案**（`src/net/rollback.ts`）：
+
+```ts
+class RollbackSession {
+  step(inputs)                    // 记录输入 + 推进
+  rewindTo(frame, replacement)    // 截断 → 拼接新输入 → 重建 Match → 重放
+  verifyDeterministic()           // 从头重放，比对 hash
+}
+```
+
+**成本**：一次回滚 = 重建 Match + 重放 N 帧（N 通常 2~7，等于延迟帧数）。
+60fps 预算 16.6ms，重放 7 帧完全够。
+
+**已验证的四件事**：
+1. 从头重放得到的 hash 与当前状态一致（**模拟层是自洽的**，这是回滚的前提）
+2. 回滚并替换输入后，状态与"直接这么打"完全一致
+3. 帧号越界会明确报错（不静默）
+4. 回滚到当前帧（替换为空）等于什么都不做
+
+**还没做的**：输入传输（WebRTC/WebSocket）、延迟补偿、对手输入预测。
+这些都在 `RollbackSession` 之上——只要"重放一定得到同一状态"这一层站得住，上面就好搭。
+
 ## 七、执行约定
 
 - 每个角色一次提交，提交信息带 `批次 + [T<编号>] 角色名 + 3/27`

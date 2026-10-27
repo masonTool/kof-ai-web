@@ -314,3 +314,4 @@
 - [x] T293 回滚 T292 的误判：showFrameData 本来就有实现（frameDataLines 更全）；全量复查无空开关
 - [x] T294 音效盘点 + 补 whiff（挥空）：27 个音效里唯一一个定义了却从不触发的
 - [x] T295 有利帧显示：Fighter.stunTotal + frameDataLines 加「有利 +NF」
+- [x] T296 回滚骨架（src/net/rollback.ts）：保存输入+重放，rewindTo 后 hash 一致
