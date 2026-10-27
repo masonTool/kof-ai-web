@@ -27,7 +27,7 @@ export const CHANG: CharDef = {
 
     // ---------------------------------------------------------------- 必杀技
     // 鉄球大回転：抡球连打（四段）
-    '236A': mv('236A', '鉄球大回転', 'punchHeavy', 52, 'special', [
+    '236A': mv('236A', '鉄球大回転', 'changspecial1', 52, 'special', [
       hit('h1', { box: { x: 14, y: -70, w: 40, h: 34 }, frames: [10, 13], damage: 34, hitStun: 14, hitstop: 6, meterGain: 5 }),
       hit('h2', { box: { x: 14, y: -70, w: 40, h: 34 }, frames: [17, 20], damage: 32, hitStun: 14, hitstop: 6, meterGain: 5 }),
       hit('h3', { box: { x: 14, y: -72, w: 42, h: 36 }, frames: [24, 27], damage: 32, hitStun: 14, hitstop: 6, meterGain: 5 }),
@@ -43,7 +43,7 @@ export const CHANG: CharDef = {
     ], { input: { motion: '236', buttons: ['A'] } }),
 
     // 鉄球大圧殺：跳起砸球（中段）
-    '214A': mv('214A', '鉄球大圧殺', 'punchHeavy', 44, 'special', [
+    '214A': mv('214A', '鉄球大圧殺', 'changspecial2', 44, 'special', [
       hit('h1', {
         box: { x: 10, y: -74, w: 44, h: 40 },
         frames: [15, 19],
@@ -59,7 +59,7 @@ export const CHANG: CharDef = {
     ], { input: { motion: '214', buttons: ['A'] } }),
 
     // 大破壊投げ：贴身抓
-    '63214A': mv('63214A', '大破壊投げ', 'throwStart', 56, 'throw', [
+    '63214A': mv('63214A', '大破壊投げ', 'changspecial3', 56, 'throw', [
       hit('h1', {
         box: { x: 4, y: -70, w: 38, h: 54 },
         frames: [8, 12],
@@ -74,7 +74,7 @@ export const CHANG: CharDef = {
     ], { input: { motion: '63214', buttons: ['A'] }, blockable: false }),
 
     // ---------------------------------------------------------------- 超必杀
-    '236236A': mv('236236A', '鉄球大回転・乱', 'special', 66, 'super', [
+    '236236A': mv('236236A', '鉄球大回転・乱', 'changsuper', 66, 'super', [
       hit('h1', { box: { x: 12, y: -72, w: 42, h: 36 }, frames: [8, 11], damage: 32, hitStun: 15, hitstop: 6, meterGain: 0 }),
       hit('h2', { box: { x: 12, y: -72, w: 42, h: 36 }, frames: [16, 19], damage: 30, hitStun: 15, hitstop: 6, meterGain: 0 }),
       hit('h3', { box: { x: 12, y: -74, w: 44, h: 38 }, frames: [24, 27], damage: 30, hitStun: 15, hitstop: 6, meterGain: 0 }),
@@ -89,7 +89,7 @@ export const CHANG: CharDef = {
       }),
     ], { input: { motion: '236236', buttons: ['A'] }, meterCost: 50 }),
 
-    '236236AC': mv('236236AC', '鉄球大暴走', 'special', 82, 'super', [
+    '236236AC': mv('236236AC', '鉄球大暴走', 'changsuper', 82, 'super', [
       hit('h1', { box: { x: 10, y: -76, w: 44, h: 40 }, frames: [10, 14], damage: 36, hitStun: 16, hitstop: 7, meterGain: 0 }),
       hit('h2', { box: { x: 10, y: -76, w: 44, h: 40 }, frames: [20, 24], damage: 34, hitStun: 16, hitstop: 7, meterGain: 0 }),
       hit('h3', { box: { x: 10, y: -78, w: 46, h: 42 }, frames: [30, 34], damage: 34, hitStun: 16, hitstop: 7, meterGain: 0 }),

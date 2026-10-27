@@ -23,7 +23,7 @@ export const BILLY: CharDef = {
 
     // ---------------------------------------------------------------- 必杀技
     // 旋風棍：抡棍连打
-    '236A': mv('236A', '旋風棍', 'punchHeavy', 48, 'special', [
+    '236A': mv('236A', '旋風棍', 'billyspecial1', 48, 'special', [
       hit('h1', { box: { x: 16, y: -70, w: 44, h: 22 }, frames: [10, 13], damage: 30, hitStun: 14, hitstop: 6, meterGain: 5 }),
       hit('h2', { box: { x: 16, y: -70, w: 44, h: 22 }, frames: [17, 20], damage: 28, hitStun: 14, hitstop: 6, meterGain: 5 }),
       hit('h3', {
@@ -38,7 +38,7 @@ export const BILLY: CharDef = {
     ], { input: { motion: '236', buttons: ['A'] } }),
 
     // 三節棍中段打ち：对空长判定
-    '623A': mv('623A', '三節棍中段打ち', 'punchHeavy', 42, 'special', [
+    '623A': mv('623A', '三節棍中段打ち', 'billyspecial2', 42, 'special', [
       hit('h1', {
         box: { x: 8, y: -92, w: 34, h: 66 },
         frames: [5, 12],
@@ -52,7 +52,7 @@ export const BILLY: CharDef = {
     ], { input: { motion: '623', buttons: ['A'] }, invuln: [{ frames: [1, 5], kind: 'full' }] }),
 
     // 火龍棍：火焰突刺（飞行道具）
-    '214A': mv('214A', '火龍棍', 'special', 40, 'special', [], {
+    '214A': mv('214A', '火龍棍', 'billyspecial3', 40, 'special', [], {
       input: { motion: '214', buttons: ['A'] },
       projectile: {
         anim: '火龍棍',
@@ -74,7 +74,7 @@ export const BILLY: CharDef = {
     }),
 
     // ---------------------------------------------------------------- 超必杀
-    '236236A': mv('236236A', '超火炎旋風棍', 'special', 68, 'super', [
+    '236236A': mv('236236A', '超火炎旋風棍', 'billysuper', 68, 'super', [
       hit('h1', { box: { x: 14, y: -76, w: 46, h: 30 }, frames: [10, 14], damage: 34, hitStun: 16, hitstop: 7, meterGain: 0 }),
       hit('h2', { box: { x: 14, y: -78, w: 48, h: 34 }, frames: [18, 22], damage: 32, hitStun: 16, hitstop: 7, meterGain: 0 }),
       hit('h3', { box: { x: 14, y: -80, w: 50, h: 40 }, frames: [26, 30], damage: 32, hitStun: 16, hitstop: 7, meterGain: 0 }),
@@ -89,7 +89,7 @@ export const BILLY: CharDef = {
       }),
     ], { input: { motion: '236236', buttons: ['A'] }, meterCost: 50 }),
 
-    '236236AC': mv('236236AC', '超火炎旋風棍 MAX', 'special', 80, 'super', [
+    '236236AC': mv('236236AC', '超火炎旋風棍 MAX', 'billysuper', 80, 'super', [
       hit('h1', { box: { x: 12, y: -78, w: 48, h: 32 }, frames: [8, 11], damage: 30, hitStun: 16, hitstop: 6, meterGain: 0 }),
       hit('h2', { box: { x: 12, y: -80, w: 50, h: 36 }, frames: [15, 18], damage: 28, hitStun: 16, hitstop: 6, meterGain: 0 }),
       hit('h3', { box: { x: 12, y: -82, w: 52, h: 40 }, frames: [22, 25], damage: 28, hitStun: 16, hitstop: 6, meterGain: 0 }),

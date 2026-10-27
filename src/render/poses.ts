@@ -637,6 +637,15 @@ export const POSE_LIBRARY: Record<string, Pose> = {
   choispecial2: { frameDuration: 1, loop: false, exclusive: 'choi', frames: [f({ head: p(1, -70), neck: p(1, -60), hip: p(0, -38), armFront: [p(14, -54), p(16, -72)], armBack: [p(-10, -50), p(-14, -42)] })] },
   choispecial3: { frameDuration: 1, loop: false, exclusive: 'choi', frames: [f({ head: p(6, -52), neck: p(6, -44), hip: p(1, -26), armFront: [p(16, -38), p(28, -32)], armBack: [p(-10, -38), p(-18, -32)] })] },
   choisuper: { frameDuration: 1, loop: false, exclusive: 'choi', frames: [f({ head: p(2, -62), neck: p(2, -52), hip: p(0, -32), armFront: [p(18, -52), p(30, -46)], armBack: [p(-16, -52), p(-28, -46)] })] },
+  // Chang / Billy 专属必杀的兜底（key 与 anim 名一致）
+  changspecial1: { frameDuration: 1, loop: false, exclusive: 'chang', frames: [f({ head: p(6, -58), neck: p(6, -50), hip: p(2, -30), armFront: [p(22, -52), p(34, -56)], armBack: [p(-14, -50), p(-24, -54)] })] },
+  changspecial2: { frameDuration: 1, loop: false, exclusive: 'chang', frames: [f({ head: p(4, -60), neck: p(4, -52), hip: p(1, -30), armFront: [p(10, -74), p(12, -90)], armBack: [p(-8, -74), p(-10, -90)] })] },
+  changspecial3: { frameDuration: 1, loop: false, exclusive: 'chang', frames: [f({ head: p(-4, -56), neck: p(-4, -48), hip: p(-2, -28), armFront: [p(12, -60), p(16, -76)], armBack: [p(-10, -54), p(-14, -70)] })] },
+  changsuper: { frameDuration: 1, loop: false, exclusive: 'chang', frames: [f({ head: p(5, -58), neck: p(5, -50), hip: p(1, -30), armFront: [p(24, -54), p(36, -58)], armBack: [p(-18, -52), p(-30, -56)] })] },
+  billyspecial1: { frameDuration: 1, loop: false, exclusive: 'billy', frames: [f({ head: p(3, -70), neck: p(3, -60), hip: p(0, -38), armFront: [p(18, -58), p(32, -54)], armBack: [p(-10, -56), p(-20, -52)] })] },
+  billyspecial2: { frameDuration: 1, loop: false, exclusive: 'billy', frames: [f({ head: p(5, -68), neck: p(5, -58), hip: p(1, -37), armFront: [p(20, -56), p(34, -56)], armBack: [p(-8, -54), p(-16, -50)] })] },
+  billyspecial3: { frameDuration: 1, loop: false, exclusive: 'billy', frames: [f({ head: p(4, -68), neck: p(4, -58), hip: p(0, -37), armFront: [p(18, -56), p(30, -52)], armBack: [p(-12, -54), p(-22, -50)] })] },
+  billysuper: { frameDuration: 1, loop: false, exclusive: 'billy', frames: [f({ head: p(3, -70), neck: p(2, -60), hip: p(0, -38), armFront: [p(20, -58), p(34, -56)], armBack: [p(-16, -58), p(-30, -56)] })] },
   /** 升龙系：整个人向上冲，手臂上举 */
   specialUppercut: {
     frameDuration: 1,
