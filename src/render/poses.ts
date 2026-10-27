@@ -464,7 +464,12 @@ export const POSE_LIBRARY: Record<string, Pose> = {
     frameDuration: 1,
     loop: false,
     exclusive: 'kyo',
-    frames: [f({ head: p(0, -70), neck: p(0, -60), armFront: [p(16, -56), p(32, -54)], armBack: [p(8, -56), p(20, -54)] })],
+    frames: [
+      // 起手（双手收腰、火焰汇聚）
+      f({ head: p(-2, -68), neck: p(-2, -58), hip: p(-1, -37), armFront: [p(4, -50), p(6, -42)], armBack: [p(-6, -50), p(-8, -42)] }),
+      // 出手（双手推出、火柱喷出）
+      f({ head: p(0, -70), neck: p(0, -60), armFront: [p(16, -56), p(32, -54)], armBack: [p(8, -56), p(20, -54)] }),
+    ],
   },
   // 八神庵专属必杀的兜底（形状接近，紫焰由特效层负责）
   iorispecial1: {

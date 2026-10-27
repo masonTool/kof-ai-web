@@ -101,7 +101,7 @@ const ANIMS = {
   kyspecial1: ['kyokuzushi'],
   kyspecial2: ['kyodoku'],
   kyspecial3: ['kyooniyaki'],
-  kysuper: ['kyosuper'],
+  kysuper: ['kyosuperwindup', 'kyosuper'],
   iorispecial1: ['iorifukubarai'],
   iorispecial2: ['iorioniyaki'],
   iorispecial3: ['ioriaoi'],
@@ -438,6 +438,7 @@ const HEIGHT_TARGET = {
   // 不是侧躺），按宽度归一会让人物突然变宽 3 倍；宁可保留竖构图，只靠高度变化做节奏
   roll: [52, 62, 70],
   wakeup: [58, 72, 84], // 蹲着 → 半起 → 站直
+  kysuper: [70, 78], // 起手收火压低 → 出手撑起
   superCharge: [80, 88, 82], // 蓄力压低 → 气浪撑起 → 收招回落
   specialProjectile: [82, 84, 80], // 微沉 → 推出 → 回正
   specialUppercut: [74, 92, 80], // 屈膝 → 冲天 → 落地缓冲
