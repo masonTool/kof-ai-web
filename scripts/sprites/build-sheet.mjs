@@ -57,6 +57,11 @@ const FLASH_ANIMS = new Set(['hit']);
  * 运行时下标由 `poseFrameIndex()` 给，帧数少了会自己循环回来（出拳就是"收-出-收"）。
  */
 const ANIMS = {
+  // 普通技专属：起手帧复用通用 windup，只有出手帧是专属的
+  kyoheavypunch: ['punchwindup', 'kyoheavypunchout', 'kyoheavypunchout'],
+  kyoheavykick: ['kickwindup', 'kyoheavykickout', 'kyoheavykickout'],
+  ioriheavypunch: ['punchwindup', 'ioriheavypunchout', 'ioriheavypunchout'],
+  ioriheavykick: ['kickwindup', 'ioriheavykickout', 'ioriheavykickout'],
   idle: ['idle'],
   // 走 4 帧只出了 2 个姿势，循环回来正好是"左右左右"
   walkF: ['walk1', 'walk2', 'walk1', 'walk2'],

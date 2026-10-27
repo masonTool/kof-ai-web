@@ -35,11 +35,11 @@ export const IORI: CharDef = {
       hit('h1', { box: { x: 12, y: -46, w: 30, h: 12 }, frames: [5, 8], damage: 30, hitStun: 14, hitstop: 6 }),
     ], { cancel: { onHit: ['2B', ...CANCELS] } }),
 
-    '5C': mv('5C', '重拳', 'punchHeavy', 26, 'normal', [
+    '5C': mv('5C', '重拳', 'ioriheavypunch', 26, 'normal', [
       hit('h1', { box: { x: 14, y: -66, w: 32, h: 14 }, frames: [8, 11], damage: 72, hitStun: 18, blockStun: 12, hitstop: 9 }),
     ], { cancel: { onHit: CANCELS } }),
 
-    '5D': mv('5D', '重脚', 'kickHeavy', 30, 'normal', [
+    '5D': mv('5D', '重脚', 'ioriheavykick', 30, 'normal', [
       hit('h1', { box: { x: 12, y: -72, w: 34, h: 14 }, frames: [9, 12], damage: 78, hitStun: 18, blockStun: 12, hitstop: 9, level: 'high' }),
     ], { cancel: { onHit: CANCELS } }),
 

@@ -684,6 +684,31 @@ export const POSE_LIBRARY: Record<string, Pose> = {
   orochispecial2: { frameDuration: 1, loop: false, exclusive: 'orochi', frames: [f({ head: p(1, -70), neck: p(1, -60), hip: p(0, -39), armFront: [p(12, -46), p(16, -26)], armBack: [p(-10, -50), p(-14, -30)] }), f({ head: p(1, -70), neck: p(1, -60), hip: p(0, -39), armFront: [p(12, -46), p(16, -26)], armBack: [p(-10, -50), p(-14, -30)] }), f({ head: p(1, -70), neck: p(1, -60), hip: p(0, -39), armFront: [p(12, -46), p(16, -26)], armBack: [p(-10, -50), p(-14, -30)] })] },
   orochispecial3: { frameDuration: 1, loop: false, exclusive: 'orochi', frames: [f({ head: p(0, -74), neck: p(0, -64), hip: p(0, -41), armFront: [p(10, -70), p(10, -88)], armBack: [p(-10, -52), p(-12, -44)] }), f({ head: p(0, -74), neck: p(0, -64), hip: p(0, -41), armFront: [p(10, -70), p(10, -88)], armBack: [p(-10, -52), p(-12, -44)] }), f({ head: p(0, -74), neck: p(0, -64), hip: p(0, -41), armFront: [p(10, -70), p(10, -88)], armBack: [p(-10, -52), p(-12, -44)] })] },
   orochisuper: { frameDuration: 1, loop: false, exclusive: 'orochi', frames: [f({ head: p(0, -72), neck: p(0, -62), hip: p(0, -40), armFront: [p(22, -58), p(36, -56)], armBack: [p(-22, -58), p(-36, -56)] }), f({ head: p(0, -72), neck: p(0, -62), hip: p(0, -40), armFront: [p(22, -58), p(36, -56)], armBack: [p(-22, -58), p(-36, -56)] }), f({ head: p(0, -72), neck: p(0, -62), hip: p(0, -40), armFront: [p(22, -58), p(36, -56)], armBack: [p(-22, -58), p(-36, -56)] })] },
+  // 普通技专属出手帧的兜底（形状接近通用重拳/重脚，细微差别交给贴图）
+  kyoheavypunch: {
+    frameDuration: 1,
+    loop: false,
+    exclusive: 'kyo',
+    frames: [f({ head: p(4, -69), neck: p(4, -59), hip: p(1, -37), armFront: [p(18, -58), p(30, -57)], armBack: [p(-8, -52), p(-14, -46)] }), f({ head: p(4, -69), neck: p(4, -59), hip: p(1, -37), armFront: [p(18, -58), p(30, -57)], armBack: [p(-8, -52), p(-14, -46)] }), f({ head: p(4, -69), neck: p(4, -59), hip: p(1, -37), armFront: [p(18, -58), p(30, -57)], armBack: [p(-8, -52), p(-14, -46)] })],
+  },
+  kyoheavykick: {
+    frameDuration: 1,
+    loop: false,
+    exclusive: 'kyo',
+    frames: [f({ head: p(0, -70), neck: p(0, -60), hip: p(0, -39), legFront: [p(18, -54), p(30, -50)], legBack: [p(-8, -24), p(-8, -2)] }), f({ head: p(0, -70), neck: p(0, -60), hip: p(0, -39), legFront: [p(18, -54), p(30, -50)], legBack: [p(-8, -24), p(-8, -2)] }), f({ head: p(0, -70), neck: p(0, -60), hip: p(0, -39), legFront: [p(18, -54), p(30, -50)], legBack: [p(-8, -24), p(-8, -2)] })],
+  },
+  ioriheavypunch: {
+    frameDuration: 1,
+    loop: false,
+    exclusive: 'iori',
+    frames: [f({ head: p(5, -69), neck: p(5, -59), hip: p(2, -37), armFront: [p(18, -58), p(30, -55)], armBack: [p(-10, -52), p(-16, -46)] }), f({ head: p(5, -69), neck: p(5, -59), hip: p(2, -37), armFront: [p(18, -58), p(30, -55)], armBack: [p(-10, -52), p(-16, -46)] }), f({ head: p(5, -69), neck: p(5, -59), hip: p(2, -37), armFront: [p(18, -58), p(30, -55)], armBack: [p(-10, -52), p(-16, -46)] })],
+  },
+  ioriheavykick: {
+    frameDuration: 1,
+    loop: false,
+    exclusive: 'iori',
+    frames: [f({ head: p(2, -70), neck: p(1, -60), hip: p(0, -39), legFront: [p(16, -56), p(28, -62)], legBack: [p(-8, -24), p(-8, -2)] }), f({ head: p(2, -70), neck: p(1, -60), hip: p(0, -39), legFront: [p(16, -56), p(28, -62)], legBack: [p(-8, -24), p(-8, -2)] }), f({ head: p(2, -70), neck: p(1, -60), hip: p(0, -39), legFront: [p(16, -56), p(28, -62)], legBack: [p(-8, -24), p(-8, -2)] })],
+  },
   /** 升龙系：整个人向上冲，手臂上举 */
   specialUppercut: {
     frameDuration: 1,
