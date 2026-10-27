@@ -12,7 +12,7 @@ const sheetJson = {
   flash: { ...(mainSheet.flash ?? {}), ...(extraSheet.flash ?? {}) },
 } as typeof mainSheet;
 import { frameListProvider, type FrameListSheet, type SpriteFrame } from '../src/render/assets';
-import { POSE_LIBRARY, exclusivePoseNames, poseNames } from '../src/render/poses';
+import { POSE_LIBRARY, exclusivePoseNames, poseFrameIndex, poseNames } from '../src/render/poses';
 import { isSheetJson, providerFromSheetJson, type SheetJson } from '../src/render/sprite-loader';
 
 const IMG = {} as unknown as CanvasImageSource;
@@ -377,6 +377,27 @@ describe('角色专属动画的帧数一致性（曾因漏改姿势库导致只�
       const frames = (sheetJson.anims as unknown as Record<string, unknown[]>)[anim]!;
       if (!pose) { bad.push(`${anim}: 姿势库缺`); continue; }
       if (pose.frames.length !== frames.length) bad.push(`${anim}: 姿势库${pose.frames.length} vs 图集${frames.length}`);
+    }
+    expect(bad, bad.join('; ')).toEqual([]);
+  });
+});
+
+describe('专属动画能播到最后一帧', () => {
+  /**
+   * 帧数一致只解决了一半问题：`poseFrameIndex` 还得**真的返回**最后那个索引。
+   * 曾经图集 2 帧、姿势库 1 帧时，索引永远是 0——出手帧等于不存在。
+   * 这条从"能不能播到末帧"这个行为层面钉住，比单看帧数更接近玩家看到的东西。
+   */
+  it('每个专属动画的索引都能走到最后一帧', () => {
+    const exclusive = Object.keys(sheetJson.anims).filter((a) => /special\d+$|super$/.test(a));
+    const bad: string[] = [];
+    for (const anim of exclusive) {
+      const pose = POSE_LIBRARY[anim];
+      if (!pose) continue;
+      const frames = (sheetJson.anims as unknown as Record<string, unknown[]>)[anim]!;
+      const duration = pose.frames.length * pose.frameDuration;
+      const last = poseFrameIndex(anim, duration - 1, duration);
+      if (last !== frames.length - 1) bad.push(`${anim}: 末索引 ${last} ≠ ${frames.length - 1}`);
     }
     expect(bad, bad.join('; ')).toEqual([]);
   });
