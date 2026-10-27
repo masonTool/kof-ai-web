@@ -1878,3 +1878,20 @@
   - 进行中：后台出图 27 角色 × 1 张（日志 `/tmp/gen-landing.log`，每角色间隔 55 秒防限流，约 35 分钟）
   - 批次：20261026-2359
 
+## 批次 20261027-0046 · 2026-10-27 · 会话 59bce766
+
+**这批的目标**：眩晕和败北不再借用别人的姿势。
+
+- [x] [T250] dizzy / lose 补真帧：`dizzy: 'idle'` → 两帧循环摇晃，`lose: 'hit'` → 两帧跪地 → 单测 + 29/29
+  - 结果：**dizzy 29/29 两帧**（京高度 672→672，摇晃不改身高）、**lose 29/29 两帧**（京高度 496→320，跪地变矮），`art:check` 通过
+  - 做了什么：①`gen-poses.mjs` 加 `dizzymid`（头歪一侧、双眼发直、重心不稳、双臂软垂）与 `losemid`（跪地、上身塌下、手撑身前、头低着）；②`build-sheet.mjs` 把 `dizzy`/`lose` 从 ALIAS 移除，ANIMS 新增 `dizzy: ['idle','dizzymid']`、`lose: ['hit','losemid']`；③`HEIGHT_TARGET.lose = [62, 40]`（越跪越矮）；④`poses.ts` 的 lose 从 1 帧扩到 2 帧
+  - **dizzy 是循环动画**（`loop: true`）：两帧会在 `poseFrameIndex` 里反复播，这才是"摇晃"；单帧贴图就算逻辑在循环也纹丝不动
+  - 为什么这两个先做（T250 里）：都不用横躺支持（`roll` 要改 `LYING`），且最容易露馅——晕了却不动、输了还摆挨打造型
+  - 验证：新增 4 条测试（dizzy 两帧、lose 两帧且高度递减，并把两者加入 `MUST_MATCH` 走通用的"姿势库帧数 = 图集帧数"断言）；`npm run check` **981 条全绿**；逐角色统计均为 `{"2":29}`
+  - 批次：20261027-0046
+  - 做了什么：①`gen-poses.mjs` 加 `dizzymid`（头歪一侧、双眼发直、重心不稳、双臂软垂）与 `losemid`（跪地、上身塌下、手撑在身前、头低着）；②`build-sheet.mjs` 把 `dizzy`/`lose` 从 ALIAS 移除，ANIMS 新增 `dizzy: ['idle','dizzymid']`、`lose: ['hit','losemid']`；③`HEIGHT_TARGET.lose = [62, 40]`（挨打 → 跪地，越跪越矮）；④`poses.ts` 的 lose 从 1 帧扩到 2 帧
+  - 为什么这两个先做（T250 里）：都不用横躺姿势支持（`roll` 需要先改 `LYING`），而且最容易"露馅"——晕了却纹丝不动、输了还在摆挨打造型
+  - **dizzy 是循环动画**（`loop: true`），两帧会在 `poseFrameIndex` 里循环播放，所以贴图必须至少两帧，否则"摇晃"根本不动
+  - 进行中：后台出图 27 角色 × 2 张（日志 `/tmp/gen-dizzy-lose.log`，每角色间隔 60 秒，约 50 分钟）
+  - 批次：20261027-0046
+
