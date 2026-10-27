@@ -23,7 +23,7 @@ export const CHOI: CharDef = {
   },
   push: { w: 28 },
   moves: {
-    ...buildNormals({ power: 0.88, speed: 0.88, reach: 0.9, cancels: CANCELS }),
+    ...buildNormals({ power: 0.88, speed: 0.88, reach: 0.9, cancels: CANCELS, anim: { heavyPunch: 'choiheavypunch', heavyKick: 'choiheavykick' } }),
 
     // ---------------------------------------------------------------- 必杀技
     // 旋風斬：转着往前冲（多段）

@@ -18,7 +18,7 @@ export const KIM: CharDef = {
   boxes: standardBoxes(),
   push: { w: 34 },
   moves: {
-    ...buildNormals({ power: 1.0, speed: 0.95, reach: 1.04, cancels: CANCELS }),
+    ...buildNormals({ power: 1.0, speed: 0.95, reach: 1.04, cancels: CANCELS, anim: { heavyPunch: 'kimheavypunch', heavyKick: 'kimheavykick' } }),
 
     // ---------------------------------------------------------------- 必杀技
     // 半月斬：突进横踢

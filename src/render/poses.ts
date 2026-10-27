@@ -853,6 +853,54 @@ export const POSE_LIBRARY: Record<string, Pose> = {
     exclusive: 'kensou',
     frames: [f({ head: p(2, -70), neck: p(1, -60), hip: p(0, -39), legFront: [p(18, -54), p(30, -52)], legBack: [p(-8, -24), p(-8, -2)] }), f({ head: p(2, -70), neck: p(1, -60), hip: p(0, -39), legFront: [p(18, -54), p(30, -52)], legBack: [p(-8, -24), p(-8, -2)] }), f({ head: p(2, -70), neck: p(1, -60), hip: p(0, -39), legFront: [p(18, -54), p(30, -52)], legBack: [p(-8, -24), p(-8, -2)] })],
   },
+  chinheavypunch: {
+    frameDuration: 1,
+    loop: false,
+    exclusive: 'chin',
+    frames: [f({ head: p(5, -58), neck: p(4, -50), hip: p(-2, -30), armFront: [p(16, -46), p(28, -44)], armBack: [p(-10, -46), p(-14, -40)] }), f({ head: p(5, -58), neck: p(4, -50), hip: p(-2, -30), armFront: [p(16, -46), p(28, -44)], armBack: [p(-10, -46), p(-14, -40)] }), f({ head: p(5, -58), neck: p(4, -50), hip: p(-2, -30), armFront: [p(16, -46), p(28, -44)], armBack: [p(-10, -46), p(-14, -40)] })],
+  },
+  chinheavykick: {
+    frameDuration: 1,
+    loop: false,
+    exclusive: 'chin',
+    frames: [f({ head: p(-6, -52), neck: p(-6, -46), hip: p(-4, -28), legFront: [p(14, -16), p(26, -8)], legBack: [p(-10, -26), p(-14, -14)] }), f({ head: p(-6, -52), neck: p(-6, -46), hip: p(-4, -28), legFront: [p(14, -16), p(26, -8)], legBack: [p(-10, -26), p(-14, -14)] }), f({ head: p(-6, -52), neck: p(-6, -46), hip: p(-4, -28), legFront: [p(14, -16), p(26, -8)], legBack: [p(-10, -26), p(-14, -14)] })],
+  },
+  kimheavypunch: {
+    frameDuration: 1,
+    loop: false,
+    exclusive: 'kim',
+    frames: [f({ head: p(4, -69), neck: p(4, -59), hip: p(1, -37), armFront: [p(18, -58), p(30, -57)], armBack: [p(-8, -52), p(-14, -46)] }), f({ head: p(4, -69), neck: p(4, -59), hip: p(1, -37), armFront: [p(18, -58), p(30, -57)], armBack: [p(-8, -52), p(-14, -46)] }), f({ head: p(4, -69), neck: p(4, -59), hip: p(1, -37), armFront: [p(18, -58), p(30, -57)], armBack: [p(-8, -52), p(-14, -46)] })],
+  },
+  kimheavykick: {
+    frameDuration: 1,
+    loop: false,
+    exclusive: 'kim',
+    frames: [f({ head: p(-1, -72), neck: p(-1, -62), hip: p(0, -40), legFront: [p(16, -62), p(20, -84)], legBack: [p(-6, -22), p(-6, -1)] }), f({ head: p(-1, -72), neck: p(-1, -62), hip: p(0, -40), legFront: [p(16, -62), p(20, -84)], legBack: [p(-6, -22), p(-6, -1)] }), f({ head: p(-1, -72), neck: p(-1, -62), hip: p(0, -40), legFront: [p(16, -62), p(20, -84)], legBack: [p(-6, -22), p(-6, -1)] })],
+  },
+  choiheavypunch: {
+    frameDuration: 1,
+    loop: false,
+    exclusive: 'choi',
+    frames: [f({ head: p(4, -62), neck: p(4, -54), hip: p(1, -32), armFront: [p(16, -50), p(28, -46)], armBack: [p(-10, -46), p(-18, -40)] }), f({ head: p(4, -62), neck: p(4, -54), hip: p(1, -32), armFront: [p(16, -50), p(28, -46)], armBack: [p(-10, -46), p(-18, -40)] }), f({ head: p(4, -62), neck: p(4, -54), hip: p(1, -32), armFront: [p(16, -50), p(28, -46)], armBack: [p(-10, -46), p(-18, -40)] })],
+  },
+  choiheavykick: {
+    frameDuration: 1,
+    loop: false,
+    exclusive: 'choi',
+    frames: [f({ head: p(-2, -64), neck: p(-2, -56), hip: p(0, -34), legFront: [p(14, -46), p(18, -64)], legBack: [p(-6, -20), p(-6, -1)] }), f({ head: p(-2, -64), neck: p(-2, -56), hip: p(0, -34), legFront: [p(14, -46), p(18, -64)], legBack: [p(-6, -20), p(-6, -1)] }), f({ head: p(-2, -64), neck: p(-2, -56), hip: p(0, -34), legFront: [p(14, -46), p(18, -64)], legBack: [p(-6, -20), p(-6, -1)] })],
+  },
+  changheavypunch: {
+    frameDuration: 1,
+    loop: false,
+    exclusive: 'chang',
+    frames: [f({ head: p(5, -58), neck: p(5, -50), hip: p(1, -30), armFront: [p(18, -50), p(32, -48)], armBack: [p(-14, -48), p(-24, -46)] }), f({ head: p(5, -58), neck: p(5, -50), hip: p(1, -30), armFront: [p(18, -50), p(32, -48)], armBack: [p(-14, -48), p(-24, -46)] }), f({ head: p(5, -58), neck: p(5, -50), hip: p(1, -30), armFront: [p(18, -50), p(32, -48)], armBack: [p(-14, -48), p(-24, -46)] })],
+  },
+  changheavykick: {
+    frameDuration: 1,
+    loop: false,
+    exclusive: 'chang',
+    frames: [f({ head: p(4, -56), neck: p(4, -48), hip: p(0, -28), legFront: [p(16, -28), p(30, -14)], legBack: [p(-10, -22), p(-12, -4)] }), f({ head: p(4, -56), neck: p(4, -48), hip: p(0, -28), legFront: [p(16, -28), p(30, -14)], legBack: [p(-10, -22), p(-12, -4)] }), f({ head: p(4, -56), neck: p(4, -48), hip: p(0, -28), legFront: [p(16, -28), p(30, -14)], legBack: [p(-10, -22), p(-12, -4)] })],
+  },
   /** 升龙系：整个人向上冲，手臂上举 */
   specialUppercut: {
     frameDuration: 1,

@@ -23,7 +23,7 @@ export const CHANG: CharDef = {
   },
   push: { w: 44 },
   moves: {
-    ...buildNormals({ power: 1.18, speed: 1.12, reach: 1.16, cancels: CANCELS }),
+    ...buildNormals({ power: 1.18, speed: 1.12, reach: 1.16, cancels: CANCELS, anim: { heavyPunch: 'changheavypunch', heavyKick: 'changheavykick' } }),
 
     // ---------------------------------------------------------------- 必杀技
     // 鉄球大回転：抡球连打（四段）
