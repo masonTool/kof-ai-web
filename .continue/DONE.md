@@ -41,6 +41,17 @@
 
 <!-- 实际归档放下面，最新的放最上面 -->
 
+## 批次 20261028-0002 · 2026-10-28 · 会话 59bce766
+
+**这批的目标**：BGM 扩充 5 → 8 首。
+
+- [x] [T290] BGM 扩充（5 → 8 首）：dojo / airport / volcano
+  - 做了什么：①`bgm.ts` 的 `TRACKS` 加 3 首（dojo：五声音阶 A C D E G、108 BPM、triangle；airport：机械短音型反复、132 BPM、square；volcano：低频下行、100 BPM、sawtooth；volcano 的 bass 低到 29/31/33 模拟岩浆压迫感）；②加 `STAGE_TRACKS` 映射；③`fightTrackFor()` 加 `stageId` 参数，优先级 **BOSS > 暗色 > 舞台 > 默认**（宁可换掉场地曲也要保住 BOSS 辨识度）；④`main.ts` 的 `trackFor` 传 `currentStage().id`
+  - 测试调整：原断言「曲子列表严格等于 5 个」→ 改成「基础 5 首必须存在（允许追加）」
+  - 新增 2 条测试：**选曲优先级**（BOSS/暗色/舞台/默认四层各测一遍）+ 舞台曲本身是合法曲子
+  - 验证：`npm run check` **1000 条全绿**（里程碑整千）
+  - 批次：20261028-0002
+
 ## 批次 20261027-2346 · 2026-10-27 · 会话 59bce766
 
 **这批的目标**：舞台扩充 5 → 8 条。
@@ -282,15 +293,4 @@
   - 出图情况：7/8 一次成功，`eijikagesuberi` 失败一次、单独重跑后成功
   - 验证：打包两个角色都检查了错误（`grep -qi error`），失败=0；`art:check` 通过；`npm run check` **995 条全绿**
   - 批次：20261027-0845
-
-## 批次 20261027-0817 · 2026-10-27 · 会话 59bce766
-
-**这批的目标**：动作专属化第 19、20 个角色（Chang、Billy）。
-
-- [x] [T268] Chang + Billy 各 4 个必杀专属动作（20/27）→ 出图 + 数据 + 打包验证
-  - 做了什么：①`gen-poses.mjs` 加 8 条（Chang：抡球火焰气流/高举下砸火花/抓举发力/全身橙黄火焰包裹；Billy：棍转圆盘残影/棍头直刺/棍上火龙/巨大火龙缠身）；②`build-sheet.mjs` 加 `changspecial1-3`+`changsuper`、`billyspecial1-3`+`billysuper`，并更新 `EXCLUSIVE_OWNER`；③`poses.ts` 加 8 个兜底（key = anim 名，全小写）；④`chang.ts`/`billy.ts` 各改 5 处
-  - **效果是 20 个角色里最猛的**：Chang 超必杀全身被橙黄火焰包裹、铁球拖一圈残影；Billy 超必杀**整条橙红火龙绕着身体转**，火焰旋涡非常壮观
-  - 为什么这两个这么出效果：都是**重兵器/长兵器**，铁球和三节棍本身就是很好的火焰载体，AI 有明确的东西可以"点着"
-  - 验证：打包两个角色都检查了错误（`grep -qi error`），失败=0；`art:check` 通过；`npm run check` **995 条全绿**
-  - 批次：20261027-0817
 
