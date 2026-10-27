@@ -1895,3 +1895,20 @@
   - 进行中：后台出图 27 角色 × 2 张（日志 `/tmp/gen-dizzy-lose.log`，每角色间隔 60 秒，约 50 分钟）
   - 批次：20261027-0046
 
+## 批次 20261027-0144 · 2026-10-27 · 会话 59bce766
+
+**这批的目标**：被打飞和挑衅不再借用别人的姿势。
+
+- [x] [T251] hitFall / taunt 补真帧：`hitFall: 'hit'` → 两帧后仰腾空，`taunt: 'win'` → 两帧抬手勾指 → 单测 + 29/29
+  - 结果：**hitFall 29/29 两帧、taunt 29/29 两帧**，`art:check` 通过
+  - 做了什么：①`gen-poses.mjs` 加 `hitfallmid`（后仰腾空、双臂被冲力甩向身后、双腿离地、身体拉成一条斜线）与 `tauntmid`（抬手勾手指"来吧"、下巴微抬、另一手插腰）；②`build-sheet.mjs` 把两者从 ALIAS 移除，ANIMS 新增 `hitFall: ['hit','hitfallmid']`、`taunt: ['idle','tauntmid']`
+  - **好消息**：姿势库这两个本来就是 2 帧（`hitFall` 后仰两阶段、`taunt` 勾指循环），所以只补贴图、没改姿势库
+  - 为什么 `taunt` 第一帧用 `idle` 而不是原来的 `win`：挑衅的自然过程是"站着 → 抬手勾指"；用胜利姿势当起点会先摆个胜利造型再切挑衅，很怪
+  - 验证：新增 4 条测试（hitFall 两帧、taunt 两帧，并把两者加入 `MUST_MATCH` 走通用帧数一致断言）；`npm run check` **985 条全绿**；逐角色统计均为 `{"2":29}`
+  - 批次：20261027-0144
+  - 做了什么：①`gen-poses.mjs` 加 `hitfallmid`（后仰腾空、双臂被冲力甩向身后、双腿离地、身体拉成斜线）与 `tauntmid`（抬手勾手指"来吧"、下巴微抬、另一手插腰）；②`build-sheet.mjs` 把两者从 ALIAS 移除，ANIMS 新增 `hitFall: ['hit','hitfallmid']`、`taunt: ['idle','tauntmid']`
+  - **好消息**：姿势库这两个本来就是 2 帧（`hitFall` 后仰两阶段、`taunt` 勾指循环），所以只需要补贴图、不用改姿势库
+  - 为什么 `taunt` 第一帧用 `idle` 而不是 `win`：挑衅的自然过程是"站着 → 抬手勾指"，用胜利姿势当起点会先摆个胜利造型再切挑衅，很怪
+  - 进行中：后台出图 27 角色 × 2 张（日志 `/tmp/gen-fall-taunt.log`，每角色间隔 60 秒，约 50 分钟）
+  - 批次：20261027-0144
+
