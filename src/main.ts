@@ -383,7 +383,7 @@ function isBossFight(): boolean {
 function trackFor(screen: string): string | null {
   if (screen === 'fight' || screen === 'continue') {
     if (!match) return 'fight';
-    return fightTrackFor(match.p1.char.id, match.p2.char.id, isBossFight());
+    return fightTrackFor(match.p1.char.id, match.p2.char.id, isBossFight(), currentStage().id);
   }
   if (screen === 'result') return 'result';
   return 'title';

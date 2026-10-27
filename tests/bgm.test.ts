@@ -16,8 +16,11 @@ import {
 const FIGHT = TRACKS['fight']!;
 
 describe('曲子数据', () => {
-  it('五条曲子都在（普通/BOSS/暗色/结果/标题），步数与音符数组长度一致', () => {
-    expect(Object.keys(TRACKS).sort()).toEqual(['fight', 'fightBoss', 'fightDark', 'result', 'title']);
+  it('五首基础曲都在，且所有曲子的步数与音符数组长度一致', () => {
+    // 基础 5 首必须存在；舞台专属曲是追加的，允许继续加
+    for (const id of ['fight', 'fightBoss', 'fightDark', 'result', 'title']) {
+      expect(TRACKS[id], id).toBeTruthy();
+    }
     for (const [id, track] of Object.entries(TRACKS)) {
       expect(track.lead.length, id).toBe(track.steps);
       expect(track.bass.length, id).toBe(track.steps);
@@ -169,5 +172,28 @@ describe('BGM 情绪', () => {
     expect(bgm.trackId).toBe('fight');
     bgm.setMood('calm');
     expect(bgm.mood).toBe('calm');
+  });
+});
+
+describe('舞台专属曲的优先级', () => {
+  it('BOSS > 暗色角色 > 舞台 > 默认', () => {
+    // BOSS 战优先（宁可换掉场地曲，也要保住 BOSS 的辨识度）
+    expect(fightTrackFor('kyo', 'terry', true, 'dojo')).toBe('fightBoss');
+    // 暗色角色其次
+    expect(fightTrackFor('iori', 'terry', false, 'dojo')).toBe('fightDark');
+    // 普通对决才轮到舞台曲
+    expect(fightTrackFor('kyo', 'terry', false, 'dojo')).toBe('dojo');
+    expect(fightTrackFor('kyo', 'terry', false, 'airport')).toBe('airport');
+    expect(fightTrackFor('kyo', 'terry', false, 'volcano')).toBe('volcano');
+    // 没有专属曲的舞台回落默认
+    expect(fightTrackFor('kyo', 'terry', false, 'skyline')).toBe('fight');
+    expect(fightTrackFor('kyo', 'terry', false)).toBe('fight');
+  });
+
+  it('舞台专属曲本身是合法曲子', () => {
+    for (const s of ['dojo', 'airport', 'volcano']) {
+      const id = fightTrackFor('kyo', 'terry', false, s);
+      expect(TRACKS[id], id).toBeTruthy();
+    }
   });
 });

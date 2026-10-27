@@ -152,6 +152,40 @@ export const TRACKS: Record<string, TrackDef> = {
     wave: 'triangle',
     gain: 0.11,
   },
+  // ---------------- 舞台专属曲（新舞台配套）
+  dojo: {
+    id: 'dojo',
+    bpm: 108,
+    stepsPerBeat: 4,
+    steps: 32,
+    // 道场：五声音阶（A C D E G），慢而稳，像太鼓伴和风
+    lead: [69, null, 72, null, 74, null, 76, null, 79, null, 76, null, 74, null, 72, null, 69, null, 72, null, 74, null, 76, null, 74, null, 72, null, 69, null, null, null],
+    bass: [45, null, null, 45, null, null, 48, null, 43, null, null, 43, null, null, 41, null, 45, null, null, 45, null, null, 48, null, 43, null, 41, null, 45, null, null, null],
+    wave: 'triangle',
+    gain: 0.085,
+  },
+  airport: {
+    id: 'airport',
+    bpm: 132,
+    stepsPerBeat: 4,
+    steps: 32,
+    // 机场：机械感的短音型反复，像跑道灯的节拍
+    lead: [72, 72, null, 74, 72, 72, null, 69, 72, 72, null, 74, 76, 74, 72, 69, 72, 72, null, 74, 72, 72, null, 69, 71, 72, 74, 76, 74, 72, 69, null],
+    bass: [40, null, 40, null, 40, null, 40, null, 43, null, 43, null, 43, null, 43, null, 40, null, 40, null, 40, null, 40, null, 41, null, 41, null, 43, null, 40, null],
+    wave: 'square',
+    gain: 0.07,
+  },
+  volcano: {
+    id: 'volcano',
+    bpm: 100,
+    stepsPerBeat: 4,
+    steps: 32,
+    // 火山：低频压迫 + 缓慢下行，像岩浆在流动
+    lead: [69, null, null, 67, null, null, 65, null, 64, null, null, 62, null, null, 60, null, 69, null, null, 67, null, null, 65, null, 64, null, 62, null, 60, null, null, null],
+    bass: [33, null, 33, null, null, 33, null, null, 31, null, 31, null, null, 31, null, null, 29, null, 29, null, null, 29, null, null, 31, null, 31, null, 33, null, null, null],
+    wave: 'sawtooth',
+    gain: 0.075,
+  },
 };
 
 /**
@@ -323,8 +357,18 @@ export const DARK_FIGHTERS: ReadonlySet<string> = new Set([
  * 这一场该放哪首战斗曲。抽成纯函数是为了能断言"谁打谁放什么"，
  * 不用真的去听。
  */
-export function fightTrackFor(a: string, b: string, boss = false): string {
+/** 舞台 → 专属曲（没有映射的舞台用默认 fight） */
+const STAGE_TRACKS: Record<string, string> = {
+  dojo: 'dojo',
+  airport: 'airport',
+  volcano: 'volcano',
+};
+
+export function fightTrackFor(a: string, b: string, boss = false, stageId?: string): string {
   if (boss) return 'fightBoss';
   if (DARK_FIGHTERS.has(a) || DARK_FIGHTERS.has(b)) return 'fightDark';
+  // 舞台专属曲排在角色之后：BOSS 战和暗色角色的辨识度比"场地好听"更重要
+  const stage = stageId ? STAGE_TRACKS[stageId] : undefined;
+  if (stage) return stage;
   return 'fight';
 }
