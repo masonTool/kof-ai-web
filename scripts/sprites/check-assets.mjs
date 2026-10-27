@@ -10,11 +10,54 @@
  * - 头像：每个有图集的角色都要有 128×128 头像，变体也不能缺
  * - 舞台：每条舞台数据要么有底图、要么走程序化（有底图就检查尺寸能不能 cover）
  */
+import { execFileSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { decodePng } from './png.mjs';
 
 const ROOT = process.cwd();
+/** 图集实际是 .png 还是 .webp（构建时能转就转了） */
+function sheetPath(id) {
+  const png = join(SHEETS, `${id}.png`);
+  if (existsSync(png)) return png;
+  const webp = join(SHEETS, `${id}.webp`);
+  if (existsSync(webp)) return webp;
+  return null;
+}
+
+/** 完整解码：PNG 直接解，WebP 借 dwebp 解到临时文件 */
+function decodeAny(path) {
+  const buf = readFileSync(path);
+  if (buf[0] === 0x89) return decodePng(buf);
+  const tmp = '/tmp/_check_dec.png';
+  execFileSync('dwebp', [path, '-o', tmp, '-quiet'], { stdio: 'pipe' });
+  return decodePng(readFileSync(tmp));
+}
+
+/** 只读文件头拿尺寸，不解整张图（WebP 也能读） */
+function imageSize(buf) {
+  if (buf.length > 24 && buf[0] === 0x89 && buf[1] === 0x50) {
+    return { width: buf.readUInt32BE(16), height: buf.readUInt32BE(20) };
+  }
+  if (buf.length > 30 && buf.toString('ascii', 0, 4) === 'RIFF' && buf.toString('ascii', 8, 12) === 'WEBP') {
+    const kind = buf.toString('ascii', 12, 16);
+    if (kind === 'VP8X') {
+      return {
+        width: 1 + (buf[24] | (buf[25] << 8) | (buf[26] << 16)),
+        height: 1 + (buf[27] | (buf[28] << 8) | (buf[29] << 16)),
+      };
+    }
+    if (kind === 'VP8L') {
+      const b = buf.readUInt32LE(21);
+      return { width: 1 + (b & 0x3fff), height: 1 + ((b >> 14) & 0x3fff) };
+    }
+    if (kind === 'VP8 ') {
+      return { width: buf.readUInt16LE(26) & 0x3fff, height: buf.readUInt16LE(28) & 0x3fff };
+    }
+  }
+  return null;
+}
+
 const SHEETS = join(ROOT, 'public/sheets');
 const PORTRAITS = join(ROOT, 'public/portraits');
 const STAGES = join(ROOT, 'public/stages');
@@ -83,23 +126,25 @@ for (const id of ids) {
     flash: { ...(mainJson.flash ?? {}), ...(extraJson?.flash ?? {}) },
   };
 
-  const pngPath = join(SHEETS, `${id}.png`);
-  if (!existsSync(pngPath)) {
-    warn(`${id}: 有 json 没有 png`);
+  const pngPath = sheetPath(id);
+  if (pngPath === null) {
+    warn(`${id}: 有 json 没有图集（.png / .webp 都没有）`);
     continue;
   }
-  const atlas = decodePng(readFileSync(pngPath));
-  if (atlas.width !== mainJson.width || atlas.height !== mainJson.height) {
+  const atlas = imageSize(readFileSync(pngPath));
+  if (atlas === null) {
+    warn(`${id}: 图集尺寸读不出来（${pngPath}）`);
+  } else if (atlas.width !== mainJson.width || atlas.height !== mainJson.height) {
     warn(`${id}: json 声明 ${mainJson.width}×${mainJson.height}，实际 ${atlas.width}×${atlas.height}`);
   }
   // 扩展片的尺寸单独对
   if (extraJson) {
-    const extraPng = join(SHEETS, `${id}-extra.png`);
-    if (!existsSync(extraPng)) {
-      warn(`${id}: 有 extra.json 没有 extra.png`);
+    const extraPng = sheetPath(`${id}-extra`);
+    if (extraPng === null) {
+      warn(`${id}: 有 extra.json 没有 extra 图集`);
     } else {
-      const ea = decodePng(readFileSync(extraPng));
-      if (ea.width !== extraJson.width || ea.height !== extraJson.height) {
+      const ea = imageSize(readFileSync(extraPng));
+      if (ea !== null && (ea.width !== extraJson.width || ea.height !== extraJson.height)) {
         warn(`${id}-extra: json 声明 ${extraJson.width}×${extraJson.height}，实际 ${ea.width}×${ea.height}`);
       }
     }
@@ -123,7 +168,7 @@ for (const id of ids) {
   if (extraJson) {
     const extraPng = join(SHEETS, `${id}-extra.png`);
     if (existsSync(extraPng)) {
-      const ea = decodePng(readFileSync(extraPng));
+      const ea = decodeAny(extraPng);
       checkRects(extraJson.anims, ea.width, ea.height, `${id}-extra`);
     }
   }
@@ -168,7 +213,7 @@ for (const id of ids) {
 
 /** 平均色（只算不透明像素），用来核对"染色有没有真的生效" */
 function meanColor(file) {
-  const img = decodePng(readFileSync(file));
+  const img = decodeAny(file);
   let r = 0;
   let g = 0;
   let b = 0;
@@ -186,8 +231,8 @@ function meanColor(file) {
 // 变体角色：必须有派生图集，且色调要和本体明显不同（否则选中了也看不出区别）
 for (const [variant, base] of Object.entries(VARIANTS)) {
   if (!existsSync(join(PORTRAITS, `${variant}.png`))) warn(`${variant}: 变体没有头像`);
-  const vSheet = join(SHEETS, `${variant}.png`);
-  const bSheet = join(SHEETS, `${base}.png`);
+  const vSheet = sheetPath(variant);
+  const bSheet = sheetPath(base);
   if (!existsSync(vSheet)) {
     warn(`${variant}: 没有派生图集（跑 build-sheet --char ${variant} --from ${base} --tint r,g,b）`);
     continue;

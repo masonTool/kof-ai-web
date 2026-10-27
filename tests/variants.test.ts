@@ -29,7 +29,9 @@ describe('暴走变体图集', () => {
     });
 
     it(`${id} 用的是自己的图集文件，不是本体那张`, () => {
-      expect(variant.image).toBe(`${id}.png`);
+      // 图集可能是 .webp（构建时转的）也可能是 .png（没有 cwebp 的环境），
+      // 只要求"是变体自己的那张"，不锁扩展名
+      expect(variant.image).toMatch(new RegExp(`^${id}\\.(webp|png)$`));
       expect(variant.image).not.toBe(base.image);
       expect(variant.scale).toBe(base.scale);
     });

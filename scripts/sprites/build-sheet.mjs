@@ -10,7 +10,8 @@
  *
  * 用法：node scripts/sprites/build-kyo.mjs
  */
-import { readFileSync, readdirSync, writeFileSync, existsSync } from 'node:fs';
+import { readFileSync, readdirSync, writeFileSync, existsSync, rmSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
 import { join } from 'node:path';
 import { createImage, decodePng, encodePng, blit } from './png.mjs';
 import { cutout, scaleToHeight, scaleToWidth } from './cutout.mjs';
@@ -584,11 +585,13 @@ if (FROM) {
     { src: `${FROM}-extra`, out: `${CHAR_ID}-extra`, outImage: OUT_EXTRA_IMAGE, outJson: OUT_EXTRA_JSON },
   ];
   for (const p of pieces) {
-    if (!existsSync(`public/sheets/${p.src}.png`)) continue;
-    const out = tintPng(decodePng(readFileSync(`public/sheets/${p.src}.png`)));
+    const srcImg = readSheetImage(p.src);
+    if (srcImg === null) continue;
+    const out = tintPng(srcImg);
     writeFileSync(p.outImage, encodePng(out));
+    const finalImage = toWebpOrKeep(p.outImage);
     const json = JSON.parse(readFileSync(`public/sheets/${p.src}.json`, 'utf8'));
-    json.image = `${p.out}.png`;
+    json.image = finalImage;
     writeFileSync(p.outJson, `${JSON.stringify(json, null, 1)}\n`);
     console.log(`${p.out}：由 ${p.src} 染色派生（tint ${tint.join(',')}）· 图集 ${out.width}×${out.height}`);
   }
@@ -860,9 +863,52 @@ for (const [anim, list] of Object.entries(frames)) {
   for (const f of list) if (f.sil) order.push({ anim, kind: 'flash', img: f.sil, rect: { ...f.rect } });
 }
 
-const MAX_W = 2048;
+/**
+ * 图集宽度。
+ *
+ * 2048 时高度会涨到 29000+：**超过 WebP 的 16383 单边上限**，只能输出 PNG。
+ * 4096 把高度砍到约一半（WebP 能吃下），同时宽图的连续像素更多、压缩率也更好。
+ * 不选 8192 是为了照顾移动端 GPU 的 4096 纹理上限。
+ */
+const MAX_W = Number(process.env.SHEET_MAX_W ?? 4096);
 
 /** 把一组帧货架打包并写出去（png + json），返回图集尺寸 */
+/**
+ * 把刚写出的 PNG 转成 **WebP 无损**，并删掉 PNG。
+ *
+ * 实测（choi 一整套 8.53MB → 3.22MB，-62%；逐字节比对 0 差异）。
+ * 没有 `cwebp` 的环境（CI / 别人的机器）会原样保留 PNG——加载器读 json 的
+ * `image` 字段，所以两条路都能跑。
+ */
+function toWebpOrKeep(pngPath) {
+  const webp = pngPath.replace(/\.png$/, '.webp');
+  try {
+    execFileSync('cwebp', ['-lossless', '-z', '6', '-quiet', pngPath, '-o', webp], { stdio: 'pipe' });
+    if (existsSync(webp) && readFileSync(webp).length > 0) {
+      rmSync(pngPath);
+      return webp.split('/').pop();
+    }
+  } catch {
+    // 没有 cwebp：保留 PNG
+  }
+  return pngPath.split('/').pop();
+}
+
+/**
+ * 读一张图集，PNG 不在就退回 WebP（用 `dwebp` 解到临时文件）。
+ *
+ * 染色派生要读**源角色**的图集，而那些图集在上一步已经被转成 WebP 并删了 PNG。
+ */
+function readSheetImage(baseName) {
+  const png = `public/sheets/${baseName}.png`;
+  if (existsSync(png)) return decodePng(readFileSync(png));
+  const webp = `public/sheets/${baseName}.webp`;
+  if (!existsSync(webp)) return null;
+  const tmp = `/tmp/_sheet_dec_${baseName.replace(/[^a-z0-9_-]/gi, '_')}.png`;
+  execFileSync('dwebp', [webp, '-o', tmp, '-quiet'], { stdio: 'pipe' });
+  return decodePng(readFileSync(tmp));
+}
+
 function packAndWrite(subset, outImage, outJson, imageName) {
   const placed = subset.map((f) => ({ ...f, rect: { ...f.rect } }));
   let shelfX = 0;
@@ -884,6 +930,7 @@ function packAndWrite(subset, outImage, outJson, imageName) {
   const atlas = createImage(atlasW, atlasH);
   for (const f of placed) blit(atlas, f.img, f.rect.x, f.rect.y);
   writeFileSync(outImage, encodePng(atlas));
+  const finalImage = toWebpOrKeep(outImage);
 
   const animsJson = {};
   const flashJson = {};
@@ -906,7 +953,7 @@ function packAndWrite(subset, outImage, outJson, imageName) {
     outJson,
     JSON.stringify(
       // scale：一个源像素等于多少世界单位（绘制时宽高都要乘它，否则贴图会被放大 RES 倍）
-      { image: imageName, width: atlasW, height: atlasH, scale: 1 / RES, anims: animsJson, flash: flashJson },
+      { image: finalImage, width: atlasW, height: atlasH, scale: 1 / RES, anims: animsJson, flash: flashJson },
       null,
       1,
     ),

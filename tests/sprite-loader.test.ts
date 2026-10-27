@@ -402,3 +402,4 @@ describe('专属动画能播到最后一帧', () => {
     expect(bad, bad.join('; ')).toEqual([]);
   });
 });
+

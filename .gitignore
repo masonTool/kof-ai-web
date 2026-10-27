@@ -8,6 +8,7 @@ dist/
 *.png
 # 但游戏运行时用的图集要进仓库
 !public/sheets/*.png
+!public/sheets/*.webp
 # 人物头像（选人/VS 用，从图集裁出来的）
 !public/portraits/*.png
 !public/selportraits/*.png
