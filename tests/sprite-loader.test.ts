@@ -361,3 +361,23 @@ describe('起身动画（wakeup）', () => {
     expect(last.h).toBeGreaterThan(crouch.h * 1.2);
   });
 });
+
+describe('角色专属动画的帧数一致性（曾因漏改姿势库导致只显示第一帧）', () => {
+  /**
+   * 专属动画（kyspecial1 之类）**不在** `MUST_MATCH` 里，所以它们的帧数一直是
+   * "没人管"的状态——曾经图集已经 2 帧（起手+出手）、姿势库还停在 1 帧，
+   * 结果 `poseFrameIndex` 永远返回 0，游戏中**出手帧一次都没显示过**。
+   */
+  it('姿势库的专属动画帧数 = 图集帧数', () => {
+    const exclusive = Object.keys(sheetJson.anims).filter((a) => /special\d+$|super$/.test(a));
+    expect(exclusive.length).toBeGreaterThan(0);
+    const bad: string[] = [];
+    for (const anim of exclusive) {
+      const pose = POSE_LIBRARY[anim];
+      const frames = (sheetJson.anims as unknown as Record<string, unknown[]>)[anim]!;
+      if (!pose) { bad.push(`${anim}: 姿势库缺`); continue; }
+      if (pose.frames.length !== frames.length) bad.push(`${anim}: 姿势库${pose.frames.length} vs 图集${frames.length}`);
+    }
+    expect(bad, bad.join('; ')).toEqual([]);
+  });
+});
