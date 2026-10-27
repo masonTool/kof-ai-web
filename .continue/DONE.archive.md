@@ -2081,3 +2081,14 @@
   - 验证：打包两个角色**都检查了错误**（`grep -qi error`），失败=0；`art:check` 通过；`npm run check` **995 条全绿**；变体 `orochi_leona` 已重派生
   - 批次：20261027-0738
 
+## 批次 20261027-0748 · 2026-10-27 · 会话 59bce766
+
+**这批的目标**：动作专属化第 13、14 个角色（Ralf、Clark）。
+
+- [x] [T265] Ralf + Clark 各 4 个必杀专属动作（14/27）→ 出图 + 数据 + 打包验证
+  - 做了什么：①`gen-poses.mjs` 加 8 条（Ralf：橙红火花连打/拖气浪套索臂/飞扑拳/大片冲击波；Clark：双臂张开擒抱/抓住甩过头顶/抱人侧滚/高举对手）；②`build-sheet.mjs` 加 `ralfspecial1-3`+`ralfsuper`、`clarkspecial1-3`+`clarksuper`，并更新 `EXCLUSIVE_OWNER`；③`poses.ts` 加 8 个兜底（key = anim 名）；④`ralf.ts`/`clark.ts` 各改 5 处
+  - **Clark 是纯投技角色**（5 个必杀数据里全是 `throwStart`），所以动作全部围绕"抓、摔、举"——和 Ralf 的"拳拳到肉"形成对照
+  - **意外收获**：Clark 的投技图里 AI **主动画出了被摔的对手**（尤其"高举过头顶"那张，对手整个人在空中），表现力比预想强
+  - 验证：打包两个角色都检查了错误（`grep -qi error`），失败=0；`art:check` 通过；`npm run check` **995 条全绿**
+  - 批次：20261027-0748
+
