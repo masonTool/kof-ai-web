@@ -13,6 +13,10 @@ import { audioGraph, DEFAULT_SFX_VOLUME, setBusVolume, unlockAudio } from './gra
 export type SfxName =
   | 'hitLight'
   | 'hitHeavy'
+  | 'hitFire'
+  | 'hitThunder'
+  | 'hitDarkfire'
+  | 'hitKi'
   | 'hitCounter'
   | 'guard'
   | 'guardCrush'
@@ -68,6 +72,12 @@ export interface SfxSpec {
 export const SFX: Record<SfxName, SfxSpec> = {
   hitLight: { wave: 'square', from: 640, to: 220, ms: 65, gain: 0.22, noise: 0.4, thump: 0.5, presence: 0.5 },
   hitHeavy: { wave: 'sawtooth', from: 340, to: 80, ms: 140, gain: 0.3, noise: 0.55, thump: 0.9, presence: 0.75 },
+  // 属性重击：只在**重击**时用，让"这一下带着火/电/暗色"能被听出来。
+  // 轻击保持 hitLight 的清脆——否则京的每一下都变成火声，轻重就听不出了。
+  hitFire: { wave: 'sawtooth', from: 380, to: 90, ms: 165, gain: 0.3, noise: 0.75, thump: 0.8, presence: 0.7 },
+  hitThunder: { wave: 'square', from: 1400, to: 380, ms: 95, gain: 0.28, noise: 0.55, thump: 0.5, presence: 0.9 },
+  hitDarkfire: { wave: 'sawtooth', from: 240, to: 60, ms: 205, gain: 0.3, noise: 0.4, thump: 0.95, presence: 0.6 },
+  hitKi: { wave: 'triangle', from: 780, to: 480, ms: 115, gain: 0.24, noise: 0.3, thump: 0.4, presence: 0.8 },
   // 反击：比普通命中更"脆"更响，玩家要能凭听觉分出反击
   hitCounter: { wave: 'square', from: 900, to: 260, ms: 110, gain: 0.3, noise: 0.7, thump: 0.7, presence: 0.85 },
   guard: { wave: 'triangle', from: 940, to: 720, ms: 55, gain: 0.14, noise: 0.18, presence: 0.35 },
@@ -118,7 +128,16 @@ export function sfxForWorldEvent(type: string, data?: Readonly<Record<string, nu
     case 'hit': {
       if (data?.['counter'] === true || data?.['counter'] === 1) return 'hitCounter';
       const damage = Number(data?.['damage'] ?? 0);
-      return damage >= 60 ? 'hitHeavy' : 'hitLight';
+      // 只有重击才上属性音：轻击保持统一的清脆，轻重层次不会被属性色盖掉
+      if (damage >= 60) {
+        const style = String(data?.['style'] ?? 'none');
+        if (style === 'fire') return 'hitFire';
+        if (style === 'thunder') return 'hitThunder';
+        if (style === 'darkfire') return 'hitDarkfire';
+        if (style === 'ki' || style === 'wind' || style === 'light') return 'hitKi';
+        return 'hitHeavy';
+      }
+      return 'hitLight';
     }
     case 'guard':
       return 'guard';

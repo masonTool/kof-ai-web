@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { SFX, sfxForWorldEvent } from '../src/audio/sfx';
 import { ROSTER } from '../src/data/chars';
 import {
   BgmPlayer,
@@ -194,6 +195,31 @@ describe('舞台专属曲的优先级', () => {
     for (const s of ['dojo', 'airport', 'volcano']) {
       const id = fightTrackFor('kyo', 'terry', false, s);
       expect(TRACKS[id], id).toBeTruthy();
+    }
+  });
+});
+
+describe('命中音效的属性细分', () => {
+  it('重击按属性出不同音，轻击统一清脆（保住轻重层次）', () => {
+    // 轻击：不管什么属性都是清脆的 hitLight
+    expect(sfxForWorldEvent('hit', { damage: 30, style: 'fire' })).toBe('hitLight');
+    expect(sfxForWorldEvent('hit', { damage: 30, style: 'thunder' })).toBe('hitLight');
+    // 重击：属性色生效
+    expect(sfxForWorldEvent('hit', { damage: 70, style: 'fire' })).toBe('hitFire');
+    expect(sfxForWorldEvent('hit', { damage: 70, style: 'thunder' })).toBe('hitThunder');
+    expect(sfxForWorldEvent('hit', { damage: 70, style: 'darkfire' })).toBe('hitDarkfire');
+    expect(sfxForWorldEvent('hit', { damage: 70, style: 'ki' })).toBe('hitKi');
+    expect(sfxForWorldEvent('hit', { damage: 70, style: 'wind' })).toBe('hitKi');
+    // 无属性角色（大门/拉尔夫/克拉克）的重击还是普通重击
+    expect(sfxForWorldEvent('hit', { damage: 70, style: 'none' })).toBe('hitHeavy');
+    // 反击压过属性
+    expect(sfxForWorldEvent('hit', { damage: 70, style: 'fire', counter: true })).toBe('hitCounter');
+  });
+
+  it('属性音效都在音效表里（写了名字没定义等于静音）', () => {
+    for (const name of ['hitFire', 'hitThunder', 'hitDarkfire', 'hitKi'] as const) {
+      expect(SFX[name], name).toBeTruthy();
+      expect(SFX[name].gain, name).toBeGreaterThan(0);
     }
   });
 });
