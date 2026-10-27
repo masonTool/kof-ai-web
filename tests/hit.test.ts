@@ -303,3 +303,4 @@ describe('事件与朝向', () => {
     expect(isGuarding(facingLeft, CHAR.moves['5A']!.hits[0]!)).toBe(true);
   });
 });
+

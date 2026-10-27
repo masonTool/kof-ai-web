@@ -145,6 +145,8 @@ export function sfxForWorldEvent(type: string, data?: Readonly<Record<string, nu
       return 'guardCrush';
     case 'clash':
       return 'clash';
+    case 'whiff':
+      return 'whiff';
     case 'superstart':
       return 'superStart';
     case 'proj':

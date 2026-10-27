@@ -312,3 +312,4 @@
 - [x] T291 命中音效按属性细分：hitFire/hitThunder/hitDarkfire/hitKi（属性音只用于重击）
 - [x] T292 训练模式帧数面板：showFrameData 从空开关补上实现（招式帧/状态帧）
 - [x] T293 回滚 T292 的误判：showFrameData 本来就有实现（frameDataLines 更全）；全量复查无空开关
+- [x] T294 音效盘点 + 补 whiff（挥空）：27 个音效里唯一一个定义了却从不触发的

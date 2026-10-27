@@ -173,6 +173,11 @@ export class Fighter implements Entity {
     return { x, y: this.y + box.y, w: box.w, h: box.h };
   }
 
+  /** 本招式是否命中过（打空判定用：招式结束时还是 false 就是挥空） */
+  moveLanded = false;
+  /** 刚"挥空结束"，等 `Match.step` 消费成 whiff 事件后清零 */
+  moveWhiffed = false;
+
   /** 本帧生效的判定（moveFrame 落在判定窗口内的那些） */
   activeHits(): HitDef[] {
     if (!this.isAttacking) return [];
@@ -298,6 +303,7 @@ export class Fighter implements Entity {
 
   /** 不看当前状态，强行起手（取消通道与测试用；仍然检查空中/气槽） */
   forceStart(move: MoveDef): boolean {
+    this.moveLanded = false;
     if (move.meterCost !== undefined && this.meter < move.meterCost) return false;
     if (move.meterCost !== undefined) this.meter -= move.meterCost;
     this.move = move;
@@ -642,7 +648,11 @@ export class Fighter implements Entity {
       this.clampX();
     }
 
-    if (this.moveFrame >= move.total) this.toNeutral();
+    if (this.moveFrame >= move.total) {
+      // 整招收完还没命中过 → 挥空。交给 Match 发事件（Fighter 没有 world 引用）
+      if (!this.moveLanded) this.moveWhiffed = true;
+      this.toNeutral();
+    }
   }
 
   private stepAir(input: InputState): void {

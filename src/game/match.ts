@@ -231,6 +231,13 @@ export class Match {
     this.world.step([inputs[0], inputs[1]]);
     this.checkSuperFlash();
     this.stepMoveBanner();
+    // 挥空：整招收完没命中过。Fighter 只置标志，事件在这里发（它没有 world 引用）
+    for (const f of [this.p1, this.p2]) {
+      if (f.moveWhiffed) {
+        f.moveWhiffed = false;
+        this.world.emit('whiff', { x: f.x + (f.facing > 0 ? 18 : -18), y: f.y - 60 });
+      }
+    }
     this.lastHits = [...resolveCombat(this.world, this.fighters), ...resolveProjectiles(this.world, this.fighters)];
     this.world.sweep();
     this.applyHitEffects(this.lastHits);

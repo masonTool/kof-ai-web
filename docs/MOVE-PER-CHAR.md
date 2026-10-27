@@ -742,6 +742,22 @@ P2  hitstun 2      ← 对手状态 + 状态帧
 **没做"有利帧"**：那需要知道受击硬直的总量（`hitStun` 总量），而 `Fighter` 只暴露了递增的
 `stateFrame`；要算得往 `Fighter` 里加字段，收益不如先把"当前第几帧"这一层做出来。
 
+## 六点十六、挥空音效（`whiff` 从"定义了但从不触发"变成真音的）
+
+**盘点方法**：把 `SFX` 表里的 27 个音效名逐个反查引用（这次**不排除任何文件**，包括
+`sfx.ts` 自己的 `return 'xxx'`），结果只有 **1 个**从未被引用：`whiff`。
+
+**为什么它从没响过**：音效表里有 `whiff` 定义，但模拟层**从来没有抛出过 `whiff` 事件**——
+打空和打中在音效上完全一样。
+
+**补齐的三处**：
+1. `Fighter` 加 `moveLanded`（本招是否命中过）与 `moveWhiffed`（刚挥空结束，供消费）
+2. 招式自然结束处（`moveFrame >= total`）：`if (!moveLanded) moveWhiffed = true`
+3. `Match.step` 消费它并 `emit('whiff', …)`；`sfxForWorldEvent` 加 `case 'whiff'`
+
+**为什么用"置标志 + Match 消费"**：`Fighter` 没有 `world` 引用（事件都在 `Match` 层发），
+硬塞一个引用会破坏现有的分层。
+
 ## 七、执行约定
 
 - 每个角色一次提交，提交信息带 `批次 + [T<编号>] 角色名 + 3/27`

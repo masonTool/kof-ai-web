@@ -864,3 +864,33 @@ describe('被打飞时旋转', () => {
     expect(m.p2.spinVel).toBe(0);
   });
 });
+
+describe('挥空（whiff）事件', () => {
+  it('招式打完没碰到人 → 发出 whiff（这个音效以前定义了但从不触发）', () => {
+    const m = makeMatch();
+    for (let i = 0; i < 4; i++) m.step(); // 走完 intro
+    m.p1.startMove(KYO.moves['5A']!);
+    let whiffed = false;
+    for (let i = 0; i < 40 && !whiffed; i++) {
+      m.step();
+      if (m.world.events.some((e) => e.type === 'whiff')) whiffed = true;
+    }
+    expect(whiffed).toBe(true);
+  });
+
+  it('命中的招式不发 whiff（只有真正打空才算）', () => {
+    const m = makeMatch();
+    for (let i = 0; i < 4; i++) m.step();
+    closeIn(m);
+    m.p1.startMove(KYO.moves['5A']!);
+    let sawHit = false;
+    let sawWhiff = false;
+    for (let i = 0; i < 40; i++) {
+      m.step();
+      if (m.world.events.some((e) => e.type === 'hit')) sawHit = true;
+      if (m.world.events.some((e) => e.type === 'whiff')) sawWhiff = true;
+    }
+    expect(sawHit).toBe(true);
+    expect(sawWhiff).toBe(false);
+  });
+});

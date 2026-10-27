@@ -277,6 +277,7 @@ export function applyHit(world: World, c: HitCandidate): HitResolution {
     defender.burnStyle = style;
   }
 
+  attacker.moveLanded = true;
   world.emit('hit', {
     x: c.x,
     y: c.y,
