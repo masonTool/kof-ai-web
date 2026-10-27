@@ -894,3 +894,23 @@ describe('挥空（whiff）事件', () => {
     expect(sawWhiff).toBe(false);
   });
 });
+
+describe('硬直总量（算有利帧用）', () => {
+  it('进入硬直时记录总帧数，且 stateFrame 会涨过它（所以能用它判断"还在硬直中"）', () => {
+    const m = makeMatch();
+    for (let i = 0; i < 4; i++) m.step();
+    closeIn(m);
+    m.p1.startMove(KYO.moves['5A']!);
+    let stunned = false;
+    for (let i = 0; i < 40 && !stunned; i++) {
+      m.step();
+      if (m.p2.stunTotal > 0) stunned = true;
+    }
+    expect(stunned).toBe(true);
+    expect(m.p2.stunTotal).toBeGreaterThan(0);
+    expect(m.p2.stateFrame).toBeLessThan(m.p2.stunTotal);
+    // 硬直走完：stateFrame 涨过 stunTotal
+    for (let i = 0; i < 40; i++) m.step();
+    expect(m.p2.stateFrame).toBeGreaterThan(m.p2.stunTotal);
+  });
+});

@@ -229,6 +229,16 @@ export class TrainingSession {
     }
     lines.push('A 轻拳 B 轻脚 C 重拳 D 重脚 · A+B 回避 · C+D 吹飞 · ABC MAX');
     lines.push(`假人 ${this.settings.dummy}${this.settings.dummy === 'cpu' ? `(${CPU_LEVEL_LABEL[this.settings.cpuLevel]})` : ''} · F1 判定框 ${onOff(this.settings.showBoxes)} · F2 帧数 ${onOff(this.settings.showFrameData)}`);
+    // 有利帧：只在"我在出招 + 对手在硬直"时才有意义
+    const p1 = this.match.p1;
+    const p2 = this.match.p2;
+    const p1Remain = p1.isAttacking && p1.move ? Math.max(0, p1.move.total - p1.moveFrame) : 0;
+    const p2Stunned = p2.stunTotal > 0 && p2.stateFrame < p2.stunTotal;
+    const p2Remain = p2Stunned ? Math.max(0, p2.stunTotal - p2.stateFrame) : 0;
+    if (p1Remain > 0 && p2Remain > 0) {
+      const adv = p2Remain - p1Remain;
+      lines.push(`有利 ${adv >= 0 ? '+' : ''}${adv}F（我剩 ${p1Remain}F / 对手剩 ${p2Remain}F）`);
+    }
     lines.push(`F3 无限气 ${onOff(this.settings.infiniteMeter)} · F4 无限血 ${onOff(this.settings.infiniteHp)} · F5 假人 · R 重开`);
     return lines;
   }

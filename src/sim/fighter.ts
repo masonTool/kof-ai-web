@@ -173,6 +173,13 @@ export class Fighter implements Entity {
     return { x, y: this.y + box.y, w: box.w, h: box.h };
   }
 
+  /**
+   * 本次硬直的**总帧数**（进入硬直时设一次，用来算有利帧）。
+   *
+   * `stateFrame` 是递增的"已经过了几帧"，只有它算不出"还剩几帧"。
+   */
+  stunTotal = 0;
+
   /** 本招式是否命中过（打空判定用：招式结束时还是 false 就是挥空） */
   moveLanded = false;
   /** 刚"挥空结束"，等 `Match.step` 消费成 whiff 事件后清零 */
@@ -434,6 +441,7 @@ export class Fighter implements Entity {
   }
 
   enterHitstun(frames: number, opts: { launch?: number; knockdown?: boolean } = {}): void {
+    this.stunTotal = Math.max(1, frames | 0);
     this.move = null;
     this.moveFrame = 0;
     this.usedHits.clear();
