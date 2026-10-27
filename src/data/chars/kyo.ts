@@ -52,19 +52,19 @@ export const KYO: CharDef = {
       hit('h1', { box: { x: 4, y: -66, w: 24, h: 36 }, frames: [3, 7], damage: 110, hitStun: 30, blockStun: 0, hitstop: 14, pushback: 0, knockdown: 'slam' }),
     ], { input: { motion: '4', buttons: ['C'] } }),
 
-    '2A': mv('2A', '蹲轻拳', 'crouchPunch', 12, 'normal', [
+    '2A': mv('2A', '蹲轻拳', 'kyocrouchpunch', 12, 'normal', [
       hit('h1', { box: { x: 10, y: -42, w: 24, h: 10 }, frames: [3, 5], damage: 22, hitStun: 12, blockStun: 7, hitstop: 4 }),
     ], { cancel: { onHit: ['2B', '236A', '236C'] } }),
 
-    '2B': mv('2B', '蹲轻脚', 'crouchKick', 15, 'normal', [
+    '2B': mv('2B', '蹲轻脚', 'kyocrouchkick', 15, 'normal', [
       hit('h1', { box: { x: 8, y: -14, w: 30, h: 10 }, frames: [4, 7], damage: 26, hitStun: 13, blockStun: 8, hitstop: 5, guard: 'low', level: 'low' }),
     ], { cancel: { onHit: ['2B', '5B', '236A', '236C'] } }),
 
-    '2C': mv('2C', '蹲重拳', 'crouchPunch', 24, 'normal', [
+    '2C': mv('2C', '蹲重拳', 'kyocrouchpunch', 24, 'normal', [
       hit('h1', { box: { x: 8, y: -68, w: 28, h: 22 }, frames: [7, 10], damage: 68, hitStun: 18, blockStun: 12, hitstop: 9 }),
     ], { cancel: { onHit: SPECIAL_CANCELS } }),
 
-    '2D': mv('2D', '扫腿', 'crouchKick', 30, 'normal', [
+    '2D': mv('2D', '扫腿', 'kyocrouchkick', 30, 'normal', [
       hit('h1', {
         box: { x: 8, y: -12, w: 36, h: 12 },
         frames: [8, 11],
@@ -127,7 +127,7 @@ export const KYO: CharDef = {
       }),
     ], { input: { motion: '6', buttons: ['B'] }, cancel: { onHit: ['236A', '236C'] } }),
 
-    '3D': mv('3D', '外式・奈落払い', 'crouchKick', 32, 'command', [
+    '3D': mv('3D', '外式・奈落払い', 'kyocrouchkick', 32, 'command', [
       hit('h1', {
         box: { x: 10, y: -10, w: 34, h: 12 },
         frames: [9, 12],

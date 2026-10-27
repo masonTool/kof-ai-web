@@ -48,19 +48,19 @@ export const IORI: CharDef = {
       hit('h1', { box: { x: 4, y: -66, w: 24, h: 36 }, frames: [3, 7], damage: 105, hitStun: 30, blockStun: 0, hitstop: 14, pushback: 0, knockdown: 'slam' }),
     ], { input: { motion: '4', buttons: ['C'] } }),
 
-    '2A': mv('2A', '蹲轻拳', 'crouchPunch', 12, 'normal', [
+    '2A': mv('2A', '蹲轻拳', 'ioricrouchpunch', 12, 'normal', [
       hit('h1', { box: { x: 10, y: -42, w: 24, h: 10 }, frames: [3, 5], damage: 22, hitStun: 12, blockStun: 7, hitstop: 4 }),
     ], { cancel: { onHit: ['2B', '236A', '214A'] } }),
 
-    '2B': mv('2B', '蹲轻脚', 'crouchKick', 15, 'normal', [
+    '2B': mv('2B', '蹲轻脚', 'ioricrouchkick', 15, 'normal', [
       hit('h1', { box: { x: 8, y: -14, w: 30, h: 10 }, frames: [4, 7], damage: 26, guard: 'low', level: 'low' }),
     ], { cancel: { onHit: ['2B', '5B', ...CANCELS] } }),
 
-    '2C': mv('2C', '蹲重拳', 'crouchPunch', 24, 'normal', [
+    '2C': mv('2C', '蹲重拳', 'ioricrouchpunch', 24, 'normal', [
       hit('h1', { box: { x: 8, y: -68, w: 28, h: 22 }, frames: [7, 10], damage: 68, hitStun: 18, blockStun: 12, hitstop: 9 }),
     ], { cancel: { onHit: CANCELS } }),
 
-    '2D': mv('2D', '扫腿', 'crouchKick', 30, 'normal', [
+    '2D': mv('2D', '扫腿', 'ioricrouchkick', 30, 'normal', [
       hit('h1', {
         box: { x: 8, y: -12, w: 36, h: 12 },
         frames: [8, 11],

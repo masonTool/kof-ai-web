@@ -303,3 +303,4 @@
 - [x] T282 正常技专属化 22/27：Billy/Eiji/Shingo/Yashiro
 - [x] T283 正常技专属化收官：Shermie/Chris/Goenitz/Orochi；29 角色全部覆盖（变体继承已验证）
 - [x] T284 轻攻击专属化验证（4/27）：京/八神/红丸/大门 的 5A/5B
+- [x] T285 蹲攻击专属化 4/27（京/八神/红丸/大门）+ 修 EXCLUSIVE_OWNER 漏登记（影响轻攻击批次）

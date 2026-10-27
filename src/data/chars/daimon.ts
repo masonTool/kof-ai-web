@@ -38,19 +38,19 @@ export const DAIMON: CharDef = {
       hit('h1', { box: { x: 12, y: -74, w: 34, h: 16 }, frames: [10, 13], damage: 84, hitStun: 19, blockStun: 13, hitstop: 10, level: 'high' }),
     ], { cancel: { onHit: CANCELS } }),
 
-    '2A': mv('2A', '蹲轻拳', 'crouchPunch', 13, 'normal', [
+    '2A': mv('2A', '蹲轻拳', 'daimoncrouchpunch', 13, 'normal', [
       hit('h1', { box: { x: 10, y: -44, w: 24, h: 10 }, frames: [4, 6], damage: 24, hitstop: 4 }),
     ], { cancel: { onHit: ['2B', '214A'] } }),
 
-    '2B': mv('2B', '蹲轻脚', 'crouchKick', 16, 'normal', [
+    '2B': mv('2B', '蹲轻脚', 'daimoncrouchkick', 16, 'normal', [
       hit('h1', { box: { x: 8, y: -16, w: 32, h: 10 }, frames: [5, 8], damage: 28, guard: 'low', level: 'low' }),
     ], { cancel: { onHit: ['214A', '63214B'] } }),
 
-    '2C': mv('2C', '蹲重拳', 'crouchPunch', 26, 'normal', [
+    '2C': mv('2C', '蹲重拳', 'daimoncrouchpunch', 26, 'normal', [
       hit('h1', { box: { x: 8, y: -70, w: 28, h: 26 }, frames: [8, 11], damage: 74, hitStun: 19, blockStun: 12, hitstop: 10 }),
     ], { cancel: { onHit: CANCELS } }),
 
-    '2D': mv('2D', '扫腿', 'crouchKick', 32, 'normal', [
+    '2D': mv('2D', '扫腿', 'daimoncrouchkick', 32, 'normal', [
       hit('h1', {
         box: { x: 8, y: -14, w: 38, h: 12 },
         frames: [9, 12],

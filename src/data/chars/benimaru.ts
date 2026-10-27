@@ -37,19 +37,19 @@ export const BENIMARU: CharDef = {
       hit('h1', { box: { x: 12, y: -72, w: 36, h: 14 }, frames: [9, 12], damage: 76, hitStun: 18, blockStun: 12, hitstop: 9, level: 'high' }),
     ], { cancel: { onHit: CANCELS } }),
 
-    '2A': mv('2A', '蹲轻拳', 'crouchPunch', 12, 'normal', [
+    '2A': mv('2A', '蹲轻拳', 'benicrouchpunch', 12, 'normal', [
       hit('h1', { box: { x: 10, y: -42, w: 24, h: 10 }, frames: [3, 5], damage: 20, hitstop: 4 }),
     ], { cancel: { onHit: ['2B', '236A'] } }),
 
-    '2B': mv('2B', '蹲轻脚', 'crouchKick', 14, 'normal', [
+    '2B': mv('2B', '蹲轻脚', 'benicrouchkick', 14, 'normal', [
       hit('h1', { box: { x: 8, y: -14, w: 32, h: 10 }, frames: [4, 7], damage: 24, guard: 'low', level: 'low' }),
     ], { cancel: { onHit: ['2B', '236A', '63214B'] } }),
 
-    '2C': mv('2C', '蹲重拳', 'crouchPunch', 24, 'normal', [
+    '2C': mv('2C', '蹲重拳', 'benicrouchpunch', 24, 'normal', [
       hit('h1', { box: { x: 8, y: -68, w: 26, h: 24 }, frames: [7, 10], damage: 66, hitStun: 18, blockStun: 12, hitstop: 9 }),
     ], { cancel: { onHit: CANCELS } }),
 
-    '2D': mv('2D', '扫腿', 'crouchKick', 30, 'normal', [
+    '2D': mv('2D', '扫腿', 'benicrouchkick', 30, 'normal', [
       hit('h1', {
         box: { x: 8, y: -12, w: 36, h: 12 },
         frames: [8, 11],

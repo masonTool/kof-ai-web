@@ -57,6 +57,15 @@ const FLASH_ANIMS = new Set(['hit']);
  * 运行时下标由 `poseFrameIndex()` 给，帧数少了会自己循环回来（出拳就是"收-出-收"）。
  */
 const ANIMS = {
+  // 蹲攻击专属（2A~2D）：现在全员共用 1 帧的 crouchPunch/crouchKick，连动作都没有
+  kyocrouchpunch: ['kyocrouchpunchout'],
+  kyocrouchkick: ['kyocrouchkickout'],
+  ioricrouchpunch: ['ioricrouchpunchout'],
+  ioricrouchkick: ['ioricrouchkickout'],
+  benicrouchpunch: ['benicrouchpunchout'],
+  benicrouchkick: ['benicrouchkickout'],
+  daimoncrouchpunch: ['daimoncrouchpunchout'],
+  daimoncrouchkick: ['daimoncrouchkickout'],
   // 轻攻击专属（5A/5B）：幅度小、节奏快，起手帧同样复用 punchwindup/kickwindup
   kyolightpunch: ['punchwindup', 'kyolightpunchout', 'kyolightpunchout'],
   kyolightkick: ['kickwindup', 'kyolightkickout', 'kyolightkickout'],
@@ -498,6 +507,10 @@ const scale = (CHAR_H * RES) / refH;
 const HEIGHT_TARGET = {
   crouch: 64,
   crouchPunch: 66,
+  kyocrouchpunch: 66, kyocrouchkick: 58,
+  ioricrouchpunch: 66, ioricrouchkick: 58,
+  benicrouchpunch: 66, benicrouchkick: 58,
+  daimoncrouchpunch: 66, daimoncrouchkick: 58,
   crouchKick: 58,
   landing: [60, 72], // 蹲到底 → 回弹
   lose: [62, 40], // 挨打 → 跪地（越跪越矮）
@@ -524,6 +537,14 @@ const HEIGHT_TARGET = {
  * 导致图集一直是旧的（art:check 只校验通用动画，发现不了）。
  */
 const EXCLUSIVE_OWNER = {
+  kyocrouchpunch: 'kyo', kyocrouchkick: 'kyo',
+  ioricrouchpunch: 'iori', ioricrouchkick: 'iori',
+  benicrouchpunch: 'benimaru', benicrouchkick: 'benimaru',
+  daimoncrouchpunch: 'daimon', daimoncrouchkick: 'daimon',
+  kyolightpunch: 'kyo', kyolightkick: 'kyo',
+  iorilightpunch: 'iori', iorilightkick: 'iori',
+  benilightpunch: 'benimaru', benilightkick: 'benimaru',
+  daimonlightpunch: 'daimon', daimonlightkick: 'daimon',
   kyspecial1: 'kyo', kyspecial2: 'kyo', kyspecial3: 'kyo', kysuper: 'kyo',
   iorispecial1: 'iori', iorispecial2: 'iori', iorispecial3: 'iori', iorisuper: 'iori',
   terryspecial1: 'terry', terryspecial2: 'terry', terryspecial3: 'terry', terrysuper: 'terry',

@@ -1045,6 +1045,54 @@ export const POSE_LIBRARY: Record<string, Pose> = {
     exclusive: 'daimon',
     frames: [f({ head: p(4, -63), neck: p(4, -55), hip: p(0, -34), legFront: [p(16, -32), p(26, -26)], legBack: [p(-8, -24), p(-8, -4)] }), f({ head: p(4, -63), neck: p(4, -55), hip: p(0, -34), legFront: [p(16, -32), p(26, -26)], legBack: [p(-8, -24), p(-8, -4)] }), f({ head: p(4, -63), neck: p(4, -55), hip: p(0, -34), legFront: [p(16, -32), p(26, -26)], legBack: [p(-8, -24), p(-8, -4)] })],
   },
+  kyocrouchpunch: {
+    frameDuration: 1,
+    loop: false,
+    exclusive: 'kyo',
+    frames: [f({ head: p(4, -54), neck: p(4, -46), hip: p(-1, -26), armFront: [p(14, -44), p(26, -42)], armBack: [p(-8, -40), p(-12, -34)] })],
+  },
+  kyocrouchkick: {
+    frameDuration: 1,
+    loop: false,
+    exclusive: 'kyo',
+    frames: [f({ head: p(5, -50), neck: p(5, -42), hip: p(-1, -24), legFront: [p(16, -16), p(30, -8)], legBack: [p(-10, -26), p(-14, -14)] })],
+  },
+  ioricrouchpunch: {
+    frameDuration: 1,
+    loop: false,
+    exclusive: 'iori',
+    frames: [f({ head: p(6, -54), neck: p(6, -46), hip: p(0, -26), armFront: [p(16, -44), p(28, -40)], armBack: [p(-10, -40), p(-14, -34)] })],
+  },
+  ioricrouchkick: {
+    frameDuration: 1,
+    loop: false,
+    exclusive: 'iori',
+    frames: [f({ head: p(6, -48), neck: p(6, -40), hip: p(0, -22), legFront: [p(18, -14), p(32, -6)], legBack: [p(-10, -24), p(-14, -12)] })],
+  },
+  benicrouchpunch: {
+    frameDuration: 1,
+    loop: false,
+    exclusive: 'benimaru',
+    frames: [f({ head: p(3, -56), neck: p(3, -48), hip: p(-1, -28), armFront: [p(14, -46), p(24, -44)], armBack: [p(-8, -42), p(-12, -36)] })],
+  },
+  benicrouchkick: {
+    frameDuration: 1,
+    loop: false,
+    exclusive: 'benimaru',
+    frames: [f({ head: p(3, -52), neck: p(3, -44), hip: p(-1, -26), legFront: [p(14, -18), p(26, -12)], legBack: [p(-8, -26), p(-12, -14)] })],
+  },
+  daimoncrouchpunch: {
+    frameDuration: 1,
+    loop: false,
+    exclusive: 'daimon',
+    frames: [f({ head: p(4, -50), neck: p(4, -42), hip: p(0, -24), armFront: [p(14, -40), p(28, -38)], armBack: [p(2, -40), p(16, -38)] })],
+  },
+  daimoncrouchkick: {
+    frameDuration: 1,
+    loop: false,
+    exclusive: 'daimon',
+    frames: [f({ head: p(5, -46), neck: p(5, -38), hip: p(0, -22), legFront: [p(14, -14), p(28, -6)], legBack: [p(-10, -22), p(-14, -10)] })],
+  },
   /** 升龙系：整个人向上冲，手臂上举 */
   specialUppercut: {
     frameDuration: 1,
