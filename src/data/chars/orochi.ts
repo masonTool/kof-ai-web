@@ -28,7 +28,7 @@ export const OROCHI: CharDef = {
   push: { w: 38 },
   boss: { damageTaken: 0.85, meterRegen: 0.5 },
   moves: {
-    ...buildNormals({ power: 1.18, speed: 1.12, reach: 1.2, cancels: CANCELS, anim: { crouchPunch: 'orochicrouchpunch', crouchKick: 'orochicrouchkick', heavyPunch: 'orochiheavypunch', heavyKick: 'orochiheavykick' } }),
+    ...buildNormals({ power: 1.18, speed: 1.12, reach: 1.2, cancels: CANCELS, anim: { jump: 'orochijumpattack', crouchPunch: 'orochicrouchpunch', crouchKick: 'orochicrouchkick', heavyPunch: 'orochiheavypunch', heavyKick: 'orochiheavykick' } }),
 
     // ---------------------------------------------------------------- 必杀技
     // 空間断ち：极长的横向判定（半屏）

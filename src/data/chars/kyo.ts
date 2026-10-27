@@ -79,15 +79,15 @@ export const KYO: CharDef = {
     ], { cancel: { onHit: ['236236P', '236236AC'] } }),
 
     // ---------------------------------------------------------------- 空中技
-    'jA': mv('jA', '空中轻拳', 'jumpAttack', 20, 'normal', [
+    'jA': mv('jA', '空中轻拳', 'kyojumpattack', 20, 'normal', [
       hit('h1', { box: { x: 8, y: -52, w: 26, h: 12 }, frames: [4, 8], damage: 24, guard: 'overhead', level: 'overhead' }),
     ], { airborne: true, landingLag: 4 }),
 
-    'jB': mv('jB', '空中轻脚', 'jumpAttack', 22, 'normal', [
+    'jB': mv('jB', '空中轻脚', 'kyojumpattack', 22, 'normal', [
       hit('h1', { box: { x: 10, y: -34, w: 28, h: 12 }, frames: [5, 9], damage: 30, guard: 'overhead', level: 'overhead' }),
     ], { airborne: true, landingLag: 4 }),
 
-    'jC': mv('jC', '空中重拳', 'jumpAttack', 26, 'normal', [
+    'jC': mv('jC', '空中重拳', 'kyojumpattack', 26, 'normal', [
       hit('h1', {
         box: { x: 10, y: -56, w: 30, h: 16 },
         frames: [6, 10],
@@ -100,7 +100,7 @@ export const KYO: CharDef = {
       }),
     ], { airborne: true, landingLag: 6 }),
 
-    'jD': mv('jD', '空中重脚', 'jumpAttack', 28, 'normal', [
+    'jD': mv('jD', '空中重脚', 'kyojumpattack', 28, 'normal', [
       hit('h1', {
         box: { x: 12, y: -40, w: 32, h: 16 },
         frames: [7, 11],

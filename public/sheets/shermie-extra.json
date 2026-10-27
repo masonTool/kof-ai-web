@@ -4,9 +4,19 @@
  "height": 28393,
  "scale": 0.125,
  "anims": {
-  "shermiecrouchpunch": [
+  "shermiejumpattack": [
    {
     "x": 0,
+    "y": 0,
+    "w": 359,
+    "h": 672,
+    "ox": -204,
+    "oy": -672
+   }
+  ],
+  "shermiecrouchpunch": [
+   {
+    "x": 360,
     "y": 0,
     "w": 396,
     "h": 528,
@@ -16,7 +26,7 @@
   ],
   "shermiecrouchkick": [
    {
-    "x": 397,
+    "x": 757,
     "y": 0,
     "w": 399,
     "h": 464,
@@ -26,7 +36,7 @@
   ],
   "shermieheavypunch": [
    {
-    "x": 797,
+    "x": 1157,
     "y": 0,
     "w": 356,
     "h": 672,
@@ -34,7 +44,7 @@
     "oy": -672
    },
    {
-    "x": 1154,
+    "x": 1514,
     "y": 0,
     "w": 459,
     "h": 672,

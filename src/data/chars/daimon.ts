@@ -64,19 +64,19 @@ export const DAIMON: CharDef = {
       }),
     ], { cancel: { onHit: ['236236A'] } }),
 
-    'jA': mv('jA', '空中轻拳', 'jumpAttack', 22, 'normal', [
+    'jA': mv('jA', '空中轻拳', 'daimonjumpattack', 22, 'normal', [
       hit('h1', { box: { x: 8, y: -54, w: 26, h: 12 }, frames: [5, 9], damage: 26, guard: 'overhead', level: 'overhead' }),
     ], { airborne: true, landingLag: 5 }),
 
-    'jB': mv('jB', '空中轻脚', 'jumpAttack', 24, 'normal', [
+    'jB': mv('jB', '空中轻脚', 'daimonjumpattack', 24, 'normal', [
       hit('h1', { box: { x: 10, y: -38, w: 28, h: 14 }, frames: [6, 10], damage: 32, guard: 'overhead', level: 'overhead' }),
     ], { airborne: true, landingLag: 5 }),
 
-    'jC': mv('jC', '空中重拳', 'jumpAttack', 28, 'normal', [
+    'jC': mv('jC', '空中重拳', 'daimonjumpattack', 28, 'normal', [
       hit('h1', { box: { x: 10, y: -58, w: 30, h: 18 }, frames: [7, 11], damage: 66, guard: 'overhead', level: 'overhead', hitStun: 17, hitstop: 9 }),
     ], { airborne: true, landingLag: 7 }),
 
-    'jD': mv('jD', '空中重脚', 'jumpAttack', 30, 'normal', [
+    'jD': mv('jD', '空中重脚', 'daimonjumpattack', 30, 'normal', [
       hit('h1', { box: { x: 12, y: -44, w: 32, h: 18 }, frames: [8, 12], damage: 70, guard: 'overhead', level: 'overhead', hitStun: 17, hitstop: 9 }),
     ], { airborne: true, landingLag: 7 }),
 

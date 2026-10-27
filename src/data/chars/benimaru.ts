@@ -63,19 +63,19 @@ export const BENIMARU: CharDef = {
       }),
     ], { cancel: { onHit: ['236236A'] } }),
 
-    'jA': mv('jA', '空中轻拳', 'jumpAttack', 20, 'normal', [
+    'jA': mv('jA', '空中轻拳', 'benimarujumpattack', 20, 'normal', [
       hit('h1', { box: { x: 8, y: -52, w: 26, h: 12 }, frames: [4, 8], damage: 24, guard: 'overhead', level: 'overhead' }),
     ], { airborne: true, landingLag: 4 }),
 
-    'jB': mv('jB', '空中轻脚', 'jumpAttack', 22, 'normal', [
+    'jB': mv('jB', '空中轻脚', 'benimarujumpattack', 22, 'normal', [
       hit('h1', { box: { x: 10, y: -36, w: 28, h: 12 }, frames: [5, 9], damage: 28, guard: 'overhead', level: 'overhead' }),
     ], { airborne: true, landingLag: 4 }),
 
-    'jC': mv('jC', '空中重拳', 'jumpAttack', 26, 'normal', [
+    'jC': mv('jC', '空中重拳', 'benimarujumpattack', 26, 'normal', [
       hit('h1', { box: { x: 10, y: -56, w: 28, h: 16 }, frames: [6, 10], damage: 58, guard: 'overhead', level: 'overhead', hitStun: 16, hitstop: 8 }),
     ], { airborne: true, landingLag: 6 }),
 
-    'jD': mv('jD', '空中重脚', 'jumpAttack', 28, 'normal', [
+    'jD': mv('jD', '空中重脚', 'benimarujumpattack', 28, 'normal', [
       hit('h1', { box: { x: 12, y: -42, w: 30, h: 16 }, frames: [7, 11], damage: 62, guard: 'overhead', level: 'overhead', hitStun: 16, hitstop: 8 }),
     ], { airborne: true, landingLag: 6 }),
 

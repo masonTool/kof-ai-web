@@ -18,7 +18,7 @@ export const KENSOU: CharDef = {
   boxes: standardBoxes(),
   push: { w: 34 },
   moves: {
-    ...buildNormals({ power: 1.0, speed: 0.98, reach: 1.0, cancels: CANCELS, anim: { crouchPunch: 'kensoucrouchpunch', crouchKick: 'kensoucrouchkick', heavyPunch: 'kensouheavypunch', heavyKick: 'kensouheavykick' } }),
+    ...buildNormals({ power: 1.0, speed: 0.98, reach: 1.0, cancels: CANCELS, anim: { jump: 'kensoujumpattack', crouchPunch: 'kensoucrouchpunch', crouchKick: 'kensoucrouchkick', heavyPunch: 'kensouheavypunch', heavyKick: 'kensouheavykick' } }),
 
     // ---------------------------------------------------------------- 必杀技
     // 超球弾：气弹

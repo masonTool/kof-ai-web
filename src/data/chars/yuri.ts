@@ -22,7 +22,7 @@ export const YURI: CharDef = {
   },
   push: { w: 32 },
   moves: {
-    ...buildNormals({ power: 0.92, speed: 0.9, reach: 0.95, cancels: CANCELS, anim: { crouchPunch: 'yuricrouchpunch', crouchKick: 'yuricrouchkick', heavyPunch: 'yuriheavypunch', heavyKick: 'yuriheavykick' } }),
+    ...buildNormals({ power: 0.92, speed: 0.9, reach: 0.95, cancels: CANCELS, anim: { jump: 'yurijumpattack', crouchPunch: 'yuricrouchpunch', crouchKick: 'yuricrouchkick', heavyPunch: 'yuriheavypunch', heavyKick: 'yuriheavykick' } }),
 
     // ---------------------------------------------------------------- 必杀技
     // 虎煌拳：小型气弹

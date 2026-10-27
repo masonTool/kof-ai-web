@@ -18,7 +18,7 @@ export const JOE: CharDef = {
   boxes: standardBoxes(),
   push: { w: 34 },
   moves: {
-    ...buildNormals({ power: 1.04, speed: 0.98, reach: 1.02, cancels: CANCELS, anim: { crouchPunch: 'joecrouchpunch', crouchKick: 'joecrouchkick' } }),
+    ...buildNormals({ power: 1.04, speed: 0.98, reach: 1.02, cancels: CANCELS, anim: { jump: 'joejumpattack', crouchPunch: 'joecrouchpunch', crouchKick: 'joecrouchkick' } }),
 
     // 指令技：膝蹴り（中段）
     '6B': mv('6B', '膝蹴り', 'kickLight', 28, 'command', [

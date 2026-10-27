@@ -24,7 +24,7 @@ export const GOENITZ: CharDef = {
   boss: { damageTaken: 0.8, meterRegen: 0.35 },
   moves: {
     // 大判定、慢收招
-    ...buildNormals({ power: 1.12, speed: 1.1, reach: 1.16, cancels: CANCELS, anim: { crouchPunch: 'goenitzcrouchpunch', crouchKick: 'goenitzcrouchkick', heavyPunch: 'goenitzheavypunch', heavyKick: 'goenitzheavykick' } }),
+    ...buildNormals({ power: 1.12, speed: 1.1, reach: 1.16, cancels: CANCELS, anim: { jump: 'goenitzjumpattack', crouchPunch: 'goenitzcrouchpunch', crouchKick: 'goenitzcrouchkick', heavyPunch: 'goenitzheavypunch', heavyKick: 'goenitzheavykick' } }),
 
     // ---------------------------------------------------------------- 必杀技
     // ミズチ：长判定风刃突进
