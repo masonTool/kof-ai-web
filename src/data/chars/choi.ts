@@ -27,7 +27,7 @@ export const CHOI: CharDef = {
 
     // ---------------------------------------------------------------- 必杀技
     // 旋風斬：转着往前冲（多段）
-    '236A': mv('236A', '旋風斬', 'kickLight', 48, 'special', [
+    '236A': mv('236A', '旋風斬', 'choispecial1', 48, 'special', [
       hit('h1', { box: { x: 8, y: -60, w: 30, h: 30 }, frames: [8, 11], damage: 26, hitStun: 14, hitstop: 6, meterGain: 4 }),
       hit('h2', { box: { x: 8, y: -60, w: 30, h: 30 }, frames: [14, 17], damage: 24, hitStun: 14, hitstop: 6, meterGain: 4 }),
       hit('h3', { box: { x: 8, y: -62, w: 32, h: 32 }, frames: [20, 23], damage: 24, hitStun: 14, hitstop: 6, meterGain: 4 }),
@@ -43,7 +43,7 @@ export const CHOI: CharDef = {
     ], { input: { motion: '236', buttons: ['A'] }, travel: 82, travelFrames: 28 }),
 
     // 飛翔空裂斬：对空上冲（爪）
-    '623A': mv('623A', '飛翔空裂斬', 'kickLight', 40, 'special', [
+    '623A': mv('623A', '飛翔空裂斬', 'choispecial2', 40, 'special', [
       hit('h1', { box: { x: 4, y: -78, w: 26, h: 46 }, frames: [4, 8], damage: 28, hitStun: 16, hitstop: 6, meterGain: 5 }),
       hit('h2', {
         box: { x: 4, y: -84, w: 28, h: 56 },
@@ -57,7 +57,7 @@ export const CHOI: CharDef = {
     ], { input: { motion: '623', buttons: ['A'] }, invuln: [{ frames: [1, 5], kind: 'full' }] }),
 
     // 疾風斬：低空突进（下段）
-    '214A': mv('214A', '疾風斬', 'crouchKick', 38, 'special', [
+    '214A': mv('214A', '疾風斬', 'choispecial3', 38, 'special', [
       hit('h1', {
         box: { x: 10, y: -22, w: 32, h: 18 },
         frames: [10, 14],
@@ -73,7 +73,7 @@ export const CHOI: CharDef = {
     ], { input: { motion: '214', buttons: ['A'] }, travel: 72, travelFrames: 16 }),
 
     // ---------------------------------------------------------------- 超必杀
-    '236236A': mv('236236A', '真！超絶竜巻斬', 'special', 70, 'super', [
+    '236236A': mv('236236A', '真！超絶竜巻斬', 'choisuper', 70, 'super', [
       hit('h1', { box: { x: 8, y: -62, w: 32, h: 34 }, frames: [8, 11], damage: 28, hitStun: 15, hitstop: 6, meterGain: 0 }),
       hit('h2', { box: { x: 8, y: -62, w: 32, h: 34 }, frames: [15, 18], damage: 26, hitStun: 15, hitstop: 6, meterGain: 0 }),
       hit('h3', { box: { x: 8, y: -66, w: 34, h: 38 }, frames: [22, 25], damage: 26, hitStun: 15, hitstop: 6, meterGain: 0 }),
@@ -89,7 +89,7 @@ export const CHOI: CharDef = {
       }),
     ], { input: { motion: '236236', buttons: ['A'] }, meterCost: 50, travel: 66, travelFrames: 16 }),
 
-    '236236AC': mv('236236AC', '真！超絶竜巻斬 MAX', 'special', 82, 'super', [
+    '236236AC': mv('236236AC', '真！超絶竜巻斬 MAX', 'choisuper', 82, 'super', [
       hit('h1', { box: { x: 8, y: -62, w: 34, h: 36 }, frames: [6, 9], damage: 26, hitStun: 15, hitstop: 5, meterGain: 0 }),
       hit('h2', { box: { x: 8, y: -62, w: 34, h: 36 }, frames: [12, 15], damage: 24, hitStun: 15, hitstop: 5, meterGain: 0 }),
       hit('h3', { box: { x: 8, y: -66, w: 36, h: 40 }, frames: [18, 21], damage: 24, hitStun: 15, hitstop: 5, meterGain: 0 }),

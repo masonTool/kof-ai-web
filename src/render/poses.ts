@@ -628,6 +628,15 @@ export const POSE_LIBRARY: Record<string, Pose> = {
   chinspecial2: { frameDuration: 1, loop: false, exclusive: 'chin', frames: [f({ head: p(-6, -50), neck: p(-6, -44), hip: p(-4, -26), legFront: [p(14, -14), p(24, -6)], armBack: [p(-12, -34), p(-18, -28)] })] },
   chinspecial3: { frameDuration: 1, loop: false, exclusive: 'chin', frames: [f({ head: p(5, -58), neck: p(4, -50), hip: p(-2, -30), armFront: [p(12, -44), p(18, -36)], armBack: [p(-10, -46), p(-14, -40)] })] },
   chinsuper: { frameDuration: 1, loop: false, exclusive: 'chin', frames: [f({ head: p(3, -58), neck: p(3, -50), hip: p(0, -30), armFront: [p(18, -52), p(30, -48)], armBack: [p(-16, -52), p(-28, -48)] })] },
+  // Kim / Choi 专属必杀的兜底（key 与 anim 名一致）
+  kimspecial1: { frameDuration: 1, loop: false, exclusive: 'kim', frames: [f({ head: p(2, -66), neck: p(1, -56), hip: p(0, -36), legFront: [p(16, -62), p(22, -84)], legBack: [p(-6, -22), p(-6, -1)] })] },
+  kimspecial2: { frameDuration: 1, loop: false, exclusive: 'kim', frames: [f({ head: p(1, -74), neck: p(1, -64), hip: p(0, -41), legFront: [p(14, -58), p(18, -80)], legBack: [p(-8, -24), p(-8, -2)] })] },
+  kimspecial3: { frameDuration: 1, loop: false, exclusive: 'kim', frames: [f({ head: p(2, -70), neck: p(2, -60), hip: p(0, -40), legFront: [p(18, -50), p(28, -44)], legBack: [p(-10, -40), p(-14, -28)] })] },
+  kimsuper: { frameDuration: 1, loop: false, exclusive: 'kim', frames: [f({ head: p(3, -70), neck: p(2, -60), hip: p(0, -40), legFront: [p(22, -52), p(32, -46)], legBack: [p(-8, -26), p(-10, -8)] })] },
+  choispecial1: { frameDuration: 1, loop: false, exclusive: 'choi', frames: [f({ head: p(3, -64), neck: p(3, -54), hip: p(0, -34), armFront: [p(16, -54), p(26, -50)], armBack: [p(-12, -48), p(-20, -42)] })] },
+  choispecial2: { frameDuration: 1, loop: false, exclusive: 'choi', frames: [f({ head: p(1, -70), neck: p(1, -60), hip: p(0, -38), armFront: [p(14, -54), p(16, -72)], armBack: [p(-10, -50), p(-14, -42)] })] },
+  choispecial3: { frameDuration: 1, loop: false, exclusive: 'choi', frames: [f({ head: p(6, -52), neck: p(6, -44), hip: p(1, -26), armFront: [p(16, -38), p(28, -32)], armBack: [p(-10, -38), p(-18, -32)] })] },
+  choisuper: { frameDuration: 1, loop: false, exclusive: 'choi', frames: [f({ head: p(2, -62), neck: p(2, -52), hip: p(0, -32), armFront: [p(18, -52), p(30, -46)], armBack: [p(-16, -52), p(-28, -46)] })] },
   /** 升龙系：整个人向上冲，手臂上举 */
   specialUppercut: {
     frameDuration: 1,

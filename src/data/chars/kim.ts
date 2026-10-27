@@ -22,7 +22,7 @@ export const KIM: CharDef = {
 
     // ---------------------------------------------------------------- 必杀技
     // 半月斬：突进横踢
-    '236B': mv('236B', '半月斬', 'kickHeavy', 38, 'special', [
+    '236B': mv('236B', '半月斬', 'kimspecial1', 38, 'special', [
       hit('h1', {
         box: { x: 14, y: -64, w: 36, h: 20 },
         frames: [10, 14],
@@ -36,7 +36,7 @@ export const KIM: CharDef = {
     ], { input: { motion: '236', buttons: ['B'] }, travel: 66, travelFrames: 15 }),
 
     // 飛燕斬：跳起下劈（中段）
-    '214B': mv('214B', '飛燕斬', 'kickHeavy', 40, 'special', [
+    '214B': mv('214B', '飛燕斬', 'kimspecial2', 40, 'special', [
       hit('h1', {
         box: { x: 10, y: -66, w: 32, h: 26 },
         frames: [13, 17],
@@ -52,7 +52,7 @@ export const KIM: CharDef = {
     ], { input: { motion: '214', buttons: ['B'] } }),
 
     // 空連脚：对空连踢
-    '623B': mv('623B', '空連脚', 'kickHeavy', 42, 'special', [
+    '623B': mv('623B', '空連脚', 'kimspecial3', 42, 'special', [
       hit('h1', { box: { x: 6, y: -88, w: 28, h: 40 }, frames: [4, 8], damage: 30, hitStun: 16, hitstop: 6, meterGain: 5 }),
       hit('h2', { box: { x: 6, y: -92, w: 30, h: 50 }, frames: [10, 14], damage: 30, hitStun: 16, hitstop: 6, meterGain: 5 }),
       hit('h3', {
@@ -67,7 +67,7 @@ export const KIM: CharDef = {
     ], { input: { motion: '623', buttons: ['B'] }, invuln: [{ frames: [1, 5], kind: 'full' }] }),
 
     // ---------------------------------------------------------------- 超必杀
-    '236236B': mv('236236B', '鳳凰脚', 'special', 66, 'super', [
+    '236236B': mv('236236B', '鳳凰脚', 'kimsuper', 66, 'super', [
       hit('h1', { box: { x: 10, y: -72, w: 34, h: 30 }, frames: [8, 12], damage: 34, hitStun: 16, hitstop: 7, meterGain: 0 }),
       hit('h2', { box: { x: 10, y: -74, w: 36, h: 34 }, frames: [16, 20], damage: 32, hitStun: 16, hitstop: 7, meterGain: 0 }),
       hit('h3', { box: { x: 10, y: -76, w: 36, h: 40 }, frames: [24, 28], damage: 32, hitStun: 16, hitstop: 7, meterGain: 0 }),
@@ -83,7 +83,7 @@ export const KIM: CharDef = {
       }),
     ], { input: { motion: '236236', buttons: ['B'] }, meterCost: 50, travel: 50, travelFrames: 12 }),
 
-    '236236AC': mv('236236AC', '鳳凰脚 MAX', 'special', 78, 'super', [
+    '236236AC': mv('236236AC', '鳳凰脚 MAX', 'kimsuper', 78, 'super', [
       hit('h1', { box: { x: 10, y: -72, w: 36, h: 32 }, frames: [6, 9], damage: 30, hitStun: 16, hitstop: 6, meterGain: 0 }),
       hit('h2', { box: { x: 10, y: -74, w: 36, h: 36 }, frames: [13, 16], damage: 28, hitStun: 16, hitstop: 6, meterGain: 0 }),
       hit('h3', { box: { x: 10, y: -76, w: 38, h: 40 }, frames: [20, 23], damage: 28, hitStun: 16, hitstop: 6, meterGain: 0 }),
