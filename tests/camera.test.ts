@@ -428,9 +428,21 @@ describe('舞台轮换（之前 drawFrame 不传 stage，永远只有夜城）',
     expect(ids.size).toBeGreaterThan(1);
   });
 
-  it('五条舞台的 id 与底图对得上（有 id 没图等于画不出背景层）', () => {
+  it('舞台 id 的前五条顺序稳定（追加新舞台不影响既有选图）', () => {
     const ids = STAGES.map((s) => s.id);
-    expect(ids).toEqual(['skyline', 'valley', 'arena', 'harbor', 'snow']);
+    // 前 5 条是发布过的顺序，`stageForIndex()` 按取模选图，改了会换掉老存档的舞台
+    expect(ids.slice(0, 5)).toEqual(['skyline', 'valley', 'arena', 'harbor', 'snow']);
+    // 新增舞台的 id 不能重复
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it('新舞台没有底图也能跑（回落程序化绘制），底图缺失由 art:check 兜底', () => {
+    // 程序化舞台自带视差与天气层，底图只是加成；所以这里只断言"配置完整"
+    for (const s of STAGES) {
+      expect(s.horizon, s.id).toBeGreaterThan(0);
+      expect(s.buildings.length, s.id).toBeGreaterThan(0);
+      expect((s.distant ?? []).length, s.id).toBeGreaterThan(0);
+    }
   });
 });
 
