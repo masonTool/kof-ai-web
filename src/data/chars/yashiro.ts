@@ -23,7 +23,7 @@ export const YASHIRO: CharDef = {
 
     // ---------------------------------------------------------------- 必杀技
     // 強靭ダン：突进肩撞
-    '236A': mv('236A', '強靭ダン', 'punchHeavy', 38, 'special', [
+    '236A': mv('236A', '強靭ダン', 'yashirospecial1', 38, 'special', [
       hit('h1', {
         box: { x: 14, y: -64, w: 36, h: 24 },
         frames: [10, 14],
@@ -37,7 +37,7 @@ export const YASHIRO: CharDef = {
     ], { input: { motion: '236', buttons: ['A'] }, travel: 66, travelFrames: 15 }),
 
     // ミサイルマイト：跳起砸地（中段）
-    '214A': mv('214A', 'ミサイルマイト', 'punchHeavy', 42, 'special', [
+    '214A': mv('214A', 'ミサイルマイト', 'yashirospecial2', 42, 'special', [
       hit('h1', {
         box: { x: 10, y: -70, w: 38, h: 34 },
         frames: [14, 18],
@@ -53,7 +53,7 @@ export const YASHIRO: CharDef = {
     ], { input: { motion: '214', buttons: ['A'] } }),
 
     // ジェットカウンター：对空上捞
-    '623A': mv('623A', 'ジェットカウンター', 'punchHeavy', 40, 'special', [
+    '623A': mv('623A', 'ジェットカウンター', 'yashirospecial3', 40, 'special', [
       hit('h1', {
         box: { x: 6, y: -90, w: 30, h: 62 },
         frames: [5, 11],
@@ -67,7 +67,7 @@ export const YASHIRO: CharDef = {
     ], { input: { motion: '623', buttons: ['A'] }, invuln: [{ frames: [1, 5], kind: 'full' }] }),
 
     // ---------------------------------------------------------------- 超必杀
-    '236236A': mv('236236A', 'ミリオンスタンプ', 'special', 66, 'super', [
+    '236236A': mv('236236A', 'ミリオンスタンプ', 'yashirosuper', 66, 'super', [
       hit('h1', { box: { x: 10, y: -72, w: 40, h: 34 }, frames: [10, 14], damage: 38, hitStun: 17, hitstop: 7, meterGain: 0 }),
       hit('h2', { box: { x: 10, y: -74, w: 40, h: 38 }, frames: [20, 24], damage: 36, hitStun: 17, hitstop: 7, meterGain: 0 }),
       hit('h3', {
@@ -81,7 +81,7 @@ export const YASHIRO: CharDef = {
       }),
     ], { input: { motion: '236236', buttons: ['A'] }, meterCost: 50, travel: 46, travelFrames: 14 }),
 
-    '236236AC': mv('236236AC', 'ミリオンスタンプ MAX', 'special', 78, 'super', [
+    '236236AC': mv('236236AC', 'ミリオンスタンプ MAX', 'yashirosuper', 78, 'super', [
       hit('h1', { box: { x: 8, y: -74, w: 42, h: 36 }, frames: [8, 11], damage: 34, hitStun: 17, hitstop: 6, meterGain: 0 }),
       hit('h2', { box: { x: 8, y: -76, w: 42, h: 40 }, frames: [16, 19], damage: 32, hitStun: 17, hitstop: 6, meterGain: 0 }),
       hit('h3', { box: { x: 8, y: -78, w: 44, h: 42 }, frames: [24, 27], damage: 32, hitStun: 17, hitstop: 6, meterGain: 0 }),

@@ -22,7 +22,7 @@ export const SHERMIE: CharDef = {
 
     // ---------------------------------------------------------------- 必杀技
     // シェルミーフラッシュ：雷电突进
-    '236A': mv('236A', 'シェルミーフラッシュ', 'special', 38, 'special', [
+    '236A': mv('236A', 'シェルミーフラッシュ', 'shermiespecial1', 38, 'special', [
       hit('h1', {
         box: { x: 12, y: -66, w: 36, h: 30 },
         frames: [11, 15],
@@ -36,7 +36,7 @@ export const SHERMIE: CharDef = {
     ], { input: { motion: '236', buttons: ['A'] }, travel: 54, travelFrames: 15 }),
 
     // シェルミースパイラル：抓起来摔（不可防）
-    '63214B': mv('63214B', 'シェルミースパイラル', 'throwStart', 54, 'throw', [
+    '63214B': mv('63214B', 'シェルミースパイラル', 'shermiespecial2', 54, 'throw', [
       hit('h1', {
         box: { x: 4, y: -64, w: 32, h: 48 },
         frames: [8, 12],
@@ -51,7 +51,7 @@ export const SHERMIE: CharDef = {
     ], { input: { motion: '63214', buttons: ['B'] }, blockable: false }),
 
     // アクセルスピンナー：原地回旋踢
-    '214A': mv('214A', 'アクセルスピンナー', 'kickHeavy', 40, 'special', [
+    '214A': mv('214A', 'アクセルスピンナー', 'shermiespecial3', 40, 'special', [
       hit('h1', { box: { x: 10, y: -66, w: 32, h: 24 }, frames: [9, 12], damage: 30, hitStun: 15, hitstop: 6, meterGain: 5 }),
       hit('h2', {
         box: { x: 10, y: -70, w: 34, h: 30 },
@@ -65,7 +65,7 @@ export const SHERMIE: CharDef = {
     ], { input: { motion: '214', buttons: ['A'] } }),
 
     // ---------------------------------------------------------------- 超必杀
-    '236236A': mv('236236A', 'シェルミーパラダイス', 'throwStart', 70, 'super', [
+    '236236A': mv('236236A', 'シェルミーパラダイス', 'shermiesuper', 70, 'super', [
       hit('h1', {
         box: { x: 4, y: -66, w: 34, h: 50 },
         frames: [8, 12],
@@ -98,7 +98,7 @@ export const SHERMIE: CharDef = {
       }),
     ], { input: { motion: '236236', buttons: ['A'] }, meterCost: 100, blockable: false }),
 
-    '236236AC': mv('236236AC', 'シェルミーフラッシュ MAX', 'special', 64, 'super', [
+    '236236AC': mv('236236AC', 'シェルミーフラッシュ MAX', 'shermiesuper', 64, 'super', [
       hit('h1', { box: { x: 10, y: -70, w: 38, h: 34 }, frames: [8, 12], damage: 34, hitStun: 16, hitstop: 7, meterGain: 0 }),
       hit('h2', { box: { x: 10, y: -72, w: 40, h: 38 }, frames: [18, 22], damage: 32, hitStun: 16, hitstop: 7, meterGain: 0 }),
       hit('h3', {

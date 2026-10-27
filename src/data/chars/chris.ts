@@ -22,7 +22,7 @@ export const CHRIS: CharDef = {
 
     // ---------------------------------------------------------------- 必杀技
     // クリスフレイム：火焰弹（飞行道具）
-    '236A': mv('236A', 'クリスフレイム', 'special', 36, 'special', [], {
+    '236A': mv('236A', 'クリスフレイム', 'chrisspecial1', 36, 'special', [], {
       input: { motion: '236', buttons: ['A'] },
       projectile: {
         anim: 'クリスフレイム',
@@ -43,7 +43,7 @@ export const CHRIS: CharDef = {
     }),
 
     // スライディング：低身滑铲（下段）
-    '214B': mv('214B', 'スライディング', 'crouchKick', 34, 'special', [
+    '214B': mv('214B', 'スライディング', 'chrisspecial2', 34, 'special', [
       hit('h1', {
         box: { x: 10, y: -20, w: 34, h: 16 },
         frames: [9, 13],
@@ -59,7 +59,7 @@ export const CHRIS: CharDef = {
     ], { input: { motion: '214', buttons: ['B'] }, travel: 62, travelFrames: 14 }),
 
     // フレイムアッパー：对空火焰拳
-    '623A': mv('623A', 'フレイムアッパー', 'special', 38, 'special', [
+    '623A': mv('623A', 'フレイムアッパー', 'chrisspecial3', 38, 'special', [
       hit('h1', {
         box: { x: 6, y: -86, w: 28, h: 58 },
         frames: [4, 10],
@@ -73,7 +73,7 @@ export const CHRIS: CharDef = {
     ], { input: { motion: '623', buttons: ['A'] }, invuln: [{ frames: [1, 5], kind: 'full' }] }),
 
     // ---------------------------------------------------------------- 超必杀
-    '236236A': mv('236236A', 'クリスフレイム MAX', 'special', 64, 'super', [
+    '236236A': mv('236236A', 'クリスフレイム MAX', 'chrissuper', 64, 'super', [
       hit('h1', { box: { x: 10, y: -74, w: 36, h: 30 }, frames: [8, 11], damage: 28, hitStun: 16, hitstop: 6, meterGain: 0 }),
       hit('h2', { box: { x: 10, y: -76, w: 36, h: 34 }, frames: [15, 18], damage: 26, hitStun: 16, hitstop: 6, meterGain: 0 }),
       hit('h3', { box: { x: 10, y: -78, w: 38, h: 38 }, frames: [22, 25], damage: 26, hitStun: 16, hitstop: 6, meterGain: 0 }),
@@ -88,7 +88,7 @@ export const CHRIS: CharDef = {
       }),
     ], { input: { motion: '236236', buttons: ['A'] }, meterCost: 50, travel: 44, travelFrames: 12 }),
 
-    '236236AC': mv('236236AC', '炎の大蛇', 'special', 76, 'super', [], {
+    '236236AC': mv('236236AC', '炎の大蛇', 'chrissuper', 76, 'super', [], {
       input: { motion: '236236', buttons: ['A', 'C'] },
       meterCost: 100,
       projectile: {

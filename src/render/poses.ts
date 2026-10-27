@@ -655,6 +655,19 @@ export const POSE_LIBRARY: Record<string, Pose> = {
   shingospecial2: { frameDuration: 1, loop: false, exclusive: 'shingo', frames: [f({ head: p(-2, -70), neck: p(-2, -60), hip: p(0, -39), legFront: [p(18, -52), p(28, -48)], legBack: [p(-8, -24), p(-8, -2)] })] },
   shingospecial3: { frameDuration: 1, loop: false, exclusive: 'shingo', frames: [f({ head: p(2, -70), neck: p(2, -60), hip: p(0, -39), armFront: [p(10, -66), p(8, -80)], armBack: [p(-10, -50), p(-14, -42)] })] },
   shingosuper: { frameDuration: 1, loop: false, exclusive: 'shingo', frames: [f({ head: p(6, -68), neck: p(6, -58), hip: p(2, -37), armFront: [p(20, -56), p(32, -54)], armBack: [p(8, -56), p(20, -54)] })] },
+  // 三天王专属必杀的兜底（key 与 anim 名一致）
+  yashirospecial1: { frameDuration: 1, loop: false, exclusive: 'yashiro', frames: [f({ head: p(6, -68), neck: p(6, -58), hip: p(2, -37), armFront: [p(18, -56), p(30, -54)], armBack: [p(-10, -52), p(-16, -46)] })] },
+  yashirospecial2: { frameDuration: 1, loop: false, exclusive: 'yashiro', frames: [f({ head: p(5, -66), neck: p(5, -56), hip: p(1, -36), armFront: [p(10, -74), p(12, -90)], armBack: [p(-8, -50), p(-14, -42)] })] },
+  yashirospecial3: { frameDuration: 1, loop: false, exclusive: 'yashiro', frames: [f({ head: p(3, -68), neck: p(3, -58), hip: p(0, -37), armFront: [p(16, -58), p(28, -56)], armBack: [p(-10, -54), p(-16, -48)] })] },
+  yashirosuper: { frameDuration: 1, loop: false, exclusive: 'yashiro', frames: [f({ head: p(4, -58), neck: p(4, -50), hip: p(0, -30), armFront: [p(18, -46), p(30, -40)], armBack: [p(-16, -46), p(-28, -40)] })] },
+  shermiespecial1: { frameDuration: 1, loop: false, exclusive: 'shermie', frames: [f({ head: p(4, -70), neck: p(4, -60), hip: p(1, -39), armFront: [p(16, -58), p(30, -56)], armBack: [p(6, -58), p(20, -56)] })] },
+  shermiespecial2: { frameDuration: 1, loop: false, exclusive: 'shermie', frames: [f({ head: p(-4, -66), neck: p(-4, -56), hip: p(-2, -36), armFront: [p(12, -62), p(16, -78)], armBack: [p(-10, -56), p(-14, -72)] })] },
+  shermiespecial3: { frameDuration: 1, loop: false, exclusive: 'shermie', frames: [f({ head: p(2, -70), neck: p(1, -60), hip: p(0, -39), legFront: [p(20, -50), p(30, -44)], legBack: [p(-8, -26), p(-10, -8)] })] },
+  shermiesuper: { frameDuration: 1, loop: false, exclusive: 'shermie', frames: [f({ head: p(-6, -62), neck: p(-6, -54), hip: p(-3, -34), armFront: [p(10, -58), p(14, -74)], armBack: [p(-8, -54), p(-12, -70)] })] },
+  chrisspecial1: { frameDuration: 1, loop: false, exclusive: 'chris', frames: [f({ head: p(4, -70), neck: p(4, -60), hip: p(1, -38), armFront: [p(16, -58), p(30, -56)], armBack: [p(-10, -52), p(-16, -46)] })] },
+  chrisspecial2: { frameDuration: 1, loop: false, exclusive: 'chris', frames: [f({ head: p(8, -54), neck: p(8, -46), hip: p(2, -28), legFront: [p(20, -18), p(32, -8)], legBack: [p(-10, -16), p(-14, -2)] })] },
+  chrisspecial3: { frameDuration: 1, loop: false, exclusive: 'chris', frames: [f({ head: p(1, -74), neck: p(1, -64), hip: p(0, -41), armFront: [p(10, -66), p(8, -82)], armBack: [p(-10, -50), p(-14, -42)] })] },
+  chrissuper: { frameDuration: 1, loop: false, exclusive: 'chris', frames: [f({ head: p(-2, -70), neck: p(-2, -60), hip: p(0, -38), armFront: [p(14, -58), p(28, -54)], armBack: [p(-14, -58), p(-28, -54)] })] },
   /** 升龙系：整个人向上冲，手臂上举 */
   specialUppercut: {
     frameDuration: 1,

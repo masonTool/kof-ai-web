@@ -185,6 +185,18 @@ const ANIMS = {
   shingospecial2: ['shingokick'],
   shingospecial3: ['shingooniyaki'],
   shingosuper: ['shingosuper'],
+  yashirospecial1: ['yashirodan'],
+  yashirospecial2: ['yashiromissile'],
+  yashirospecial3: ['yashirojet'],
+  yashirosuper: ['yashirostamp'],
+  shermiespecial1: ['shermieflash'],
+  shermiespecial2: ['shermiespiral'],
+  shermiespecial3: ['shermieaccel'],
+  shermiesuper: ['shermieparadise'],
+  chrisspecial1: ['chrisflame'],
+  chrisspecial2: ['chrissliding'],
+  chrisspecial3: ['chrisupper'],
+  chrissuper: ['chrisorochi'],
   // 超必杀三段：起手（气汇聚）→ 蓄满（气浪最大）→ 释放收招
   superCharge: ['superchargewindup', 'supercharge', 'superchargerecover'],
   // 躺在地上：按"宽度"归一，锚点用包围盒中心（横躺的人没有"脚底"这个概念）
@@ -457,6 +469,9 @@ const EXCLUSIVE_OWNER = {
   billyspecial1: 'billy', billyspecial2: 'billy', billyspecial3: 'billy', billysuper: 'billy',
   eijispecial1: 'eiji', eijispecial2: 'eiji', eijispecial3: 'eiji', eijisuper: 'eiji',
   shingospecial1: 'shingo', shingospecial2: 'shingo', shingospecial3: 'shingo', shingosuper: 'shingo',
+  yashirospecial1: 'yashiro', yashirospecial2: 'yashiro', yashirospecial3: 'yashiro', yashirosuper: 'yashiro',
+  shermiespecial1: 'shermie', shermiespecial2: 'shermie', shermiespecial3: 'shermie', shermiesuper: 'shermie',
+  chrisspecial1: 'chris', chrisspecial2: 'chris', chrisspecial3: 'chris', chrissuper: 'chris',
 };
 
 const frames = {};
