@@ -41,6 +41,18 @@
 
 <!-- 实际归档放下面，最新的放最上面 -->
 
+## 批次 20261028-0013 · 2026-10-28 · 会话 59bce766
+
+**这批的目标**：自查上一批的误判并回滚。
+
+- [x] [T293] 回滚冗余的 `drawFrameData`（T292 是一次误判）
+  - **上一批我说错了**：声称 `showFrameData` 是"空开关、没有任何代码消费"——实际 `main.ts` 里一直有 `if (training.settings.showFrameData) drawTrainingOverlay(ctx, training.frameDataLines())`，而 `frameDataLines()` **内容比我的面板全得多**（招式名、moveFrame/total、**判定窗口**、输入、血量、气槽）
+  - **误判原因**：判断时用了 `grep -v "training.ts|settings.ts"`，把定义和消费一起排除掉了
+  - 做了什么：删掉 `drawFrameData()` 函数、main 里的调用、以及配套的 2 条测试；全量复查所有设置项的消费处（不再排除文件）
+  - **复查结果：没有空开关**（showBoxes 9 / showFrameData 7 / infiniteHp 7 / infiniteMeter 7 / autoReset 在 training.ts 内 / weatherFx 1 / fxIntensity 1，全部有实现）
+  - 验证：`npm run check` 回到 **1002 条全绿**
+  - 批次：20261028-0013
+
 ## 批次 20261028-0010 · 2026-10-28 · 会话 59bce766
 
 **这批的目标**：训练模式帧数面板。
@@ -280,18 +292,4 @@
   - 验证：打包 kyo 失败=0；`art:check` 通过；`npm run check` **995 条全绿**
   - **铺开计划**：剩余 106 个专属动作各补 1 张起手帧，按 4 个角色一批推进（约 2 小时）
   - 批次：20261027-0948
-
-## 批次 20261027-0911 · 2026-10-27 · 会话 59bce766
-
-**这批的目标**：最后两个 BOSS，动作专属化收官。
-
-- [x] [T271] Goenitz + Orochi 各 4 个必杀专属动作（**27/27 全部完成**）
-  - 做了什么：①`gen-poses.mjs` 加 8 条（Goenitz：半透明青白风刃/巨大旋风柱/上升气流/铺天盖地风暴；Orochi：纯白空间裂隙/地面白光柱/全身被光吞没/背后白色大蛇虚影）；②`build-sheet.mjs` 加两组 8 个动画 + `EXCLUSIVE_OWNER`；③`poses.ts` 加 8 个兜底；④两个角色数据各改 5 处
-  - **BOSS 的视觉语言刻意和普通角色反着来**：
-    - Goenitz 的风是**流动的、有形的、铺满画面的**（和火/电那种"贴在身上"的特效不同）
-    - Orochi 的光是**静止的、耀眼的、把人吞没的** —— `光の柱` 那张整个人几乎没入白光只剩轮廓；而且姿势**刻意不发力**（抬手即灭），和前面 25 个角色的"发力姿势"完全相反
-  - **意外之喜**：Orochi 超必杀 AI 真画出了**背后一条巨大的白色大蛇虚影**
-  - 出图受阻：连续 12 张（三天王）+ 8 张触发限流，`goenitzjorm`/`goenitzsuper`/orochi 全部失败；等 3 分钟后**逐个补跑（每次间隔 60 秒）全部成功**
-  - 验证：打包两个 BOSS 都检查了错误，失败=0；`art:check` 通过；`npm run check` **995 条全绿**
-  - 批次：20261027-0911
 
