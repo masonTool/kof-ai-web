@@ -315,3 +315,4 @@
 - [x] T294 音效盘点 + 补 whiff（挥空）：27 个音效里唯一一个定义了却从不触发的
 - [x] T295 有利帧显示：Fighter.stunTotal + frameDataLines 加「有利 +NF」
 - [x] T296 回滚骨架（src/net/rollback.ts）：保存输入+重放，rewindTo 后 hash 一致
+- [x] T297 图集体积优化 302MB → 157MB（-48%）：4096 宽 + WebP 无损；试过 PNG-8/Paeth/降 RES 均不可行
