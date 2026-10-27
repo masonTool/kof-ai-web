@@ -18,7 +18,7 @@ export const ROBERT: CharDef = {
   boxes: standardBoxes(),
   push: { w: 34 },
   moves: {
-    ...buildNormals({ power: 0.99, speed: 0.95, reach: 1.05, cancels: CANCELS, anim: { jump: 'robertjumpattack', crouchPunch: 'robertcrouchpunch', crouchKick: 'robertcrouchkick', heavyPunch: 'robertheavypunch', heavyKick: 'robertheavykick' } }),
+    ...buildNormals({ power: 0.99, speed: 0.95, reach: 1.05, cancels: CANCELS, anim: { punch: 'robertlightpunch', kick: 'robertlightkick', jump: 'robertjumpattack', crouchPunch: 'robertcrouchpunch', crouchKick: 'robertcrouchkick', heavyPunch: 'robertheavypunch', heavyKick: 'robertheavykick' } }),
     // 投技：← + C（不可防，只抓站立/蹲防的对手）
     '4C': mv('4C', '龙虎投', 'throwStart', 34, 'throw', [
       hit('h1', { box: { x: 4, y: -66, w: 24, h: 36 }, frames: [3, 7], damage: 105, hitStun: 30, blockStun: 0, hitstop: 14, pushback: 0, knockdown: 'slam' }),
