@@ -23,7 +23,7 @@ export const ATHENA: CharDef = {
   },
   push: { w: 32 },
   moves: {
-    ...buildNormals({ power: 0.9, speed: 0.92, reach: 0.94, cancels: CANCELS }),
+    ...buildNormals({ power: 0.9, speed: 0.92, reach: 0.94, cancels: CANCELS, anim: { heavyPunch: 'athenaheavypunch', heavyKick: 'athenaheavykick' } }),
     // 投技：← + C（不可防，只抓站立/蹲防的对手）
     '4C': mv('4C', '精神投', 'throwStart', 34, 'throw', [
       hit('h1', { box: { x: 4, y: -66, w: 24, h: 36 }, frames: [3, 7], damage: 105, hitStun: 30, blockStun: 0, hitstop: 14, pushback: 0, knockdown: 'slam' }),
