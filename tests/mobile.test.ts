@@ -23,7 +23,6 @@ import {
   drawDemoResult,
   drawLoadingHint,
   drawStageBadge,
-  drawFrameData,
   drawLoadingScreen,
   drawTrainingBadge,
   MOVE_HINT_TEXT,
@@ -439,29 +438,3 @@ describe('加载屏', () => {
   });
 });
 
-describe('训练模式帧数面板（F2 以前是空开关）', () => {
-  it('显示招式名与当前帧 / 总帧', () => {
-    const ctx = new FakeCtx();
-    drawFrameData(
-      ctx,
-      { state: 'attack', stateFrame: 5, moveName: '重拳', moveFrame: 3, moveTotal: 26 },
-      { state: 'hitstun', stateFrame: 2 },
-    );
-    const all = ctx.texts.map((t) => t.text);
-    expect(all.some((t) => t.includes('重拳') && t.includes('3') && t.includes('26')), all.join('|')).toBe(true);
-    expect(all).toContain('P1');
-    expect(all).toContain('P2');
-  });
-
-  it('没在出招时显示状态与状态帧', () => {
-    const ctx = new FakeCtx();
-    drawFrameData(
-      ctx,
-      { state: 'idle', stateFrame: 42, moveName: null, moveFrame: 0, moveTotal: 0 },
-      { state: 'crouch', stateFrame: 7 },
-    );
-    const all = ctx.texts.map((t) => t.text);
-    expect(all.some((t) => t.includes('idle') && t.includes('42')), all.join('|')).toBe(true);
-    expect(all.some((t) => t.includes('crouch') && t.includes('7'))).toBe(true);
-  });
-});

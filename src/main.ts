@@ -40,7 +40,6 @@ import {
   drawComboMeter,
   drawStageBadge,
   drawLoadingHint,
-  drawFrameData,
   drawLoadingScreen,
   drawDemoResult,
   drawDemoLabel,
@@ -1219,20 +1218,6 @@ startAnimationLoop(
           if (match) drawFrame(ctx, match);
           drawContinue(ctx, flow, blink);
           break;
-      }
-
-      if (training?.settings.showFrameData === true && match !== null) {
-        drawFrameData(
-          ctx,
-          {
-            state: match.p1.state,
-            stateFrame: match.p1.stateFrame,
-            moveName: match.p1.move?.name ?? null,
-            moveFrame: match.p1.moveFrame,
-            moveTotal: match.p1.move?.total ?? 0,
-          },
-          { state: match.p2.state, stateFrame: match.p2.stateFrame },
-        );
       }
 
       if (padAdjusting) drawPadAdjustHint(ctx, blink);

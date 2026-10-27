@@ -696,7 +696,36 @@ BOSS > 暗色角色 > 舞台专属曲 > 默认 fight
 **关键设计：属性音只用在重击上**。轻击一律 `hitLight`——否则京的每一下都会变成火声，
 "轻重层次"就被属性色盖掉了。反过来重击换成属性音，玩家能听出"这一下带着电"。
 
-## 六点十五、训练模式帧数面板（F2 从"空开关"变成真功能）
+## 六点十五、一次误判与回滚（记录）
+
+上一批我声称「`showFrameData` 是空开关、没有任何代码消费它」，于是加了一个
+`drawFrameData()` 面板。**这是错的**：
+
+```ts
+// main.ts 里一直有这行
+if (training.settings.showFrameData) drawTrainingOverlay(ctx, training.frameDataLines());
+```
+
+`frameDataLines()` 早就存在，而且内容**比我的面板更全**——招式名、`moveFrame/total`、
+**判定窗口**（`h.frames[0]-h.frames[1]`）、输入、血量、气槽。我的版本只有两行。
+
+**误判原因**：我 grep 时用了 `grep -v "training.ts|settings.ts"`——把定义和消费都排除掉了，
+自然"找不到消费者"。
+
+**已回滚**（删掉 `drawFrameData` 与对应测试），并全量复查了所有设置项：
+
+| 开关 | 消费处 | 结论 |
+|---|---|---|
+| showBoxes | 9 | ✓ 有实现 |
+| showFrameData | 7 | ✓ 有实现（只是被我排除掉了） |
+| infiniteHp / infiniteMeter | 7 / 7 | ✓ |
+| autoReset | 0（在 training.ts 内） | ✓ |
+| weatherFx / fxIntensity | 1 / 1 | ✓ |
+
+**没有空开关了。** 教训：**判断"某功能有没有实现"时不能排除文件**——定义和消费往往就在
+同一个文件里。
+
+## （原）训练模式帧数面板的设想
 
 **发现的问题**：`showFrameData` 这个开关一直存在——设置能打开、训练场状态条上会显示
 `F2 帧数 开`——但**没有任何代码消费它**。打开和关掉完全一样。
